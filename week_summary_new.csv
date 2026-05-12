@@ -1,0 +1,888 @@
+day,shopper_id,gender,age_group,entry_time,exit_time,dwell_min,sections_visited,n_sections,browsing_min,approached_fitting,used_fitting_room,fitting_wait_min,gave_up_fitting,joined_queue,initial_queue_position,queue_wait_min,abandoned_queue,reached_counter,purchased,funnel_stage
+Monday,1,female,adult,10:34,13:34,180,Stockings;Skirts & Dresses;Tops;Jeans;Pants,5,80,True,True,0,False,True,2,6,True,False,False,queued
+Monday,2,female,adult,10:43,11:25,42,Stockings;Jeans;Underwear,3,23,False,False,,False,False,,0,False,False,False,browsed
+Monday,3,male,adult,10:52,12:08,76,Stockings;Skirts & Dresses;Tops;Jeans,4,24,False,False,,False,False,,0,False,False,False,browsed
+Monday,4,male,adult,10:55,12:15,80,Hats & Handbags;Skirts & Dresses;Pants,3,16,True,True,0,False,True,2,2,False,True,True,purchased
+Monday,5,female,adult,11:10,12:16,66,Pants;Stockings;Jeans,3,25,False,False,,False,True,2,5,False,True,True,purchased
+Monday,6,male,adult,11:39,12:00,21,Pants;Stockings,2,7,False,False,,False,True,1,0,False,True,True,purchased
+Monday,7,female,adult,11:44,12:57,73,Jeans;Tops;Underwear,3,25,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,8,male,adult,11:47,12:59,72,Underwear;Jeans;Tops;Hats & Handbags,4,39,False,False,,False,True,2,3,True,False,False,queued
+Monday,9,female,adult,12:01,12:33,32,Tops,1,4,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,10,female,adult,12:09,14:38,149,Jeans;Pants;Stockings;Skirts & Dresses;Underwear,5,43,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,11,male,adult,12:14,13:27,73,Tops;Stockings;Hats & Handbags;Pants,4,21,False,False,,False,True,1,0,False,True,True,purchased
+Monday,12,male,young,12:24,13:19,55,Jeans;Stockings;Skirts & Dresses,3,35,False,False,,False,False,,0,False,False,False,browsed
+Monday,13,female,senior,12:28,14:57,149,Jeans;Hats & Handbags;Skirts & Dresses;Pants;Underwear,5,69,True,True,0,False,False,,0,False,False,False,used_fitting
+Monday,14,female,young,12:40,14:09,89,Jeans;Hats & Handbags;Pants;Tops,4,33,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,15,female,senior,12:42,14:48,126,Jeans;Skirts & Dresses;Pants;Tops,4,46,True,True,0,False,True,2,1,False,True,True,purchased
+Monday,16,female,adult,12:44,13:31,47,Tops;Skirts & Dresses,2,18,False,False,,False,True,1,0,False,True,True,purchased
+Monday,17,female,adult,13:13,15:11,118,Underwear;Stockings;Skirts & Dresses;Pants,4,36,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,18,male,young,13:27,14:31,64,Pants;Hats & Handbags;Tops;Underwear,4,29,True,True,0,False,False,,0,False,False,False,used_fitting
+Monday,19,female,young,13:31,14:52,81,Pants;Skirts & Dresses;Jeans,3,24,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,20,male,young,13:42,14:06,24,Pants;Underwear,2,8,False,False,,False,False,,0,False,False,False,browsed
+Monday,21,female,young,14:01,15:33,92,Skirts & Dresses;Pants;Jeans;Hats & Handbags,4,62,False,False,,False,False,,0,False,False,False,browsed
+Monday,22,male,young,14:06,15:48,102,Underwear;Skirts & Dresses;Stockings;Jeans;Pants,5,42,False,False,,False,True,1,0,False,True,True,purchased
+Monday,23,female,young,14:14,14:51,37,Hats & Handbags;Stockings,2,17,False,False,,False,False,,0,False,False,False,browsed
+Monday,24,male,adult,14:22,15:39,77,Underwear;Tops;Jeans,3,19,False,False,,False,True,1,0,False,True,True,purchased
+Monday,25,male,young,14:30,14:56,26,Stockings;Skirts & Dresses,2,8,False,False,,False,True,1,0,False,True,True,purchased
+Monday,26,female,young,14:40,15:40,60,Underwear;Hats & Handbags;Skirts & Dresses;Tops,4,39,False,False,,False,True,1,0,False,True,True,purchased
+Monday,27,male,adult,14:41,15:10,29,Underwear,1,3,False,False,,False,False,,0,False,False,False,browsed
+Monday,28,female,young,14:52,17:17,145,Hats & Handbags;Stockings;Jeans;Pants;Tops;Underwear,6,71,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,29,female,young,15:05,16:26,81,Stockings;Jeans;Pants;Underwear;Skirts & Dresses,5,44,True,True,0,False,True,2,0,True,False,False,queued
+Monday,30,male,senior,15:20,16:16,56,Hats & Handbags;Skirts & Dresses;Pants,3,30,False,False,,False,False,,0,False,False,False,browsed
+Monday,31,male,adult,15:23,15:57,34,Skirts & Dresses;Underwear;Pants;Jeans,4,17,False,False,,False,False,,0,False,False,False,browsed
+Monday,32,female,adult,15:32,18:25,173,Pants;Tops;Jeans;Hats & Handbags;Skirts & Dresses,5,78,True,True,0,False,True,2,5,False,True,True,purchased
+Monday,33,female,young,15:46,18:01,135,Tops;Stockings;Jeans;Skirts & Dresses;Underwear;Pants,6,53,True,True,0,False,True,2,3,False,True,True,purchased
+Monday,34,male,senior,15:47,16:33,46,Hats & Handbags;Stockings,2,5,False,False,,False,True,1,0,False,True,True,purchased
+Monday,35,male,adult,15:52,17:45,113,Hats & Handbags;Skirts & Dresses;Stockings;Jeans;Underwear;Pants,6,53,False,False,,False,True,2,1,False,True,True,purchased
+Monday,36,male,young,15:53,16:54,61,Pants;Hats & Handbags;Tops;Underwear,4,25,False,False,,False,True,1,0,False,True,True,purchased
+Monday,37,female,young,16:06,17:34,88,Pants;Skirts & Dresses;Jeans;Underwear;Stockings;Hats & Handbags,6,55,False,False,,False,True,1,0,False,True,True,purchased
+Monday,38,female,adult,16:10,18:40,150,Underwear;Hats & Handbags;Skirts & Dresses;Pants;Stockings,5,45,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,39,female,young,16:21,17:07,46,Jeans;Skirts & Dresses;Tops;Hats & Handbags,4,31,False,False,,False,False,,0,False,False,False,browsed
+Monday,40,female,adult,16:25,19:09,164,Hats & Handbags;Jeans;Skirts & Dresses;Stockings;Tops;Pants,6,86,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,41,female,adult,16:52,18:59,127,Skirts & Dresses;Stockings;Jeans;Underwear,4,44,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,42,female,adult,16:57,18:17,80,Underwear;Tops;Hats & Handbags,3,25,False,False,,False,True,3,5,True,False,False,queued
+Monday,43,female,young,17:02,17:42,40,Stockings;Underwear;Hats & Handbags,3,21,True,False,,True,True,1,0,False,True,True,purchased
+Monday,44,female,senior,17:08,18:14,66,Skirts & Dresses;Pants;Tops;Hats & Handbags,4,18,False,False,,False,True,2,1,False,True,True,purchased
+Monday,45,male,young,17:14,17:46,32,Hats & Handbags;Tops,2,8,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,46,female,senior,17:19,20:04,165,Pants;Hats & Handbags;Jeans;Underwear;Tops,5,84,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,47,male,young,17:38,18:27,49,Underwear;Jeans;Skirts & Dresses,3,17,False,False,,False,True,1,0,False,True,True,purchased
+Monday,48,male,adult,17:51,19:28,97,Underwear;Skirts & Dresses;Tops;Stockings,4,38,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,49,female,adult,18:06,18:45,39,Stockings;Jeans;Tops,3,13,False,False,,False,True,1,0,False,True,True,purchased
+Monday,50,female,senior,18:27,,,Tops;Skirts & Dresses;Underwear;Jeans;Hats & Handbags;Stockings,6,83,False,False,,False,False,,0,False,False,False,browsed
+Monday,51,female,adult,18:30,19:56,86,Skirts & Dresses;Underwear,2,21,True,True,0,False,True,1,0,False,True,True,purchased
+Monday,52,male,adult,18:31,19:45,74,Pants;Hats & Handbags;Underwear;Skirts & Dresses,4,21,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,1,male,adult,10:08,11:20,72,Pants;Hats & Handbags;Underwear;Stockings;Tops,5,27,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,2,female,adult,10:48,13:56,188,Hats & Handbags;Stockings;Skirts & Dresses;Jeans;Tops;Pants;Underwear,7,84,False,False,,False,True,2,2,True,False,False,queued
+Tuesday,3,male,young,11:00,12:06,66,Pants;Stockings;Tops;Skirts & Dresses;Jeans;Underwear,6,39,False,False,,False,True,2,1,False,True,True,purchased
+Tuesday,4,male,young,11:09,11:19,10,Jeans,1,4,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,5,male,adult,11:16,11:38,22,Pants,1,4,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,6,male,senior,11:17,12:58,101,Skirts & Dresses;Hats & Handbags;Jeans;Stockings;Tops,5,42,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,7,male,adult,11:20,12:21,61,Underwear;Jeans;Hats & Handbags;Pants,4,31,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,8,female,adult,11:27,13:35,128,Pants;Skirts & Dresses;Jeans;Tops;Underwear;Hats & Handbags,6,59,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,9,male,senior,11:32,12:07,35,Jeans,1,5,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,10,female,senior,11:39,13:22,103,Tops;Underwear;Skirts & Dresses;Hats & Handbags,4,30,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,11,female,young,11:51,13:00,69,Skirts & Dresses;Tops;Pants,3,24,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,12,female,adult,12:22,14:46,144,Jeans;Skirts & Dresses;Stockings;Hats & Handbags,4,59,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,13,female,adult,12:26,13:03,37,Tops,1,7,True,True,0,False,True,2,5,False,True,True,purchased
+Tuesday,14,male,young,12:37,14:02,85,Pants;Hats & Handbags;Tops;Underwear;Jeans,5,46,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,15,male,adult,12:41,12:59,18,Pants,1,5,False,False,,False,True,2,2,False,True,True,purchased
+Tuesday,16,male,adult,12:45,13:54,69,Tops;Stockings,2,9,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,17,male,adult,12:49,14:15,86,Tops;Stockings;Skirts & Dresses;Pants,4,19,False,False,,False,True,2,5,False,True,True,purchased
+Tuesday,18,female,young,12:51,13:26,35,Stockings;Jeans,2,13,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,19,female,senior,12:52,16:05,193,Tops;Stockings;Hats & Handbags;Pants;Skirts & Dresses,5,113,True,False,,True,True,1,0,False,True,True,purchased
+Tuesday,20,female,senior,13:01,15:01,120,Jeans;Tops;Underwear;Pants,4,50,True,True,0,False,True,2,0,True,False,False,queued
+Tuesday,21,female,adult,13:14,15:10,116,Stockings;Jeans;Pants;Hats & Handbags;Tops;Underwear,6,49,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,22,male,adult,13:15,14:46,91,Stockings;Jeans;Underwear;Tops;Hats & Handbags;Pants,6,46,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,23,female,adult,13:18,16:12,174,Underwear;Pants;Hats & Handbags;Stockings;Tops;Skirts & Dresses,6,55,True,True,0,False,True,3,3,False,True,True,purchased
+Tuesday,24,male,adult,13:20,13:32,12,Pants,1,5,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,25,female,adult,13:28,15:34,126,Tops;Pants;Jeans;Stockings;Skirts & Dresses;Underwear,6,53,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,26,female,adult,13:30,16:36,186,Stockings;Tops;Skirts & Dresses;Underwear;Pants,5,71,True,True,0,False,True,2,9,False,True,True,purchased
+Tuesday,27,male,adult,13:31,14:41,70,Underwear;Skirts & Dresses;Tops;Pants,4,14,False,False,,False,True,2,1,True,False,False,queued
+Tuesday,28,female,young,13:34,14:23,49,Stockings;Skirts & Dresses;Jeans;Tops,4,19,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,29,female,young,13:35,15:42,127,Jeans;Underwear;Stockings;Hats & Handbags;Pants;Tops;Skirts & Dresses,7,81,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,30,female,adult,13:36,15:53,137,Skirts & Dresses;Jeans;Tops;Hats & Handbags;Stockings;Pants;Underwear,7,82,True,True,0,False,True,2,2,True,False,False,queued
+Tuesday,31,female,senior,13:38,15:22,104,Skirts & Dresses;Jeans;Pants;Stockings,4,65,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,32,female,adult,13:44,15:47,123,Skirts & Dresses;Jeans;Hats & Handbags;Pants;Underwear;Stockings,6,67,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,33,male,young,13:45,14:12,27,Underwear;Jeans,2,11,False,False,,False,True,2,1,False,True,True,purchased
+Tuesday,34,female,young,14:18,16:19,121,Stockings;Pants;Hats & Handbags;Tops;Skirts & Dresses;Underwear,6,45,True,True,0,False,True,2,1,False,True,True,purchased
+Tuesday,35,female,senior,14:21,16:37,136,Pants;Skirts & Dresses;Jeans;Stockings;Hats & Handbags;Tops,6,59,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,36,male,adult,14:29,14:55,26,Jeans,1,3,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,37,female,senior,14:46,16:18,92,Hats & Handbags;Skirts & Dresses;Pants,3,69,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,38,female,adult,15:05,17:45,160,Stockings;Jeans;Tops;Hats & Handbags;Pants;Underwear,6,92,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,39,male,senior,15:09,17:32,143,Underwear;Hats & Handbags;Jeans;Skirts & Dresses;Stockings,5,41,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,40,female,adult,15:33,18:07,154,Pants;Jeans;Underwear;Hats & Handbags;Skirts & Dresses;Tops,6,113,True,True,0,False,True,3,0,True,False,False,queued
+Tuesday,41,female,young,15:41,16:34,53,Pants;Skirts & Dresses,2,20,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,42,female,adult,15:49,16:52,63,Underwear;Stockings;Tops;Hats & Handbags,4,33,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,43,female,adult,15:50,18:00,130,Jeans;Underwear;Skirts & Dresses;Stockings,4,49,False,False,,False,True,2,3,False,True,True,purchased
+Tuesday,44,female,senior,15:55,18:03,128,Hats & Handbags;Skirts & Dresses;Stockings;Tops;Pants;Jeans,6,52,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,45,male,adult,16:04,16:55,51,Tops;Stockings,2,21,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,46,female,adult,16:08,18:25,137,Stockings;Underwear;Jeans;Hats & Handbags;Pants,5,37,True,True,0,False,True,2,3,False,True,True,purchased
+Tuesday,47,male,young,16:09,17:29,80,Pants;Underwear;Tops;Stockings;Skirts & Dresses,5,58,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,48,male,senior,16:10,17:36,86,Stockings;Skirts & Dresses;Pants;Tops,4,37,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,49,female,adult,16:21,17:36,75,Tops;Underwear;Stockings,3,23,True,True,0,False,True,3,1,False,True,True,purchased
+Tuesday,50,female,adult,16:34,18:15,101,Jeans;Pants;Underwear;Tops,4,35,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,51,female,adult,16:37,19:27,170,Underwear;Stockings;Tops;Jeans;Pants;Hats & Handbags,6,94,True,True,0,False,True,2,4,False,True,True,purchased
+Tuesday,52,male,adult,16:40,17:38,58,Underwear;Pants;Tops;Jeans,4,22,False,False,,False,True,2,1,False,True,True,purchased
+Tuesday,53,female,adult,16:41,18:34,113,Skirts & Dresses;Hats & Handbags;Pants;Jeans;Tops,5,71,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,54,male,young,16:58,17:27,29,Skirts & Dresses,1,4,True,True,0,False,True,2,2,True,False,False,queued
+Tuesday,55,male,senior,17:04,18:45,101,Stockings;Jeans;Skirts & Dresses;Underwear,4,27,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,56,male,adult,17:08,18:44,96,Jeans;Hats & Handbags;Skirts & Dresses;Underwear,4,35,True,True,0,False,True,2,1,False,True,True,purchased
+Tuesday,57,female,adult,17:10,19:51,161,Stockings;Hats & Handbags;Pants;Skirts & Dresses;Jeans,5,83,True,True,0,False,True,2,1,False,True,True,purchased
+Tuesday,58,female,adult,17:18,19:32,134,Jeans;Pants;Stockings;Hats & Handbags;Tops,5,72,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,59,male,adult,17:23,19:05,102,Underwear;Jeans;Skirts & Dresses;Pants;Tops,5,40,True,True,0,False,True,2,3,True,False,False,queued
+Tuesday,60,female,young,17:25,19:08,103,Underwear;Jeans;Skirts & Dresses;Stockings,4,51,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,61,female,adult,17:26,19:10,104,Stockings;Hats & Handbags;Skirts & Dresses,3,29,True,True,0,False,True,1,0,False,True,True,purchased
+Tuesday,62,male,senior,17:39,18:26,47,Hats & Handbags;Tops;Stockings,3,15,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,63,male,adult,18:03,18:36,33,Jeans;Stockings,2,12,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,64,male,young,18:12,19:11,59,Pants;Jeans;Underwear;Tops,4,27,False,False,,False,True,3,3,False,True,True,purchased
+Tuesday,65,female,senior,18:19,20:31,132,Underwear;Jeans;Pants;Tops;Hats & Handbags,5,61,False,False,,False,True,2,8,False,True,True,purchased
+Tuesday,66,female,adult,18:59,19:40,41,Jeans;Skirts & Dresses;Hats & Handbags,3,19,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,67,female,adult,19:00,,,Stockings;Jeans;Pants;Skirts & Dresses;Hats & Handbags;Tops,6,79,True,True,0,False,False,,0,False,False,False,used_fitting
+Tuesday,68,female,young,19:13,,,Pants;Stockings;Hats & Handbags;Skirts & Dresses;Jeans,5,63,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,69,female,adult,19:23,20:14,51,Jeans;Skirts & Dresses;Hats & Handbags;Underwear,4,25,False,False,,False,True,1,0,False,True,True,purchased
+Tuesday,70,female,adult,19:32,19:54,22,Jeans,1,5,False,False,,False,True,2,1,False,True,True,purchased
+Tuesday,71,female,young,19:48,20:29,41,Underwear;Stockings;Tops,3,20,False,False,,False,False,,0,False,False,False,browsed
+Tuesday,72,female,adult,19:49,,,Skirts & Dresses;Underwear;Hats & Handbags;Jeans;Stockings,5,38,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,1,female,young,10:15,12:05,110,Stockings;Pants;Underwear;Jeans;Tops,5,72,True,True,0,False,True,2,1,False,True,True,purchased
+Wednesday,2,female,adult,10:30,12:56,146,Skirts & Dresses;Tops;Stockings;Jeans;Hats & Handbags,5,46,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,3,female,young,10:39,12:25,106,Underwear;Tops;Pants;Stockings;Hats & Handbags,5,70,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,4,female,young,10:40,11:11,31,Pants,1,8,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,5,female,senior,10:58,13:48,170,Skirts & Dresses;Stockings;Hats & Handbags;Jeans;Underwear;Tops,6,56,True,True,0,False,True,2,5,False,True,True,purchased
+Wednesday,6,female,adult,11:19,14:16,177,Skirts & Dresses;Tops;Jeans;Stockings;Underwear,5,81,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,7,female,senior,11:35,13:56,141,Hats & Handbags;Jeans;Tops;Pants,4,70,False,False,,False,True,3,10,False,True,True,purchased
+Wednesday,8,female,adult,11:38,13:38,120,Skirts & Dresses;Hats & Handbags;Tops,3,58,True,True,0,False,True,3,7,False,True,True,purchased
+Wednesday,9,female,young,11:39,12:26,47,Underwear;Stockings,2,12,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,10,male,young,11:40,11:53,13,Hats & Handbags,1,4,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,11,male,adult,11:49,12:02,13,Tops,1,2,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,12,female,young,11:50,13:31,101,Jeans;Skirts & Dresses;Tops;Stockings,4,52,True,True,0,False,True,3,6,False,True,True,purchased
+Wednesday,13,female,adult,11:57,12:57,60,Pants;Underwear;Tops;Hats & Handbags;Jeans,5,38,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,14,female,adult,12:00,12:46,46,Hats & Handbags;Stockings;Underwear,3,25,False,False,,False,True,2,1,True,False,False,queued
+Wednesday,15,female,adult,12:02,15:28,206,Jeans;Hats & Handbags;Stockings;Tops;Underwear;Pants;Skirts & Dresses,7,97,True,True,0,False,True,2,1,False,True,True,purchased
+Wednesday,16,male,senior,12:11,12:16,5,Tops,1,2,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,17,female,adult,12:15,13:16,61,Hats & Handbags;Tops,2,18,True,True,0,False,True,2,2,False,True,True,purchased
+Wednesday,18,female,young,12:16,12:51,35,Tops;Skirts & Dresses,2,14,True,True,0,False,False,,0,False,False,False,used_fitting
+Wednesday,19,female,senior,12:17,14:06,109,Stockings;Jeans;Hats & Handbags,3,47,True,True,0,False,True,2,2,True,False,False,queued
+Wednesday,20,female,senior,12:22,13:41,79,Pants;Skirts & Dresses;Tops;Underwear,4,35,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,21,female,adult,12:33,14:26,113,Jeans;Underwear;Stockings;Pants;Hats & Handbags;Skirts & Dresses,6,47,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,22,male,young,12:36,13:08,32,Jeans;Underwear;Tops,3,15,False,False,,False,True,2,0,False,True,True,purchased
+Wednesday,23,male,adult,12:37,13:22,45,Underwear;Hats & Handbags;Tops,3,18,False,False,,False,True,2,0,True,False,False,queued
+Wednesday,24,male,adult,12:40,14:03,83,Skirts & Dresses;Tops;Pants;Underwear;Hats & Handbags;Jeans,6,46,False,False,,False,True,2,0,True,False,False,queued
+Wednesday,25,female,young,12:42,15:09,147,Jeans;Skirts & Dresses;Hats & Handbags;Underwear;Stockings;Tops;Pants,7,92,True,True,0,False,True,2,1,False,True,True,purchased
+Wednesday,26,male,young,12:43,13:03,20,Stockings,1,5,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,27,male,adult,12:47,14:03,76,Skirts & Dresses;Stockings;Tops,3,21,False,False,,False,True,2,0,False,True,True,purchased
+Wednesday,28,male,young,12:51,13:57,66,Hats & Handbags;Stockings;Skirts & Dresses,3,16,False,False,,False,True,3,14,False,True,True,purchased
+Wednesday,29,female,adult,12:53,14:43,110,Jeans;Underwear;Pants;Hats & Handbags;Tops;Stockings,6,70,False,False,,False,True,2,2,False,True,True,purchased
+Wednesday,30,female,young,12:56,14:09,73,Hats & Handbags;Tops;Jeans;Stockings;Underwear,5,37,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,31,female,young,13:05,14:39,94,Skirts & Dresses;Pants;Jeans,3,43,True,True,0,False,True,2,3,False,True,True,purchased
+Wednesday,32,female,young,13:06,14:41,95,Jeans;Tops;Hats & Handbags;Underwear;Pants;Stockings,6,68,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,33,female,young,13:07,15:30,143,Skirts & Dresses;Jeans;Hats & Handbags;Underwear;Pants,5,79,True,True,0,False,False,,0,False,False,False,used_fitting
+Wednesday,34,male,senior,13:13,14:56,103,Hats & Handbags;Jeans;Tops;Skirts & Dresses;Pants,5,28,False,False,,False,True,2,3,False,True,True,purchased
+Wednesday,35,female,senior,13:17,16:25,188,Stockings;Pants;Jeans;Skirts & Dresses;Hats & Handbags,5,99,True,True,0,False,True,2,0,True,False,False,queued
+Wednesday,36,male,young,13:21,14:24,63,Skirts & Dresses;Stockings;Pants;Tops,4,33,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,37,female,adult,13:22,14:16,54,Tops;Pants;Hats & Handbags;Skirts & Dresses,4,38,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,38,female,young,13:27,15:29,122,Underwear;Pants;Tops;Hats & Handbags;Jeans;Skirts & Dresses,6,80,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,39,male,senior,13:33,14:18,45,Underwear;Tops,2,12,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,40,female,adult,13:38,16:20,162,Tops;Underwear;Skirts & Dresses;Jeans;Stockings,5,82,False,False,,False,True,2,2,False,True,True,purchased
+Wednesday,41,female,senior,13:41,14:29,48,Tops;Skirts & Dresses;Hats & Handbags,3,27,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,42,female,young,13:42,16:04,142,Stockings;Underwear;Jeans;Hats & Handbags;Pants;Skirts & Dresses;Tops,7,84,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,43,female,young,13:47,15:02,75,Jeans;Hats & Handbags;Skirts & Dresses;Tops,4,30,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,44,male,adult,13:54,14:32,38,Jeans;Underwear;Tops,3,17,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,45,male,adult,13:55,14:35,40,Hats & Handbags;Underwear,2,9,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,46,female,adult,13:58,15:16,78,Skirts & Dresses;Tops;Jeans,3,21,True,True,0,False,True,2,1,False,True,True,purchased
+Wednesday,47,female,senior,14:23,16:14,111,Hats & Handbags;Skirts & Dresses;Tops;Stockings;Pants;Jeans,6,64,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,48,female,young,14:40,15:56,76,Underwear;Skirts & Dresses;Jeans,3,46,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,49,female,adult,14:57,18:29,212,Stockings;Underwear;Pants;Skirts & Dresses;Tops;Hats & Handbags;Jeans,7,103,True,True,0,False,False,,0,False,False,False,used_fitting
+Wednesday,50,male,adult,15:13,15:34,21,Tops,1,4,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,51,female,adult,15:22,17:05,103,Underwear;Tops;Stockings;Pants,4,35,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,52,male,adult,15:29,16:37,68,Hats & Handbags;Stockings;Tops,3,19,False,False,,False,True,2,1,True,False,False,queued
+Wednesday,53,male,senior,15:30,16:30,60,Skirts & Dresses;Underwear,2,12,False,False,,False,True,2,2,False,True,True,purchased
+Wednesday,54,female,adult,15:34,15:45,11,Hats & Handbags,1,6,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,55,male,adult,15:36,16:39,63,Pants;Stockings;Jeans,3,21,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,56,male,adult,15:40,16:52,72,Hats & Handbags;Stockings;Jeans,3,22,False,False,,False,True,2,3,True,False,False,queued
+Wednesday,57,female,young,15:46,17:28,102,Pants;Stockings;Underwear,3,46,True,True,0,False,True,2,9,False,True,True,purchased
+Wednesday,58,female,young,15:47,16:09,22,Underwear;Tops,2,8,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,59,female,adult,15:48,16:56,68,Underwear;Jeans,2,12,True,True,0,False,False,,0,False,False,False,used_fitting
+Wednesday,60,male,young,15:50,16:52,62,Underwear;Jeans;Tops;Hats & Handbags,4,28,False,False,,False,True,2,1,False,True,True,purchased
+Wednesday,61,female,young,15:51,17:06,75,Hats & Handbags;Underwear;Pants,3,31,True,True,0,False,True,2,0,True,False,False,queued
+Wednesday,62,female,senior,15:53,18:12,139,Skirts & Dresses;Underwear;Hats & Handbags;Pants;Stockings;Tops,6,59,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,63,female,young,15:56,18:50,174,Underwear;Tops;Jeans;Skirts & Dresses;Stockings;Pants;Hats & Handbags,7,107,True,True,0,False,False,,0,False,False,False,used_fitting
+Wednesday,64,male,senior,15:57,17:14,77,Tops;Stockings;Hats & Handbags;Pants,4,20,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,65,female,adult,15:58,18:15,137,Tops;Hats & Handbags;Pants;Skirts & Dresses;Stockings,5,79,True,True,0,False,False,,0,False,False,False,used_fitting
+Wednesday,66,female,adult,16:00,16:45,45,Tops;Skirts & Dresses;Stockings;Hats & Handbags,4,20,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,67,female,young,16:02,16:28,26,Stockings;Pants,2,7,False,False,,False,True,2,4,False,True,True,purchased
+Wednesday,68,female,adult,16:09,18:11,122,Skirts & Dresses;Underwear;Jeans;Pants,4,35,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,69,female,adult,16:16,17:34,78,Jeans;Hats & Handbags;Underwear,3,28,False,False,,False,True,3,3,True,False,False,queued
+Wednesday,70,female,young,16:20,17:17,57,Stockings;Jeans;Tops;Underwear,4,37,False,False,,False,True,3,4,True,False,False,queued
+Wednesday,71,female,adult,16:28,17:21,53,Jeans;Stockings;Hats & Handbags;Tops,4,21,False,False,,False,True,2,1,False,True,True,purchased
+Wednesday,72,female,young,16:30,17:01,31,Stockings;Underwear,2,17,False,False,,False,True,2,3,True,False,False,queued
+Wednesday,73,male,adult,16:35,18:04,89,Jeans;Hats & Handbags,2,17,True,True,0,False,True,2,8,False,True,True,purchased
+Wednesday,74,female,adult,16:38,18:32,114,Tops;Skirts & Dresses;Hats & Handbags;Jeans;Pants;Stockings,6,69,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,75,male,adult,16:43,17:39,56,Tops;Stockings,2,28,False,False,,False,True,2,4,False,True,True,purchased
+Wednesday,76,female,adult,16:52,20:53,241,Stockings;Tops;Skirts & Dresses;Hats & Handbags;Jeans;Pants;Underwear,7,136,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,77,female,young,16:56,17:57,61,Stockings;Tops;Hats & Handbags;Skirts & Dresses,4,33,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,78,female,adult,16:58,17:47,49,Stockings;Skirts & Dresses;Jeans,3,22,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,79,female,adult,16:59,17:21,22,Stockings,1,3,False,False,,False,True,4,6,True,False,False,queued
+Wednesday,80,female,young,17:00,19:16,136,Jeans;Hats & Handbags;Skirts & Dresses;Pants;Stockings;Underwear;Tops,7,89,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,81,female,young,17:11,17:37,26,Tops;Jeans,2,17,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,82,female,senior,17:17,20:11,174,Underwear;Pants;Tops;Hats & Handbags;Stockings;Skirts & Dresses,6,57,True,True,0,False,True,1,0,False,True,True,purchased
+Wednesday,83,male,young,17:20,17:27,7,Skirts & Dresses,1,4,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,84,male,young,17:22,18:15,53,Hats & Handbags;Stockings;Skirts & Dresses;Jeans,4,26,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,85,female,senior,17:25,19:13,108,Hats & Handbags;Underwear;Jeans;Tops;Pants,5,53,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,86,female,adult,17:30,19:01,91,Underwear;Hats & Handbags;Stockings;Pants;Tops,5,38,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,87,female,adult,17:40,20:25,165,Pants;Tops;Stockings;Underwear;Hats & Handbags;Jeans;Skirts & Dresses,7,102,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,88,female,adult,18:00,18:38,38,Pants;Hats & Handbags,2,12,False,False,,False,True,2,1,False,True,True,purchased
+Wednesday,89,male,senior,18:39,19:11,32,Jeans;Skirts & Dresses,2,9,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,90,male,young,18:59,19:43,44,Underwear;Jeans;Pants;Stockings,4,20,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,91,male,adult,19:29,20:29,60,Skirts & Dresses;Hats & Handbags,2,22,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,92,male,adult,19:35,20:42,67,Tops;Skirts & Dresses;Stockings;Jeans;Hats & Handbags,5,27,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,93,female,young,19:58,,,Tops;Pants;Stockings;Jeans,4,55,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,94,female,adult,20:04,,,Pants;Skirts & Dresses;Tops;Hats & Handbags,4,35,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,95,male,senior,20:07,,,Hats & Handbags;Skirts & Dresses,2,18,False,False,,False,True,1,0,False,True,True,purchased
+Wednesday,96,female,adult,20:12,,,Hats & Handbags;Underwear;Pants,3,23,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,97,female,adult,20:21,,,Pants;Hats & Handbags;Skirts & Dresses,3,24,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,98,female,adult,20:22,,,Tops;Hats & Handbags,2,13,True,True,0,False,True,1,0,False,True,False,at_counter
+Wednesday,99,male,adult,20:43,,,Hats & Handbags,1,6,False,False,,False,False,,0,False,False,False,browsed
+Wednesday,100,male,adult,20:57,,,,0,0,False,False,,False,False,,0,False,False,False,entered_only
+Thursday,1,male,young,10:07,10:59,52,Stockings;Tops;Hats & Handbags;Skirts & Dresses;Underwear,5,29,False,False,,False,False,,0,False,False,False,browsed
+Thursday,2,female,young,10:13,11:10,57,Tops;Skirts & Dresses;Underwear;Hats & Handbags,4,30,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,3,male,adult,10:14,11:09,55,Hats & Handbags;Jeans,2,12,False,False,,False,False,,0,False,False,False,browsed
+Thursday,4,female,adult,10:16,12:30,134,Tops;Jeans;Hats & Handbags;Underwear,4,70,False,False,,False,False,,0,False,False,False,browsed
+Thursday,5,female,young,10:39,12:01,82,Pants;Tops;Hats & Handbags;Underwear;Stockings;Jeans;Skirts & Dresses,7,53,False,False,,False,False,,0,False,False,False,browsed
+Thursday,6,female,adult,10:43,12:02,79,Stockings;Underwear;Hats & Handbags;Jeans,4,21,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,7,male,young,11:06,11:52,46,Underwear;Jeans;Tops,3,35,False,False,,False,False,,0,False,False,False,browsed
+Thursday,8,male,young,11:11,11:31,20,Stockings;Underwear,2,13,False,False,,False,False,,0,False,False,False,browsed
+Thursday,9,female,senior,11:21,12:04,43,Pants;Skirts & Dresses;Tops,3,17,False,False,,False,True,2,5,False,True,True,purchased
+Thursday,10,female,adult,11:30,14:23,173,Hats & Handbags;Jeans;Tops;Pants;Stockings;Skirts & Dresses,6,87,False,False,,False,True,3,0,True,False,False,queued
+Thursday,11,female,senior,11:33,14:42,189,Skirts & Dresses;Jeans;Pants;Tops;Stockings,5,92,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,12,male,adult,11:36,13:20,104,Skirts & Dresses;Jeans;Stockings;Underwear;Tops;Pants,6,44,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,13,male,senior,11:45,13:44,119,Stockings;Jeans;Pants;Underwear;Skirts & Dresses;Hats & Handbags,6,57,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,14,female,adult,11:48,14:18,150,Underwear;Tops;Pants;Stockings,4,71,True,True,0,False,True,2,3,True,False,False,queued
+Thursday,15,female,young,11:56,12:42,46,Tops;Stockings,2,14,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,16,female,young,11:58,14:55,177,Underwear;Tops;Jeans;Skirts & Dresses;Hats & Handbags;Pants;Stockings,7,87,True,True,0,False,True,3,0,True,False,False,queued
+Thursday,17,female,young,11:59,12:32,33,Tops,1,8,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,18,female,adult,12:11,15:42,211,Skirts & Dresses;Hats & Handbags;Underwear;Stockings;Pants;Jeans,6,110,True,True,0,False,True,3,2,False,True,True,purchased
+Thursday,19,male,senior,12:21,12:53,32,Skirts & Dresses,1,2,False,False,,False,True,2,1,False,True,True,purchased
+Thursday,20,female,senior,12:23,14:42,139,Skirts & Dresses;Tops;Underwear;Pants;Stockings;Hats & Handbags,6,53,True,True,0,False,True,3,4,True,False,False,queued
+Thursday,21,female,senior,12:25,13:23,58,Hats & Handbags;Pants;Jeans;Underwear,4,22,False,False,,False,True,2,3,False,True,True,purchased
+Thursday,22,male,young,12:30,13:57,87,Jeans;Tops;Pants;Underwear;Stockings;Hats & Handbags,6,51,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,23,female,adult,12:34,13:35,61,Hats & Handbags;Underwear,2,22,True,True,0,False,True,2,2,True,False,False,queued
+Thursday,24,female,adult,12:38,13:44,66,Stockings;Underwear,2,11,True,True,0,False,True,4,0,True,False,False,queued
+Thursday,25,male,young,12:39,14:06,87,Hats & Handbags;Stockings;Jeans;Tops,4,32,True,True,0,False,True,2,4,False,True,True,purchased
+Thursday,26,male,senior,12:40,14:06,86,Skirts & Dresses;Tops;Stockings;Hats & Handbags,4,29,False,False,,False,True,2,1,True,False,False,queued
+Thursday,27,female,adult,12:43,14:58,135,Underwear;Tops;Stockings;Skirts & Dresses;Hats & Handbags,5,62,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,28,female,adult,12:45,14:12,87,Skirts & Dresses;Stockings;Tops,3,27,True,True,0,False,False,,0,False,False,False,used_fitting
+Thursday,29,male,adult,12:59,14:55,116,Tops;Underwear;Jeans;Skirts & Dresses;Pants;Hats & Handbags,6,53,False,False,,False,False,,0,False,False,False,browsed
+Thursday,30,female,adult,13:00,13:47,47,Underwear,1,4,True,True,0,False,True,3,6,False,True,True,purchased
+Thursday,31,male,adult,13:03,13:21,18,Underwear,1,2,False,False,,False,True,2,3,True,False,False,queued
+Thursday,32,female,adult,13:04,14:51,107,Underwear;Tops;Pants;Jeans;Stockings;Hats & Handbags,6,48,False,False,,False,False,,0,False,False,False,browsed
+Thursday,33,female,young,13:08,15:21,133,Tops;Skirts & Dresses;Hats & Handbags;Pants;Stockings;Jeans,6,73,True,True,0,False,True,2,2,False,True,True,purchased
+Thursday,34,female,senior,13:10,15:06,116,Tops;Skirts & Dresses;Hats & Handbags;Underwear;Stockings,5,67,False,False,,False,True,3,9,True,False,False,queued
+Thursday,35,female,adult,13:14,15:15,121,Pants;Jeans;Hats & Handbags;Stockings,4,41,False,False,,False,True,3,9,False,True,True,purchased
+Thursday,36,male,senior,13:16,15:37,141,Jeans;Underwear;Skirts & Dresses;Hats & Handbags;Stockings,5,55,False,False,,False,True,3,9,False,True,True,purchased
+Thursday,37,male,senior,13:22,14:25,63,Underwear;Skirts & Dresses;Hats & Handbags,3,11,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,38,female,adult,13:23,15:05,102,Tops;Stockings;Pants;Skirts & Dresses;Underwear;Hats & Handbags,6,57,False,False,,False,False,,0,False,False,False,browsed
+Thursday,39,female,young,13:25,14:57,92,Tops;Jeans;Stockings;Underwear;Hats & Handbags,5,68,False,False,,False,False,,0,False,False,False,browsed
+Thursday,40,female,young,13:27,13:49,22,Pants,1,4,True,True,0,False,False,,0,False,False,False,used_fitting
+Thursday,41,male,adult,13:28,13:45,17,Hats & Handbags,1,8,False,False,,False,False,,0,False,False,False,browsed
+Thursday,42,female,adult,13:33,15:02,89,Tops;Skirts & Dresses;Pants;Stockings,4,37,True,False,,True,True,6,0,True,False,False,queued
+Thursday,43,female,adult,13:37,15:29,112,Stockings;Skirts & Dresses;Tops;Hats & Handbags;Jeans;Underwear,6,48,False,False,,False,True,3,6,True,False,False,queued
+Thursday,44,male,adult,13:38,14:35,57,Underwear;Tops,2,10,False,False,,False,True,2,4,False,True,True,purchased
+Thursday,45,male,adult,13:41,15:31,110,Tops;Pants;Underwear;Hats & Handbags;Stockings,5,37,True,True,0,False,True,2,4,True,False,False,queued
+Thursday,46,female,adult,13:49,15:16,87,Underwear;Stockings;Tops,3,22,True,True,0,False,True,2,3,False,True,True,purchased
+Thursday,47,male,adult,13:52,14:10,18,Tops,1,5,False,False,,False,True,2,1,False,True,True,purchased
+Thursday,48,male,senior,13:57,14:43,46,Hats & Handbags;Jeans,2,12,False,False,,False,False,,0,False,False,False,browsed
+Thursday,49,female,young,14:01,14:59,58,Skirts & Dresses;Hats & Handbags;Tops,3,22,True,True,0,False,True,5,3,True,False,False,queued
+Thursday,50,female,adult,14:03,16:24,141,Skirts & Dresses;Pants;Underwear;Jeans;Tops;Stockings;Hats & Handbags,7,86,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,51,female,adult,14:05,14:58,53,Tops;Jeans;Hats & Handbags;Skirts & Dresses,4,25,False,False,,False,True,2,5,False,True,True,purchased
+Thursday,52,female,senior,14:08,18:07,239,Jeans;Stockings;Pants;Tops;Underwear;Skirts & Dresses;Hats & Handbags,7,146,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,53,female,adult,14:12,15:45,93,Stockings;Pants;Jeans;Underwear,4,53,True,True,0,False,False,,0,False,False,False,used_fitting
+Thursday,54,female,senior,14:14,16:29,135,Hats & Handbags;Jeans;Stockings;Pants;Tops;Skirts & Dresses,6,84,False,False,,False,False,,0,False,False,False,browsed
+Thursday,55,female,senior,14:17,15:45,88,Tops;Underwear,2,24,True,True,0,False,True,3,6,False,True,True,purchased
+Thursday,56,female,young,14:20,14:40,20,Tops,1,5,False,False,,False,True,2,3,False,True,True,purchased
+Thursday,57,male,senior,14:31,16:37,126,Skirts & Dresses;Stockings;Jeans;Tops;Hats & Handbags;Underwear,6,55,False,False,,False,True,4,2,True,False,False,queued
+Thursday,58,male,adult,14:38,15:01,23,Underwear,1,2,False,False,,False,True,4,8,True,False,False,queued
+Thursday,59,female,adult,14:40,16:46,126,Stockings;Hats & Handbags;Underwear;Skirts & Dresses;Jeans,5,37,True,True,0,False,True,4,12,False,True,True,purchased
+Thursday,60,female,young,14:44,15:23,39,Skirts & Dresses;Tops;Stockings,3,27,False,False,,False,False,,0,False,False,False,browsed
+Thursday,61,male,adult,14:46,15:58,72,Underwear;Jeans;Skirts & Dresses,3,17,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,62,female,adult,14:51,17:59,188,Stockings;Skirts & Dresses;Pants;Underwear;Jeans;Tops,6,78,True,True,0,False,True,2,1,True,False,False,queued
+Thursday,63,female,senior,14:59,17:37,158,Pants;Tops;Skirts & Dresses;Stockings;Hats & Handbags;Underwear,6,78,False,False,,False,True,3,6,True,False,False,queued
+Thursday,64,female,adult,15:20,17:15,115,Jeans;Stockings;Skirts & Dresses;Pants;Hats & Handbags,5,66,False,False,,False,True,3,7,False,True,True,purchased
+Thursday,65,female,young,15:28,16:24,56,Tops;Jeans;Hats & Handbags;Stockings,4,25,False,False,,False,True,2,7,False,True,True,purchased
+Thursday,66,male,senior,15:31,16:36,65,Pants;Stockings;Hats & Handbags,3,22,False,False,,False,True,5,1,True,False,False,queued
+Thursday,67,male,senior,15:33,17:09,96,Hats & Handbags;Tops;Underwear;Stockings,4,36,False,False,,False,True,3,11,False,True,True,purchased
+Thursday,68,female,adult,15:34,16:57,83,Jeans;Stockings;Skirts & Dresses,3,24,True,True,0,False,True,4,1,True,False,False,queued
+Thursday,69,male,young,15:35,16:14,39,Hats & Handbags;Stockings;Pants;Tops,4,17,False,False,,False,False,,0,False,False,False,browsed
+Thursday,70,male,young,15:43,16:37,54,Tops;Hats & Handbags;Stockings,3,13,False,False,,False,True,3,8,False,True,True,purchased
+Thursday,71,female,young,15:47,16:57,70,Pants;Hats & Handbags;Skirts & Dresses;Jeans,4,30,False,False,,False,True,4,9,False,True,True,purchased
+Thursday,72,male,young,15:51,17:23,92,Underwear;Hats & Handbags;Pants;Jeans;Stockings;Skirts & Dresses,6,41,False,False,,False,True,3,1,True,False,False,queued
+Thursday,73,female,adult,15:58,17:11,73,Jeans;Tops;Stockings;Underwear,4,27,False,False,,False,True,4,17,False,True,True,purchased
+Thursday,74,male,senior,16:00,17:26,86,Skirts & Dresses;Underwear;Pants,3,15,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,75,male,young,16:02,16:28,26,Jeans;Pants,2,9,False,False,,False,True,2,5,False,True,True,purchased
+Thursday,76,male,young,16:03,17:19,76,Underwear;Stockings;Pants;Hats & Handbags;Jeans;Skirts & Dresses,6,46,False,False,,False,False,,0,False,False,False,browsed
+Thursday,77,male,adult,16:05,17:01,56,Tops;Underwear;Stockings,3,32,False,False,,False,True,3,0,True,False,False,queued
+Thursday,78,female,adult,16:08,18:53,165,Tops;Skirts & Dresses;Jeans;Stockings;Underwear;Hats & Handbags,6,85,True,True,0,False,False,,0,False,False,False,used_fitting
+Thursday,79,female,senior,16:11,17:32,81,Pants;Underwear;Hats & Handbags,3,25,True,True,0,False,True,4,0,True,False,False,queued
+Thursday,80,male,young,16:12,16:46,34,Hats & Handbags;Tops,2,7,False,False,,False,True,4,14,False,True,True,purchased
+Thursday,81,female,adult,16:13,17:31,78,Tops;Stockings;Jeans,3,38,True,True,0,False,False,,0,False,False,False,used_fitting
+Thursday,82,male,young,16:23,16:45,22,Pants,1,5,False,False,,False,True,4,10,True,False,False,queued
+Thursday,83,female,adult,16:24,17:40,76,Skirts & Dresses;Underwear;Stockings,3,27,False,False,,False,True,3,0,True,False,False,queued
+Thursday,84,male,young,16:27,17:38,71,Pants;Stockings;Underwear;Hats & Handbags;Tops,5,41,False,False,,False,False,,0,False,False,False,browsed
+Thursday,85,female,young,16:30,17:32,62,Jeans;Tops,2,21,True,True,0,False,True,2,2,False,True,True,purchased
+Thursday,86,female,young,16:32,18:16,104,Jeans;Pants;Skirts & Dresses;Hats & Handbags;Underwear,5,50,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,87,female,adult,16:33,17:37,64,Pants;Underwear;Hats & Handbags,3,28,False,False,,False,False,,0,False,False,False,browsed
+Thursday,88,male,senior,16:41,17:54,73,Underwear;Hats & Handbags;Tops;Pants,4,22,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,89,female,senior,16:45,19:06,141,Stockings;Skirts & Dresses;Pants;Hats & Handbags,4,61,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,90,male,senior,16:47,17:26,39,Pants;Hats & Handbags,2,12,False,False,,False,False,,0,False,False,False,browsed
+Thursday,91,female,senior,16:53,17:40,47,Underwear,1,7,False,False,,False,True,3,8,False,True,True,purchased
+Thursday,92,male,young,16:56,17:15,19,Underwear,1,8,False,False,,False,False,,0,False,False,False,browsed
+Thursday,93,female,young,17:01,18:15,74,Stockings;Underwear;Jeans;Pants;Hats & Handbags;Skirts & Dresses;Tops,7,55,False,False,,False,False,,0,False,False,False,browsed
+Thursday,94,male,young,17:05,18:20,75,Underwear;Tops;Hats & Handbags;Skirts & Dresses;Pants,5,44,False,False,,False,False,,0,False,False,False,browsed
+Thursday,95,female,adult,17:10,19:54,164,Skirts & Dresses;Underwear;Jeans;Tops;Hats & Handbags,5,84,True,True,0,False,True,3,0,True,False,False,queued
+Thursday,96,female,young,17:11,18:21,70,Skirts & Dresses;Hats & Handbags;Stockings;Underwear,4,32,False,False,,False,False,,0,False,False,False,browsed
+Thursday,97,female,senior,17:20,18:33,73,Stockings;Jeans;Skirts & Dresses;Pants,4,23,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,98,female,adult,17:21,20:06,165,Skirts & Dresses;Underwear;Jeans;Stockings;Pants;Hats & Handbags,6,94,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,99,male,adult,17:24,18:07,43,Tops;Underwear,2,15,False,False,,False,False,,0,False,False,False,browsed
+Thursday,100,male,young,17:30,18:23,53,Pants,1,8,True,True,0,False,True,2,3,False,True,True,purchased
+Thursday,101,male,young,17:32,18:22,50,Stockings;Hats & Handbags,2,13,True,True,0,False,False,,0,False,False,False,used_fitting
+Thursday,102,male,senior,17:41,19:33,112,Skirts & Dresses;Underwear;Pants;Jeans,4,47,False,False,,False,True,2,3,False,True,True,purchased
+Thursday,103,female,young,17:51,18:42,51,Underwear;Pants,2,13,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,104,female,adult,17:52,19:05,73,Skirts & Dresses;Stockings;Underwear;Hats & Handbags,4,35,True,True,0,False,True,2,1,True,False,False,queued
+Thursday,105,male,adult,18:04,18:51,47,Underwear;Hats & Handbags,2,9,False,False,,False,False,,0,False,False,False,browsed
+Thursday,106,female,adult,18:08,19:48,100,Tops;Jeans;Skirts & Dresses;Stockings;Pants,5,66,False,False,,False,True,2,3,True,False,False,queued
+Thursday,107,male,young,18:22,19:17,55,Stockings;Pants;Hats & Handbags,3,29,False,False,,False,True,3,1,False,True,True,purchased
+Thursday,108,male,adult,18:23,19:41,78,Tops;Jeans;Hats & Handbags;Underwear,4,20,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,109,male,adult,18:36,19:06,30,Pants;Tops,2,14,False,False,,False,True,2,1,False,True,True,purchased
+Thursday,110,female,adult,18:38,,,Stockings;Underwear;Skirts & Dresses;Tops;Hats & Handbags;Jeans;Pants,7,86,False,False,,False,False,,0,False,False,False,browsed
+Thursday,111,male,adult,18:40,19:52,72,Underwear;Jeans;Skirts & Dresses;Tops,4,22,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,112,female,young,18:41,20:44,123,Jeans;Pants;Underwear;Hats & Handbags;Skirts & Dresses;Stockings,6,52,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,113,male,senior,18:43,19:23,40,Underwear;Stockings,2,5,False,False,,False,True,2,2,False,True,True,purchased
+Thursday,114,female,adult,18:52,20:27,95,Underwear;Pants;Jeans;Skirts & Dresses;Hats & Handbags,5,60,False,False,,False,True,1,0,False,True,True,purchased
+Thursday,115,female,adult,19:23,,,Underwear;Skirts & Dresses;Pants;Stockings;Tops;Jeans;Hats & Handbags,7,58,False,False,,False,False,,0,False,False,False,browsed
+Thursday,116,male,adult,20:17,,,Skirts & Dresses,1,4,True,True,0,False,True,1,0,False,True,True,purchased
+Thursday,117,male,adult,20:33,,,Skirts & Dresses;Underwear,2,14,False,False,,False,False,,0,False,False,False,browsed
+Thursday,118,female,senior,20:45,,,Underwear,1,3,False,False,,False,True,1,0,False,True,False,at_counter
+Thursday,119,male,adult,20:48,,,Hats & Handbags;Tops,2,6,False,False,,False,False,,0,False,False,False,browsed
+Thursday,120,male,adult,20:49,20:57,8,Skirts & Dresses,1,3,False,False,,False,False,,0,False,False,False,browsed
+Thursday,121,female,young,20:54,,,Hats & Handbags,1,1,False,False,,False,False,,0,False,False,False,browsed
+Friday,1,male,senior,10:29,11:28,59,Jeans;Underwear;Stockings;Pants,4,24,False,False,,False,True,1,0,False,True,True,purchased
+Friday,2,female,young,10:32,11:47,75,Underwear;Pants;Stockings,3,56,False,False,,False,False,,0,False,False,False,browsed
+Friday,3,female,senior,10:37,12:42,125,Stockings;Skirts & Dresses;Pants,3,32,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,4,female,adult,10:38,11:41,63,Jeans;Tops;Skirts & Dresses,3,15,False,False,,False,True,1,0,False,True,True,purchased
+Friday,5,male,senior,10:39,12:40,121,Skirts & Dresses;Tops;Pants;Underwear,4,49,False,False,,False,True,2,6,False,True,True,purchased
+Friday,6,male,adult,10:40,11:47,67,Jeans;Hats & Handbags;Skirts & Dresses;Underwear;Stockings,5,37,False,False,,False,True,2,2,True,False,False,queued
+Friday,7,female,senior,10:48,15:35,287,Tops;Pants;Jeans;Skirts & Dresses;Stockings;Hats & Handbags;Underwear,7,139,True,True,0,False,True,4,10,False,True,True,purchased
+Friday,8,male,adult,10:51,12:13,82,Skirts & Dresses;Jeans;Stockings;Tops,4,27,False,False,,False,True,2,1,False,True,True,purchased
+Friday,9,female,young,11:00,12:00,60,Hats & Handbags;Jeans;Tops,3,17,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,10,female,young,11:09,12:16,67,Underwear;Tops;Stockings;Jeans;Hats & Handbags,5,44,False,False,,False,False,,0,False,False,False,browsed
+Friday,11,female,senior,11:11,12:40,89,Hats & Handbags;Jeans;Skirts & Dresses;Tops,4,40,False,False,,False,False,,0,False,False,False,browsed
+Friday,12,male,young,11:15,12:29,74,Hats & Handbags;Skirts & Dresses;Pants;Jeans;Stockings,5,38,False,False,,False,True,1,0,False,True,True,purchased
+Friday,13,male,young,11:17,11:38,21,Stockings,1,4,False,False,,False,True,2,6,False,True,True,purchased
+Friday,14,female,young,11:21,13:36,135,Tops;Skirts & Dresses;Stockings;Hats & Handbags;Pants;Underwear;Jeans,7,76,True,True,0,False,True,4,0,True,False,False,queued
+Friday,15,male,young,11:22,11:47,25,Underwear;Hats & Handbags,2,7,False,False,,False,True,1,0,False,True,True,purchased
+Friday,16,female,adult,11:38,14:01,143,Jeans;Skirts & Dresses;Pants;Underwear;Hats & Handbags;Stockings;Tops,7,92,True,False,,True,True,5,1,True,False,False,queued
+Friday,17,female,adult,11:40,13:03,83,Pants;Tops;Stockings;Hats & Handbags,4,23,True,True,0,False,True,5,12,False,True,True,purchased
+Friday,18,male,adult,11:41,12:48,67,Underwear;Jeans;Skirts & Dresses,3,14,False,False,,False,True,4,4,True,False,False,queued
+Friday,19,female,adult,11:42,13:09,87,Jeans;Stockings;Pants;Tops;Underwear,5,67,False,False,,False,False,,0,False,False,False,browsed
+Friday,20,female,senior,11:43,12:51,68,Hats & Handbags;Underwear;Jeans;Stockings,4,21,False,False,,False,True,4,3,True,False,False,queued
+Friday,21,male,adult,11:46,12:16,30,Stockings;Pants,2,12,False,False,,False,False,,0,False,False,False,browsed
+Friday,22,female,adult,11:47,15:28,221,Jeans;Pants;Underwear;Skirts & Dresses;Stockings;Tops;Hats & Handbags,7,122,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,23,male,adult,11:48,12:31,43,Hats & Handbags,1,7,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,24,female,young,11:50,13:30,100,Tops;Pants;Stockings;Hats & Handbags;Skirts & Dresses,5,61,True,True,0,False,True,5,2,True,False,False,queued
+Friday,25,male,senior,11:51,13:29,98,Jeans;Tops;Hats & Handbags;Skirts & Dresses;Pants;Underwear,6,44,False,False,,False,False,,0,False,False,False,browsed
+Friday,26,female,senior,11:52,14:42,170,Stockings;Pants;Hats & Handbags;Skirts & Dresses;Tops;Underwear,6,63,True,True,0,False,True,5,15,False,True,True,purchased
+Friday,27,female,senior,11:53,15:26,213,Stockings;Hats & Handbags;Pants;Jeans;Skirts & Dresses;Underwear;Tops,7,89,False,False,,False,True,5,19,False,True,True,purchased
+Friday,28,female,senior,11:58,12:47,49,Jeans;Pants,2,15,False,False,,False,True,2,2,False,True,True,purchased
+Friday,29,male,young,12:01,12:52,51,Skirts & Dresses;Tops;Jeans;Underwear,4,23,False,False,,False,True,5,5,True,False,False,queued
+Friday,30,male,adult,12:03,13:20,77,Pants;Tops;Skirts & Dresses;Stockings;Jeans;Underwear,6,46,False,False,,False,False,,0,False,False,False,browsed
+Friday,31,male,senior,12:04,13:01,57,Stockings;Jeans,2,8,False,False,,False,True,3,10,False,True,True,purchased
+Friday,32,male,young,12:05,12:46,41,Skirts & Dresses;Hats & Handbags;Underwear;Pants,4,17,False,False,,False,True,3,6,False,True,True,purchased
+Friday,33,male,senior,12:07,13:13,66,Stockings;Hats & Handbags,2,11,True,True,0,False,True,3,3,False,True,True,purchased
+Friday,34,female,young,12:09,14:09,120,Hats & Handbags;Stockings;Jeans;Tops;Pants;Skirts & Dresses,6,54,True,True,0,False,True,3,7,False,True,True,purchased
+Friday,35,male,adult,12:10,12:40,30,Jeans;Stockings;Underwear,3,16,False,False,,False,False,,0,False,False,False,browsed
+Friday,36,female,young,12:11,14:27,136,Jeans;Tops;Skirts & Dresses;Pants;Hats & Handbags,5,82,True,True,0,False,True,3,0,True,False,False,queued
+Friday,37,female,adult,12:12,14:26,134,Jeans;Underwear;Pants;Hats & Handbags;Tops;Skirts & Dresses,6,72,True,True,0,False,True,5,10,False,True,True,purchased
+Friday,38,female,senior,12:15,14:10,115,Tops;Underwear;Hats & Handbags;Pants,4,44,True,False,,True,True,6,6,True,False,False,queued
+Friday,39,female,adult,12:16,14:14,118,Hats & Handbags;Tops;Pants;Underwear;Stockings;Skirts & Dresses,6,49,True,True,0,False,True,4,6,False,True,True,purchased
+Friday,40,female,senior,12:17,14:59,162,Underwear;Hats & Handbags;Skirts & Dresses;Jeans,4,70,True,False,,True,True,2,6,True,False,False,queued
+Friday,41,male,adult,12:18,12:31,13,Jeans,1,4,False,False,,False,False,,0,False,False,False,browsed
+Friday,42,male,senior,12:19,13:02,43,Jeans;Hats & Handbags,2,7,False,False,,False,False,,0,False,False,False,browsed
+Friday,43,female,adult,12:21,13:02,41,Jeans;Underwear;Stockings,3,26,False,False,,False,True,2,1,True,False,False,queued
+Friday,44,male,young,12:23,13:45,82,Stockings;Underwear;Pants;Tops;Hats & Handbags,5,44,False,False,,False,True,3,6,False,True,True,purchased
+Friday,45,female,adult,12:24,13:23,59,Underwear;Hats & Handbags,2,20,True,True,0,False,True,2,1,True,False,False,queued
+Friday,46,female,adult,12:26,14:41,135,Jeans;Hats & Handbags;Pants;Skirts & Dresses,4,67,False,False,,False,False,,0,False,False,False,browsed
+Friday,47,male,young,12:29,12:58,29,Hats & Handbags;Jeans;Pants,3,14,False,False,,False,False,,0,False,False,False,browsed
+Friday,48,female,senior,12:31,15:44,193,Skirts & Dresses;Stockings;Pants;Underwear;Jeans;Tops;Hats & Handbags,7,94,True,True,0,False,True,3,7,False,True,True,purchased
+Friday,49,female,senior,12:32,13:45,73,Stockings;Underwear;Skirts & Dresses,3,16,False,False,,False,True,4,11,False,True,True,purchased
+Friday,50,female,senior,12:33,16:19,226,Underwear;Tops;Skirts & Dresses;Jeans;Hats & Handbags,5,108,True,True,0,False,True,2,4,False,True,True,purchased
+Friday,51,female,senior,12:35,13:31,56,Jeans;Hats & Handbags;Underwear,3,19,False,False,,False,True,2,0,False,True,True,purchased
+Friday,52,male,young,12:37,14:08,91,Skirts & Dresses;Underwear;Jeans;Tops;Hats & Handbags;Pants,6,39,False,False,,False,True,7,2,True,False,False,queued
+Friday,53,female,young,12:41,14:15,94,Hats & Handbags;Skirts & Dresses;Pants;Underwear;Tops,5,41,True,False,,True,True,5,9,True,False,False,queued
+Friday,54,male,young,12:45,13:32,47,Pants;Stockings,2,9,True,True,0,False,True,3,8,False,True,True,purchased
+Friday,55,female,senior,12:46,14:35,109,Underwear;Pants;Stockings;Skirts & Dresses;Tops;Hats & Handbags,6,69,False,False,,False,False,,0,False,False,False,browsed
+Friday,56,female,adult,12:50,14:32,102,Hats & Handbags;Tops;Stockings;Jeans;Underwear;Skirts & Dresses;Pants,7,58,False,False,,False,True,2,0,True,False,False,queued
+Friday,57,female,adult,12:53,14:42,109,Hats & Handbags;Pants;Underwear,3,47,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,58,female,young,12:55,13:53,58,Jeans;Hats & Handbags;Tops;Pants,4,34,False,False,,False,True,1,0,False,True,True,purchased
+Friday,59,female,adult,12:56,15:26,150,Jeans;Tops;Stockings;Underwear;Skirts & Dresses;Hats & Handbags;Pants,7,92,True,True,0,False,True,2,4,True,False,False,queued
+Friday,60,male,senior,12:57,15:11,134,Stockings;Pants;Jeans;Tops;Skirts & Dresses;Underwear,6,63,False,False,,False,True,3,5,True,False,False,queued
+Friday,61,male,adult,12:58,14:01,63,Stockings;Hats & Handbags;Pants;Underwear,4,23,True,False,,True,True,4,3,True,False,False,queued
+Friday,62,male,adult,13:02,13:18,16,Hats & Handbags,1,4,False,False,,False,True,1,0,False,True,True,purchased
+Friday,63,male,adult,13:03,14:05,62,Pants;Hats & Handbags;Stockings;Jeans,4,33,False,False,,False,True,6,4,True,False,False,queued
+Friday,64,male,adult,13:05,13:54,49,Skirts & Dresses;Hats & Handbags;Tops,3,27,False,False,,False,False,,0,False,False,False,browsed
+Friday,65,female,adult,13:08,13:37,29,Pants,1,8,False,False,,False,True,3,9,False,True,True,purchased
+Friday,66,male,adult,13:09,13:39,30,Hats & Handbags;Tops,2,12,False,False,,False,False,,0,False,False,False,browsed
+Friday,67,female,adult,13:10,15:08,118,Underwear;Tops;Jeans;Skirts & Dresses,4,55,False,False,,False,False,,0,False,False,False,browsed
+Friday,68,female,young,13:17,14:35,78,Skirts & Dresses;Pants;Jeans;Underwear;Stockings;Tops,6,57,False,False,,False,True,2,2,True,False,False,queued
+Friday,69,female,adult,13:18,14:42,84,Skirts & Dresses;Hats & Handbags;Jeans;Pants;Tops,5,42,False,False,,False,False,,0,False,False,False,browsed
+Friday,70,male,adult,13:20,14:01,41,Underwear;Tops,2,14,False,False,,False,True,2,2,False,True,True,purchased
+Friday,71,female,young,13:22,15:11,109,Stockings;Underwear;Skirts & Dresses;Jeans,4,48,True,False,,True,True,5,4,True,False,False,queued
+Friday,72,female,adult,13:23,14:59,96,Skirts & Dresses;Pants;Stockings;Hats & Handbags;Jeans,5,47,False,False,,False,True,1,0,False,True,True,purchased
+Friday,73,male,adult,13:25,14:33,68,Tops;Pants;Jeans;Stockings,4,35,False,False,,False,False,,0,False,False,False,browsed
+Friday,74,male,young,13:31,14:01,30,Underwear;Stockings,2,10,False,False,,False,True,3,4,True,False,False,queued
+Friday,75,female,adult,13:41,15:09,88,Underwear;Jeans;Pants;Skirts & Dresses,4,24,True,True,0,False,True,3,9,False,True,True,purchased
+Friday,76,female,young,13:47,15:14,87,Tops;Stockings;Underwear,3,27,True,True,0,False,True,4,13,False,True,True,purchased
+Friday,77,male,adult,13:51,14:17,26,Hats & Handbags,1,2,False,False,,False,True,6,11,False,True,True,purchased
+Friday,78,male,adult,13:52,14:49,57,Tops;Pants;Hats & Handbags,3,15,False,False,,False,True,2,3,False,True,True,purchased
+Friday,79,male,young,13:53,14:47,54,Hats & Handbags;Jeans;Skirts & Dresses,3,26,False,False,,False,False,,0,False,False,False,browsed
+Friday,80,female,senior,13:56,17:10,194,Jeans;Hats & Handbags;Stockings;Pants;Skirts & Dresses,5,104,True,True,0,False,True,4,5,True,False,False,queued
+Friday,81,male,adult,13:58,15:23,85,Stockings;Jeans;Skirts & Dresses,3,28,False,False,,False,True,3,8,True,False,False,queued
+Friday,82,male,adult,14:00,14:58,58,Pants;Jeans;Underwear,3,33,False,False,,False,False,,0,False,False,False,browsed
+Friday,83,male,senior,14:04,15:14,70,Skirts & Dresses;Stockings;Hats & Handbags,3,14,False,False,,False,True,5,4,True,False,False,queued
+Friday,84,female,adult,14:14,16:19,125,Stockings;Pants;Skirts & Dresses;Jeans;Underwear;Tops,6,54,True,True,0,False,True,2,2,False,True,True,purchased
+Friday,85,female,young,14:21,16:51,150,Stockings;Tops;Underwear;Jeans;Hats & Handbags;Pants,6,89,False,False,,False,True,2,6,False,True,True,purchased
+Friday,86,male,senior,14:32,15:55,83,Underwear;Tops;Jeans,3,32,False,False,,False,False,,0,False,False,False,browsed
+Friday,87,female,adult,14:39,18:19,220,Jeans;Hats & Handbags;Stockings;Skirts & Dresses;Tops;Pants;Underwear,7,119,True,True,0,False,True,2,3,False,True,True,purchased
+Friday,88,male,adult,14:44,15:46,62,Skirts & Dresses;Tops;Jeans,3,17,False,False,,False,True,3,12,False,True,True,purchased
+Friday,89,female,young,14:45,17:02,137,Tops;Hats & Handbags;Jeans;Skirts & Dresses;Pants,5,78,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,90,male,young,14:46,15:37,51,Tops;Skirts & Dresses;Stockings;Hats & Handbags;Pants,5,24,False,False,,False,False,,0,False,False,False,browsed
+Friday,91,female,adult,14:55,16:32,97,Skirts & Dresses;Underwear;Pants;Tops,4,23,True,True,0,False,True,2,1,False,True,True,purchased
+Friday,92,female,adult,14:57,16:49,112,Jeans;Stockings;Skirts & Dresses;Hats & Handbags;Tops;Pants,6,71,False,False,,False,True,4,5,True,False,False,queued
+Friday,93,male,adult,15:01,15:50,49,Pants;Tops;Underwear,3,21,False,False,,False,True,3,7,False,True,True,purchased
+Friday,94,female,young,15:02,16:00,58,Jeans;Tops;Pants;Underwear,4,35,False,False,,False,True,2,4,False,True,True,purchased
+Friday,95,male,young,15:11,15:47,36,Stockings;Underwear;Hats & Handbags;Tops,4,20,False,False,,False,False,,0,False,False,False,browsed
+Friday,96,male,young,15:12,15:36,24,Tops;Jeans,2,10,False,False,,False,True,3,0,True,False,False,queued
+Friday,97,female,adult,15:16,17:50,154,Underwear;Tops;Stockings;Skirts & Dresses;Hats & Handbags;Pants;Jeans,7,92,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,98,male,adult,15:19,16:13,54,Hats & Handbags;Pants,2,15,False,False,,False,True,3,0,True,False,False,queued
+Friday,99,male,adult,15:21,16:18,57,Jeans;Pants;Tops,3,29,False,False,,False,True,4,4,True,False,False,queued
+Friday,100,female,adult,15:23,17:21,118,Pants;Jeans;Skirts & Dresses;Hats & Handbags;Tops;Stockings;Underwear,7,65,False,False,,False,True,4,0,True,False,False,queued
+Friday,101,female,young,15:28,17:22,114,Underwear;Hats & Handbags;Stockings;Jeans;Skirts & Dresses,5,46,True,True,0,False,True,4,0,True,False,False,queued
+Friday,102,male,young,15:31,16:01,30,Hats & Handbags,1,3,False,False,,False,True,1,0,False,True,True,purchased
+Friday,103,female,senior,15:33,17:08,95,Jeans;Stockings;Tops;Skirts & Dresses,4,27,False,False,,False,True,3,10,False,True,True,purchased
+Friday,104,female,young,15:36,16:18,42,Hats & Handbags;Tops,2,19,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,105,female,young,15:39,16:47,68,Skirts & Dresses;Pants,2,19,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,106,male,young,15:43,16:39,56,Jeans;Hats & Handbags;Skirts & Dresses;Underwear;Tops,5,32,False,False,,False,False,,0,False,False,False,browsed
+Friday,107,female,young,15:50,18:08,138,Tops;Pants;Hats & Handbags;Jeans;Stockings;Skirts & Dresses,6,78,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,108,female,adult,15:51,17:48,117,Underwear;Pants;Stockings;Tops;Skirts & Dresses;Hats & Handbags,6,52,True,True,0,False,True,3,5,False,True,True,purchased
+Friday,109,female,adult,15:54,16:50,56,Stockings;Underwear;Tops,3,27,False,False,,False,False,,0,False,False,False,browsed
+Friday,110,male,adult,15:56,16:55,59,Tops;Pants;Jeans,3,19,True,True,0,False,True,3,1,True,False,False,queued
+Friday,111,male,adult,15:59,17:26,87,Hats & Handbags;Jeans;Pants,3,15,True,True,0,False,True,5,0,True,False,False,queued
+Friday,112,male,senior,16:07,17:27,80,Stockings;Pants;Underwear,3,28,True,False,,True,True,3,7,True,False,False,queued
+Friday,113,female,adult,16:08,17:32,84,Hats & Handbags;Underwear;Skirts & Dresses,3,27,False,False,,False,True,2,2,True,False,False,queued
+Friday,114,male,senior,16:10,17:23,73,Pants;Underwear,2,26,False,False,,False,True,3,10,False,True,True,purchased
+Friday,115,female,young,16:12,18:18,126,Jeans;Skirts & Dresses;Stockings;Hats & Handbags;Tops;Pants,6,53,True,True,0,False,True,2,3,True,False,False,queued
+Friday,116,male,adult,16:15,16:37,22,Stockings,1,4,False,False,,False,True,1,0,False,True,True,purchased
+Friday,117,male,adult,16:17,17:58,101,Hats & Handbags;Pants;Skirts & Dresses;Tops;Underwear,5,46,False,False,,False,False,,0,False,False,False,browsed
+Friday,118,female,senior,16:23,19:23,180,Stockings;Underwear;Skirts & Dresses;Hats & Handbags,4,93,True,True,0,False,True,3,2,True,False,False,queued
+Friday,119,male,senior,16:24,18:03,99,Stockings;Tops;Pants;Hats & Handbags,4,29,True,False,,True,True,2,5,False,True,True,purchased
+Friday,120,male,senior,16:25,18:31,126,Tops;Pants;Jeans;Stockings;Hats & Handbags,5,56,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,121,female,young,16:27,17:47,80,Skirts & Dresses;Underwear;Stockings;Jeans;Hats & Handbags;Tops,6,44,True,True,0,False,True,2,0,True,False,False,queued
+Friday,122,female,adult,16:28,19:05,157,Jeans;Tops;Underwear;Pants;Stockings;Hats & Handbags;Skirts & Dresses,7,78,False,False,,False,True,2,5,False,True,True,purchased
+Friday,123,female,adult,16:29,18:37,128,Pants;Stockings;Skirts & Dresses;Jeans,4,50,True,False,,True,True,1,0,False,True,True,purchased
+Friday,124,female,adult,16:30,17:41,71,Pants;Jeans,2,15,True,True,0,False,True,2,3,False,True,True,purchased
+Friday,125,male,senior,16:31,18:05,94,Skirts & Dresses;Underwear;Jeans;Hats & Handbags,4,23,True,False,,True,True,2,4,False,True,True,purchased
+Friday,126,male,adult,16:33,17:07,34,Skirts & Dresses;Hats & Handbags,2,14,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,127,female,adult,16:35,17:08,33,Pants,1,8,False,False,,False,True,2,12,False,True,True,purchased
+Friday,128,female,senior,16:36,17:32,56,Tops;Underwear;Pants;Stockings,4,16,True,False,,True,True,3,9,False,True,True,purchased
+Friday,129,female,senior,16:40,17:25,45,Tops;Pants,2,15,True,False,,True,True,2,2,False,True,True,purchased
+Friday,130,female,young,16:41,17:40,59,Jeans;Skirts & Dresses;Stockings,3,32,True,False,,True,True,2,0,True,False,False,queued
+Friday,131,female,young,16:48,19:03,135,Skirts & Dresses;Underwear;Pants;Tops;Stockings;Jeans,6,77,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,132,male,adult,16:49,17:12,23,Jeans;Underwear,2,10,False,False,,False,True,2,0,True,False,False,queued
+Friday,133,female,senior,16:51,17:27,36,Stockings;Pants,2,15,False,False,,False,False,,0,False,False,False,browsed
+Friday,134,female,young,16:53,17:36,43,Skirts & Dresses;Jeans;Hats & Handbags,3,24,False,False,,False,False,,0,False,False,False,browsed
+Friday,135,male,young,16:57,18:14,77,Stockings;Hats & Handbags;Skirts & Dresses;Underwear;Pants,5,34,False,False,,False,True,3,0,True,False,False,queued
+Friday,136,male,senior,16:58,19:36,158,Skirts & Dresses;Tops;Jeans;Hats & Handbags;Stockings,5,58,False,False,,False,True,2,5,False,True,True,purchased
+Friday,137,female,adult,16:59,18:29,90,Skirts & Dresses;Hats & Handbags;Jeans,3,50,True,True,0,False,True,2,0,True,False,False,queued
+Friday,138,male,young,17:04,17:34,30,Tops;Hats & Handbags;Pants,3,16,False,False,,False,True,3,0,True,False,False,queued
+Friday,139,female,adult,17:06,18:54,108,Tops;Underwear;Jeans;Skirts & Dresses,4,43,True,True,0,False,True,3,6,False,True,True,purchased
+Friday,140,female,young,17:08,18:42,94,Pants;Stockings;Underwear;Jeans;Hats & Handbags,5,35,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,141,male,adult,17:12,17:25,13,Underwear,1,2,False,False,,False,False,,0,False,False,False,browsed
+Friday,142,male,young,17:17,18:04,47,Jeans;Pants;Tops;Underwear;Hats & Handbags,5,28,False,False,,False,False,,0,False,False,False,browsed
+Friday,143,male,adult,17:23,18:29,66,Jeans;Tops;Pants;Hats & Handbags,4,24,False,False,,False,False,,0,False,False,False,browsed
+Friday,144,male,young,17:34,18:48,74,Hats & Handbags;Stockings;Jeans;Underwear;Tops,5,48,False,False,,False,True,3,0,True,False,False,queued
+Friday,145,male,young,17:37,19:05,88,Hats & Handbags;Stockings;Tops;Skirts & Dresses;Pants;Jeans,6,56,False,False,,False,True,2,3,True,False,False,queued
+Friday,146,male,senior,17:38,18:30,52,Pants;Underwear;Hats & Handbags,3,18,False,False,,False,False,,0,False,False,False,browsed
+Friday,147,male,young,17:39,18:27,48,Skirts & Dresses;Stockings;Underwear,3,19,False,False,,False,False,,0,False,False,False,browsed
+Friday,148,female,young,17:43,,,Hats & Handbags;Underwear;Stockings;Jeans;Pants;Skirts & Dresses;Tops,7,109,True,True,0,False,True,2,4,False,True,True,purchased
+Friday,149,female,senior,17:51,18:56,65,Jeans;Stockings;Hats & Handbags,3,31,False,False,,False,False,,0,False,False,False,browsed
+Friday,150,female,adult,17:55,19:27,92,Hats & Handbags;Jeans,2,20,True,True,0,False,True,4,5,True,False,False,queued
+Friday,151,male,adult,17:57,19:04,67,Hats & Handbags;Stockings;Skirts & Dresses,3,15,False,False,,False,False,,0,False,False,False,browsed
+Friday,152,female,adult,17:58,18:59,61,Pants;Stockings,2,12,True,True,0,False,True,3,1,True,False,False,queued
+Friday,153,male,young,18:01,18:21,20,Skirts & Dresses;Pants,2,11,False,False,,False,False,,0,False,False,False,browsed
+Friday,154,male,senior,18:08,19:12,64,Stockings;Skirts & Dresses,2,4,False,False,,False,True,3,11,False,True,True,purchased
+Friday,155,female,adult,18:10,20:41,151,Skirts & Dresses;Stockings;Hats & Handbags;Pants,4,59,True,True,0,False,True,2,0,False,True,True,purchased
+Friday,156,male,adult,18:11,18:48,37,Hats & Handbags;Tops,2,14,False,False,,False,True,2,3,False,True,True,purchased
+Friday,157,female,young,18:12,19:18,66,Skirts & Dresses;Hats & Handbags;Stockings;Jeans;Pants,5,36,False,False,,False,True,1,0,False,True,True,purchased
+Friday,158,male,adult,18:21,18:26,5,Tops,1,4,False,False,,False,False,,0,False,False,False,browsed
+Friday,159,male,young,18:31,19:29,58,Pants;Hats & Handbags;Jeans,3,28,False,False,,False,False,,0,False,False,False,browsed
+Friday,160,female,adult,18:47,20:54,127,Hats & Handbags;Stockings;Skirts & Dresses;Tops;Underwear;Pants,6,42,False,False,,False,False,,0,False,False,False,browsed
+Friday,161,female,adult,18:53,20:21,88,Jeans;Tops;Stockings;Skirts & Dresses;Hats & Handbags,5,38,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,162,female,young,19:33,,,Stockings;Tops;Underwear;Pants,4,64,False,False,,False,False,,0,False,False,False,browsed
+Friday,163,female,adult,19:39,20:57,78,Pants;Tops;Stockings,3,25,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,164,male,adult,19:41,,,Hats & Handbags;Underwear;Stockings;Tops,4,31,False,False,,False,False,,0,False,False,False,browsed
+Friday,165,male,adult,19:42,20:30,48,Pants;Stockings,2,9,True,True,0,False,True,1,0,False,True,True,purchased
+Friday,166,female,adult,19:53,,,Underwear;Tops;Stockings,3,26,True,True,0,False,True,2,3,False,True,False,at_counter
+Friday,167,male,young,19:59,,,Tops;Jeans;Hats & Handbags;Stockings,4,20,True,True,0,False,False,,0,False,False,False,used_fitting
+Friday,168,male,adult,20:00,20:08,8,Skirts & Dresses,1,3,False,False,,False,False,,0,False,False,False,browsed
+Friday,169,female,senior,20:01,,,Hats & Handbags;Skirts & Dresses;Jeans,3,36,False,False,,False,False,,0,False,False,False,browsed
+Friday,170,female,senior,20:08,,,Hats & Handbags;Underwear;Tops,3,23,False,False,,False,False,,0,False,False,False,browsed
+Friday,171,female,young,20:11,,,Hats & Handbags;Tops;Jeans;Stockings,4,37,False,False,,False,False,,0,False,False,False,browsed
+Friday,172,female,young,20:45,,,Stockings,1,10,False,False,,False,False,,0,False,False,False,browsed
+Saturday,1,male,young,10:02,10:24,22,Hats & Handbags,1,4,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,2,female,young,10:08,12:23,135,Jeans;Hats & Handbags;Stockings;Pants;Tops;Skirts & Dresses,6,71,True,True,0,False,True,2,3,False,True,True,purchased
+Saturday,3,female,young,10:11,10:39,28,Hats & Handbags;Skirts & Dresses,2,12,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,4,female,senior,10:24,10:46,22,Skirts & Dresses,1,3,False,False,,False,True,2,1,False,True,True,purchased
+Saturday,5,female,senior,10:25,13:19,174,Skirts & Dresses;Stockings;Hats & Handbags;Tops;Jeans,5,84,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,6,female,adult,10:40,11:31,51,Pants;Stockings;Tops;Underwear,4,17,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,7,male,senior,10:47,11:48,61,Underwear;Skirts & Dresses,2,11,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,8,male,young,10:48,11:00,12,Tops,1,2,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,9,male,adult,10:51,12:08,77,Tops;Stockings;Jeans;Underwear;Skirts & Dresses,5,45,False,False,,False,False,,0,False,False,False,browsed
+Saturday,10,male,senior,10:54,13:46,172,Hats & Handbags;Underwear;Jeans;Pants;Skirts & Dresses,5,75,True,False,,True,True,5,14,False,True,True,purchased
+Saturday,11,female,adult,10:56,12:35,99,Jeans;Hats & Handbags;Tops;Stockings;Pants;Underwear,6,41,True,True,0,False,True,2,1,True,False,False,queued
+Saturday,12,female,adult,11:04,11:49,45,Pants;Tops,2,14,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,13,female,adult,11:08,12:21,73,Hats & Handbags;Pants;Underwear,3,19,True,True,0,False,True,3,5,False,True,True,purchased
+Saturday,14,female,adult,11:10,12:59,109,Hats & Handbags;Underwear;Jeans;Stockings;Tops;Skirts & Dresses,6,56,False,False,,False,False,,0,False,False,False,browsed
+Saturday,15,female,young,11:15,12:01,46,Stockings;Hats & Handbags;Tops;Pants,4,24,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,16,male,young,11:20,13:00,100,Tops;Skirts & Dresses;Underwear;Hats & Handbags;Jeans;Stockings,6,52,False,False,,False,False,,0,False,False,False,browsed
+Saturday,17,male,adult,11:21,11:33,12,Pants,1,5,False,False,,False,False,,0,False,False,False,browsed
+Saturday,18,female,adult,11:22,12:37,75,Hats & Handbags;Pants;Stockings;Jeans;Skirts & Dresses,5,41,False,False,,False,True,2,0,True,False,False,queued
+Saturday,19,female,senior,11:24,13:45,141,Pants;Tops;Hats & Handbags;Stockings;Skirts & Dresses;Underwear;Jeans,7,67,False,False,,False,False,,0,False,False,False,browsed
+Saturday,20,female,young,11:29,13:28,119,Jeans;Skirts & Dresses;Underwear;Tops;Stockings;Pants,6,50,True,True,0,False,True,3,8,False,True,True,purchased
+Saturday,21,female,young,11:30,12:43,73,Hats & Handbags;Pants;Underwear,3,26,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,22,female,adult,11:34,13:16,102,Skirts & Dresses;Hats & Handbags;Pants;Underwear;Stockings;Jeans,6,42,True,True,0,False,True,6,0,True,False,False,queued
+Saturday,23,male,young,11:36,12:08,32,Skirts & Dresses;Stockings,2,9,False,False,,False,True,2,4,False,True,True,purchased
+Saturday,24,male,adult,11:37,11:56,19,Skirts & Dresses,1,8,False,False,,False,False,,0,False,False,False,browsed
+Saturday,25,female,adult,11:39,13:20,101,Skirts & Dresses;Pants;Hats & Handbags;Jeans,4,28,False,False,,False,True,3,2,False,True,True,purchased
+Saturday,26,female,young,11:40,12:50,70,Tops;Underwear;Stockings;Hats & Handbags,4,32,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,27,male,young,11:43,12:52,69,Stockings;Hats & Handbags;Underwear,3,27,False,False,,False,True,3,2,False,True,True,purchased
+Saturday,28,male,young,11:46,12:39,53,Hats & Handbags;Underwear;Skirts & Dresses,3,15,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,29,male,senior,11:47,12:07,20,Pants,1,9,False,False,,False,False,,0,False,False,False,browsed
+Saturday,30,male,adult,11:48,12:25,37,Stockings;Hats & Handbags,2,9,False,False,,False,True,3,10,False,True,True,purchased
+Saturday,31,female,senior,11:51,14:08,137,Pants;Tops;Hats & Handbags;Skirts & Dresses;Underwear,5,76,True,False,,True,True,5,3,True,False,False,queued
+Saturday,32,female,adult,11:52,14:02,130,Pants;Jeans;Stockings;Hats & Handbags;Underwear,5,70,True,True,0,False,True,4,1,True,False,False,queued
+Saturday,33,female,young,11:54,14:07,133,Underwear;Tops;Jeans;Skirts & Dresses,4,59,True,False,,True,True,3,1,True,False,False,queued
+Saturday,34,male,young,11:56,13:00,64,Underwear;Skirts & Dresses;Tops;Stockings,4,22,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,35,female,senior,11:57,16:00,243,Hats & Handbags;Stockings;Pants;Underwear;Skirts & Dresses;Jeans,6,127,True,False,,True,True,1,0,False,True,True,purchased
+Saturday,36,female,adult,11:58,13:45,107,Hats & Handbags;Stockings;Pants;Tops;Underwear,5,41,False,False,,False,False,,0,False,False,False,browsed
+Saturday,37,female,adult,12:02,16:14,252,Stockings;Tops;Pants;Skirts & Dresses;Jeans;Hats & Handbags,6,103,True,True,0,False,True,3,10,False,True,True,purchased
+Saturday,38,female,adult,12:04,13:30,86,Underwear;Skirts & Dresses;Tops;Hats & Handbags,4,34,False,False,,False,True,5,3,True,False,False,queued
+Saturday,39,male,adult,12:06,12:42,36,Hats & Handbags;Tops,2,13,False,False,,False,False,,0,False,False,False,browsed
+Saturday,40,female,senior,12:07,14:55,168,Skirts & Dresses;Underwear;Tops;Hats & Handbags;Pants,5,73,True,True,0,False,True,5,0,True,False,False,queued
+Saturday,41,male,adult,12:10,13:27,77,Jeans;Skirts & Dresses;Tops,3,30,False,False,,False,True,2,6,False,True,True,purchased
+Saturday,42,female,adult,12:17,14:33,136,Jeans;Stockings;Hats & Handbags;Underwear,4,59,True,True,0,False,True,4,0,True,False,False,queued
+Saturday,43,male,adult,12:22,13:58,96,Skirts & Dresses;Tops;Underwear;Pants;Stockings;Hats & Handbags,6,51,False,False,,False,False,,0,False,False,False,browsed
+Saturday,44,male,adult,12:23,14:00,97,Hats & Handbags;Jeans;Skirts & Dresses;Pants;Stockings,5,49,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,45,male,adult,12:24,13:07,43,Jeans;Pants;Hats & Handbags,3,14,False,False,,False,True,2,1,True,False,False,queued
+Saturday,46,female,senior,12:25,16:07,222,Underwear;Hats & Handbags;Jeans;Tops;Pants;Skirts & Dresses;Stockings,7,111,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,47,female,adult,12:26,16:25,239,Stockings;Pants;Hats & Handbags;Underwear;Tops;Jeans;Skirts & Dresses,7,115,True,True,0,False,True,2,0,True,False,False,queued
+Saturday,48,female,adult,12:27,13:59,92,Skirts & Dresses;Tops;Underwear;Stockings;Jeans,5,57,False,False,,False,True,2,1,False,True,True,purchased
+Saturday,49,male,adult,12:28,13:05,37,Stockings;Underwear,2,12,False,False,,False,False,,0,False,False,False,browsed
+Saturday,50,female,young,12:29,14:53,144,Stockings;Pants;Underwear;Skirts & Dresses;Hats & Handbags;Jeans,6,71,True,False,,True,True,4,6,False,True,True,purchased
+Saturday,51,female,adult,12:31,14:56,145,Hats & Handbags;Jeans;Tops;Skirts & Dresses;Stockings;Underwear;Pants,7,85,True,False,,True,True,6,2,True,False,False,queued
+Saturday,52,female,adult,12:32,14:43,131,Underwear;Skirts & Dresses;Stockings;Tops;Hats & Handbags;Pants,6,47,False,False,,False,True,5,0,True,False,False,queued
+Saturday,53,female,young,12:34,13:58,84,Stockings;Pants;Hats & Handbags;Tops;Underwear;Jeans,6,62,False,False,,False,False,,0,False,False,False,browsed
+Saturday,54,male,adult,12:36,13:11,35,Jeans,1,6,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,55,male,senior,12:38,13:50,72,Tops;Skirts & Dresses;Jeans;Hats & Handbags,4,29,False,False,,False,False,,0,False,False,False,browsed
+Saturday,56,male,adult,12:40,12:57,17,Skirts & Dresses,1,8,False,False,,False,False,,0,False,False,False,browsed
+Saturday,57,female,adult,12:43,14:39,116,Pants;Jeans;Stockings;Underwear;Hats & Handbags;Skirts & Dresses,6,43,True,True,0,False,True,3,8,True,False,False,queued
+Saturday,58,female,senior,12:45,15:26,161,Skirts & Dresses;Jeans;Pants;Hats & Handbags;Underwear,5,72,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,59,female,senior,12:47,15:38,171,Jeans;Underwear;Skirts & Dresses;Stockings;Tops;Pants;Hats & Handbags,7,66,False,False,,False,True,3,3,True,False,False,queued
+Saturday,60,female,young,12:48,13:39,51,Stockings;Underwear;Skirts & Dresses,3,33,False,False,,False,False,,0,False,False,False,browsed
+Saturday,61,female,senior,12:50,16:01,191,Underwear;Tops;Pants;Hats & Handbags;Jeans;Skirts & Dresses;Stockings,7,93,False,False,,False,False,,0,False,False,False,browsed
+Saturday,62,male,adult,12:51,14:19,88,Skirts & Dresses;Stockings;Tops;Jeans,4,27,False,False,,False,False,,0,False,False,False,browsed
+Saturday,63,female,young,12:52,15:29,157,Tops;Stockings;Underwear;Jeans;Hats & Handbags;Pants;Skirts & Dresses,7,114,True,False,,True,True,3,4,True,False,False,queued
+Saturday,64,male,adult,12:53,13:55,62,Skirts & Dresses;Stockings,2,12,False,False,,False,True,3,6,False,True,True,purchased
+Saturday,65,female,adult,12:55,15:02,127,Skirts & Dresses;Pants;Tops;Jeans;Hats & Handbags;Underwear,6,49,False,False,,False,False,,0,False,False,False,browsed
+Saturday,66,female,adult,12:56,13:40,44,Hats & Handbags;Skirts & Dresses;Pants,3,26,False,False,,False,True,3,1,True,False,False,queued
+Saturday,67,female,young,12:57,13:46,49,Jeans;Pants,2,19,False,False,,False,True,2,3,False,True,True,purchased
+Saturday,68,female,young,13:01,13:24,23,Tops,1,4,False,False,,False,True,4,12,True,False,False,queued
+Saturday,69,female,adult,13:03,13:58,55,Pants;Hats & Handbags;Skirts & Dresses,3,33,True,False,,True,True,3,3,True,False,False,queued
+Saturday,70,male,senior,13:04,14:46,102,Pants;Stockings;Hats & Handbags;Skirts & Dresses,4,29,False,False,,False,True,3,11,False,True,True,purchased
+Saturday,71,female,senior,13:05,15:49,164,Jeans;Pants;Skirts & Dresses;Underwear,4,64,True,True,0,False,True,3,5,False,True,True,purchased
+Saturday,72,female,senior,13:06,14:18,72,Underwear;Tops;Skirts & Dresses,3,19,True,True,0,False,True,3,7,False,True,True,purchased
+Saturday,73,female,senior,13:07,14:59,112,Tops;Underwear;Skirts & Dresses,3,31,True,True,0,False,True,5,4,True,False,False,queued
+Saturday,74,female,senior,13:08,15:18,130,Underwear;Skirts & Dresses;Tops;Pants;Stockings,5,53,True,False,,True,True,6,2,True,False,False,queued
+Saturday,75,male,adult,13:09,14:00,51,Stockings;Jeans;Pants;Underwear,4,19,False,False,,False,False,,0,False,False,False,browsed
+Saturday,76,male,adult,13:11,14:52,101,Jeans;Hats & Handbags;Stockings;Skirts & Dresses,4,29,False,False,,False,True,3,5,True,False,False,queued
+Saturday,77,female,adult,13:12,15:12,120,Underwear;Tops;Jeans;Skirts & Dresses,4,35,True,True,0,False,True,7,3,True,False,False,queued
+Saturday,78,female,adult,13:13,15:21,128,Underwear;Pants;Stockings;Hats & Handbags;Tops;Jeans,6,50,False,False,,False,True,4,10,False,True,True,purchased
+Saturday,79,male,young,13:15,14:15,60,Jeans;Tops;Stockings,3,31,True,False,,True,True,3,3,True,False,False,queued
+Saturday,80,male,senior,13:16,14:14,58,Pants,1,8,True,True,0,False,True,2,2,False,True,True,purchased
+Saturday,81,female,adult,13:18,14:39,81,Hats & Handbags;Tops;Jeans;Pants;Skirts & Dresses,5,43,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,82,female,adult,13:20,14:42,82,Jeans;Tops;Stockings,3,32,True,False,,True,True,2,1,True,False,False,queued
+Saturday,83,female,young,13:25,14:11,46,Pants;Hats & Handbags;Underwear,3,28,False,False,,False,False,,0,False,False,False,browsed
+Saturday,84,male,senior,13:26,15:24,118,Underwear;Hats & Handbags;Tops;Jeans,4,35,False,False,,False,True,6,14,True,False,False,queued
+Saturday,85,female,senior,13:28,15:44,136,Skirts & Dresses;Tops;Underwear;Hats & Handbags;Jeans;Stockings,6,54,False,False,,False,True,2,2,False,True,True,purchased
+Saturday,86,female,senior,13:31,16:28,177,Pants;Tops;Jeans;Underwear;Hats & Handbags;Skirts & Dresses;Stockings,7,101,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,87,female,young,13:32,15:06,94,Underwear;Pants;Stockings;Jeans;Hats & Handbags,5,46,True,True,0,False,True,4,6,True,False,False,queued
+Saturday,88,female,adult,13:34,15:58,144,Stockings;Tops;Skirts & Dresses;Pants;Underwear;Jeans,6,97,True,False,,True,True,4,0,True,False,False,queued
+Saturday,89,female,adult,13:36,14:17,41,Underwear;Pants;Tops,3,19,True,False,,True,True,2,1,True,False,False,queued
+Saturday,90,male,adult,13:37,14:04,27,Tops;Jeans,2,5,False,False,,False,True,2,5,False,True,True,purchased
+Saturday,91,female,young,13:38,15:16,98,Stockings;Jeans;Skirts & Dresses;Underwear,4,36,True,True,0,False,True,5,5,True,False,False,queued
+Saturday,92,female,senior,13:39,17:02,203,Pants;Tops;Underwear;Hats & Handbags;Jeans;Stockings;Skirts & Dresses,7,98,False,False,,False,True,6,2,True,False,False,queued
+Saturday,93,male,adult,13:41,14:25,44,Hats & Handbags;Skirts & Dresses;Jeans,3,13,False,False,,False,True,3,2,False,True,True,purchased
+Saturday,94,female,adult,13:43,15:34,111,Skirts & Dresses;Hats & Handbags;Pants;Jeans,4,33,True,True,0,False,True,5,7,False,True,True,purchased
+Saturday,95,female,adult,13:44,14:28,44,Jeans,1,7,True,True,0,False,True,4,9,False,True,True,purchased
+Saturday,96,male,young,13:45,14:15,30,Skirts & Dresses;Jeans,2,14,False,False,,False,True,5,0,True,False,False,queued
+Saturday,97,male,adult,13:46,14:14,28,Underwear;Pants,2,4,False,False,,False,True,3,6,False,True,True,purchased
+Saturday,98,male,adult,13:48,14:31,43,Skirts & Dresses;Underwear;Stockings;Hats & Handbags,4,18,False,False,,False,False,,0,False,False,False,browsed
+Saturday,99,female,adult,13:49,15:59,130,Hats & Handbags;Stockings;Underwear;Tops;Skirts & Dresses;Jeans;Pants,7,68,False,False,,False,False,,0,False,False,False,browsed
+Saturday,100,male,young,13:52,14:29,37,Underwear;Jeans;Pants;Stockings,4,17,False,False,,False,False,,0,False,False,False,browsed
+Saturday,101,female,senior,13:55,18:03,248,Hats & Handbags;Jeans;Stockings;Pants;Tops;Underwear;Skirts & Dresses,7,123,True,False,,True,True,2,2,False,True,True,purchased
+Saturday,102,male,adult,13:56,15:08,72,Underwear;Skirts & Dresses;Tops;Pants,4,44,False,False,,False,False,,0,False,False,False,browsed
+Saturday,103,male,young,13:57,14:04,7,Stockings,1,2,False,False,,False,False,,0,False,False,False,browsed
+Saturday,104,female,young,14:00,16:47,167,Skirts & Dresses;Jeans;Stockings;Tops;Underwear;Hats & Handbags;Pants,7,105,True,True,0,False,True,5,1,True,False,False,queued
+Saturday,105,male,senior,14:01,15:43,102,Pants;Tops;Underwear;Jeans,4,43,False,False,,False,True,4,6,True,False,False,queued
+Saturday,106,male,young,14:02,15:11,69,Skirts & Dresses;Stockings;Underwear,3,20,False,False,,False,True,5,14,False,True,True,purchased
+Saturday,107,male,young,14:03,15:13,70,Stockings;Underwear;Hats & Handbags,3,31,False,False,,False,True,5,13,True,False,False,queued
+Saturday,108,female,adult,14:04,15:00,56,Pants;Jeans;Skirts & Dresses;Tops,4,25,False,False,,False,True,4,8,False,True,True,purchased
+Saturday,109,female,senior,14:06,15:27,81,Hats & Handbags;Skirts & Dresses;Stockings,3,31,False,False,,False,True,7,4,False,True,True,purchased
+Saturday,110,female,adult,14:08,17:21,193,Tops;Jeans;Skirts & Dresses;Underwear;Pants;Hats & Handbags;Stockings,7,104,False,False,,False,True,4,1,True,False,False,queued
+Saturday,111,male,senior,14:09,16:12,123,Hats & Handbags;Skirts & Dresses;Jeans;Tops;Underwear,5,47,False,False,,False,True,3,7,True,False,False,queued
+Saturday,112,male,senior,14:11,16:06,115,Tops;Stockings;Skirts & Dresses,3,26,True,True,0,False,True,2,12,False,True,True,purchased
+Saturday,113,female,adult,14:12,15:09,57,Pants;Underwear;Stockings,3,30,False,False,,False,False,,0,False,False,False,browsed
+Saturday,114,male,adult,14:13,15:06,53,Stockings;Hats & Handbags;Underwear,3,26,False,False,,False,False,,0,False,False,False,browsed
+Saturday,115,female,senior,14:14,15:53,99,Skirts & Dresses;Pants;Hats & Handbags;Stockings;Jeans,5,48,False,False,,False,False,,0,False,False,False,browsed
+Saturday,116,male,adult,14:18,14:41,23,Jeans;Tops,2,8,False,False,,False,True,3,0,True,False,False,queued
+Saturday,117,male,senior,14:19,15:25,66,Skirts & Dresses;Hats & Handbags;Jeans;Underwear,4,29,False,False,,False,False,,0,False,False,False,browsed
+Saturday,118,male,adult,14:23,14:54,31,Jeans,1,7,False,False,,False,True,4,8,False,True,True,purchased
+Saturday,119,male,adult,14:25,14:43,18,Pants,1,5,False,False,,False,True,3,1,False,True,True,purchased
+Saturday,120,female,senior,14:26,18:09,223,Hats & Handbags;Stockings;Underwear;Tops;Skirts & Dresses;Pants,6,107,True,False,,True,True,3,7,False,True,True,purchased
+Saturday,121,male,senior,14:29,16:58,149,Jeans;Tops;Hats & Handbags;Pants;Underwear,5,64,True,False,,True,True,8,1,True,False,False,queued
+Saturday,122,female,young,14:30,15:49,79,Jeans;Skirts & Dresses;Tops;Stockings,4,46,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,123,female,adult,14:37,16:02,85,Skirts & Dresses;Jeans;Stockings,3,37,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,124,male,adult,14:38,14:58,20,Hats & Handbags,1,2,False,False,,False,True,5,9,True,False,False,queued
+Saturday,125,male,senior,14:42,15:18,36,Hats & Handbags,1,2,False,False,,False,True,6,10,True,False,False,queued
+Saturday,126,female,senior,14:45,17:02,137,Hats & Handbags;Tops;Stockings;Jeans,4,57,True,True,0,False,True,6,8,True,False,False,queued
+Saturday,127,male,adult,14:46,16:48,122,Stockings;Underwear;Tops;Skirts & Dresses,4,52,False,False,,False,True,2,3,False,True,True,purchased
+Saturday,128,male,young,14:48,15:44,56,Pants;Skirts & Dresses;Jeans;Underwear,4,29,False,False,,False,False,,0,False,False,False,browsed
+Saturday,129,female,young,14:50,16:45,115,Skirts & Dresses;Underwear;Tops;Jeans;Pants;Hats & Handbags,6,84,True,False,,True,True,5,0,True,False,False,queued
+Saturday,130,female,adult,14:51,16:38,107,Pants;Skirts & Dresses;Stockings;Jeans;Underwear,5,66,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,131,male,adult,14:53,16:31,98,Skirts & Dresses;Underwear;Hats & Handbags;Tops;Pants,5,38,False,False,,False,False,,0,False,False,False,browsed
+Saturday,132,male,young,14:57,15:51,54,Hats & Handbags;Skirts & Dresses;Pants,3,31,False,False,,False,False,,0,False,False,False,browsed
+Saturday,133,female,adult,15:00,16:00,60,Underwear;Pants;Stockings;Tops,4,39,False,False,,False,False,,0,False,False,False,browsed
+Saturday,134,male,adult,15:07,15:21,14,Stockings;Pants,2,5,False,False,,False,True,3,0,True,False,False,queued
+Saturday,135,male,adult,15:11,15:28,17,Jeans;Pants,2,7,False,False,,False,True,3,1,True,False,False,queued
+Saturday,136,female,adult,15:12,17:22,130,Skirts & Dresses;Tops;Pants;Hats & Handbags;Jeans;Stockings,6,60,False,False,,False,True,3,4,True,False,False,queued
+Saturday,137,female,senior,15:13,17:54,161,Skirts & Dresses;Hats & Handbags;Pants;Underwear;Jeans;Stockings;Tops,7,105,False,False,,False,False,,0,False,False,False,browsed
+Saturday,138,female,young,15:17,18:17,180,Skirts & Dresses;Pants;Underwear;Jeans;Stockings;Tops;Hats & Handbags,7,113,True,False,,True,True,4,11,False,True,True,purchased
+Saturday,139,female,adult,15:22,16:34,72,Tops;Jeans,2,22,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,140,female,young,15:23,16:29,66,Skirts & Dresses;Jeans;Pants;Tops;Underwear,5,43,False,False,,False,False,,0,False,False,False,browsed
+Saturday,141,female,adult,15:24,16:14,50,Jeans;Skirts & Dresses;Tops,3,31,False,False,,False,False,,0,False,False,False,browsed
+Saturday,142,female,adult,15:25,17:21,116,Skirts & Dresses;Pants;Jeans;Hats & Handbags,4,50,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,143,male,senior,15:27,17:52,145,Jeans;Skirts & Dresses;Tops;Underwear;Stockings,5,42,True,True,0,False,True,2,3,False,True,True,purchased
+Saturday,144,female,adult,15:28,18:01,153,Pants;Skirts & Dresses;Hats & Handbags;Underwear;Stockings;Tops,6,65,True,True,0,False,True,5,3,True,False,False,queued
+Saturday,145,female,senior,15:31,17:49,138,Pants;Jeans;Stockings;Skirts & Dresses,4,79,True,False,,True,True,3,1,True,False,False,queued
+Saturday,146,female,young,15:32,16:50,78,Jeans;Tops;Hats & Handbags;Skirts & Dresses;Pants,5,43,True,False,,True,True,2,4,False,True,True,purchased
+Saturday,147,female,adult,15:37,18:05,148,Underwear;Skirts & Dresses;Hats & Handbags;Tops;Jeans,5,41,True,True,0,False,True,3,1,True,False,False,queued
+Saturday,148,female,adult,15:39,16:34,55,Underwear;Tops;Skirts & Dresses;Pants,4,32,False,False,,False,False,,0,False,False,False,browsed
+Saturday,149,female,young,15:40,17:35,115,Skirts & Dresses;Stockings;Tops;Jeans;Pants;Underwear;Hats & Handbags,7,80,False,False,,False,True,3,2,True,False,False,queued
+Saturday,150,female,senior,15:42,17:44,122,Jeans;Pants;Hats & Handbags;Skirts & Dresses,4,42,True,True,0,False,True,4,6,True,False,False,queued
+Saturday,151,female,young,15:44,16:53,69,Underwear;Pants;Stockings;Hats & Handbags,4,30,True,True,0,False,True,7,1,True,False,False,queued
+Saturday,152,male,young,15:45,16:13,28,Jeans;Pants,2,6,False,False,,False,True,3,4,False,True,True,purchased
+Saturday,153,female,young,15:48,17:54,126,Stockings;Pants;Hats & Handbags;Skirts & Dresses;Underwear;Jeans;Tops,7,78,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,154,female,young,15:49,17:23,94,Tops;Skirts & Dresses;Stockings;Underwear;Pants;Hats & Handbags,6,54,False,False,,False,True,4,7,False,True,True,purchased
+Saturday,155,female,young,15:50,17:04,74,Hats & Handbags;Pants;Underwear;Skirts & Dresses,4,33,False,False,,False,True,4,13,False,True,True,purchased
+Saturday,156,female,young,15:51,17:58,127,Jeans;Underwear;Tops;Skirts & Dresses;Stockings;Hats & Handbags;Pants,7,56,False,False,,False,False,,0,False,False,False,browsed
+Saturday,157,female,young,15:55,18:03,128,Pants;Underwear;Jeans;Tops;Skirts & Dresses;Hats & Handbags,6,102,False,False,,False,False,,0,False,False,False,browsed
+Saturday,158,female,adult,15:57,17:21,84,Skirts & Dresses;Stockings;Underwear;Tops;Hats & Handbags,5,49,False,False,,False,True,3,6,True,False,False,queued
+Saturday,159,male,adult,16:00,16:28,28,Hats & Handbags,1,7,False,False,,False,False,,0,False,False,False,browsed
+Saturday,160,female,adult,16:02,18:59,177,Hats & Handbags;Underwear;Skirts & Dresses;Stockings;Jeans;Pants,6,61,True,True,0,False,True,2,1,True,False,False,queued
+Saturday,161,male,adult,16:04,16:58,54,Pants;Jeans;Hats & Handbags,3,16,False,False,,False,False,,0,False,False,False,browsed
+Saturday,162,female,adult,16:07,18:24,137,Stockings;Jeans;Skirts & Dresses;Pants;Underwear,5,55,True,False,,True,True,6,6,True,False,False,queued
+Saturday,163,female,adult,16:09,17:16,67,Jeans;Skirts & Dresses;Pants,3,20,True,True,0,False,True,3,4,False,True,True,purchased
+Saturday,164,male,senior,16:11,17:39,88,Jeans;Pants;Hats & Handbags;Tops,4,43,False,False,,False,False,,0,False,False,False,browsed
+Saturday,165,female,adult,16:13,18:23,130,Jeans;Skirts & Dresses;Stockings,3,52,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,166,female,adult,16:14,17:44,90,Jeans;Underwear;Tops,3,53,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,167,female,adult,16:15,17:49,94,Jeans;Tops;Underwear;Hats & Handbags;Stockings;Pants,6,58,False,False,,False,False,,0,False,False,False,browsed
+Saturday,168,female,adult,16:18,17:57,99,Skirts & Dresses;Pants;Hats & Handbags;Stockings,4,48,False,False,,False,True,5,1,True,False,False,queued
+Saturday,169,male,young,16:19,17:03,44,Stockings;Hats & Handbags,2,10,False,False,,False,True,4,13,False,True,True,purchased
+Saturday,170,male,adult,16:21,18:57,156,Hats & Handbags;Underwear;Stockings;Pants;Skirts & Dresses;Jeans,6,62,True,False,,True,True,1,0,False,True,True,purchased
+Saturday,171,female,young,16:26,18:30,124,Jeans;Stockings;Underwear;Skirts & Dresses;Pants;Hats & Handbags,6,86,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,172,male,young,16:28,16:44,16,Pants;Hats & Handbags,2,4,False,False,,False,True,4,1,True,False,False,queued
+Saturday,173,female,young,16:30,16:54,24,Tops,1,3,False,False,,False,True,3,11,False,True,True,purchased
+Saturday,174,female,adult,16:31,17:34,63,Skirts & Dresses;Pants;Underwear;Stockings,4,29,False,False,,False,False,,0,False,False,False,browsed
+Saturday,175,female,adult,16:35,18:43,128,Jeans;Underwear;Tops;Hats & Handbags;Stockings,5,56,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,176,male,young,16:36,17:09,33,Skirts & Dresses,1,3,False,False,,False,True,5,17,False,True,True,purchased
+Saturday,177,male,young,16:37,16:51,14,Skirts & Dresses,1,4,False,False,,False,True,7,1,True,False,False,queued
+Saturday,178,female,young,16:39,17:35,56,Tops;Underwear,2,13,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,179,female,adult,16:44,18:38,114,Underwear;Hats & Handbags;Pants;Skirts & Dresses;Stockings;Tops,6,68,False,False,,False,True,2,0,True,False,False,queued
+Saturday,180,female,senior,16:45,20:45,240,Jeans;Skirts & Dresses;Pants;Hats & Handbags;Stockings;Underwear;Tops,7,118,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,181,female,young,16:48,17:54,66,Hats & Handbags;Jeans;Tops;Pants,4,37,False,False,,False,False,,0,False,False,False,browsed
+Saturday,182,female,adult,16:49,18:24,95,Pants;Skirts & Dresses;Hats & Handbags;Underwear,4,53,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,183,female,adult,16:51,17:52,61,Skirts & Dresses;Underwear;Jeans,3,22,True,False,,True,True,3,9,True,False,False,queued
+Saturday,184,female,adult,16:52,19:05,133,Tops;Hats & Handbags;Skirts & Dresses;Pants;Jeans,5,46,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,185,male,young,16:53,18:17,84,Underwear;Pants;Stockings;Skirts & Dresses,4,34,True,True,0,False,True,4,5,True,False,False,queued
+Saturday,186,female,senior,16:54,20:40,226,Pants;Stockings;Tops;Hats & Handbags;Jeans;Skirts & Dresses;Underwear,7,108,True,True,0,False,True,2,4,True,False,False,queued
+Saturday,187,female,young,16:56,18:37,101,Skirts & Dresses;Tops;Jeans;Pants;Underwear;Stockings,6,60,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,188,female,senior,16:57,17:33,36,Stockings,1,3,False,False,,False,True,4,7,False,True,True,purchased
+Saturday,189,female,adult,17:01,18:16,75,Stockings;Skirts & Dresses;Tops;Underwear,4,40,False,False,,False,True,7,2,True,False,False,queued
+Saturday,190,female,adult,17:06,18:49,103,Jeans;Pants;Stockings;Tops;Underwear,5,65,True,True,0,False,False,,0,False,False,False,used_fitting
+Saturday,191,female,adult,17:07,18:09,62,Tops;Pants;Hats & Handbags;Underwear,4,29,True,False,,True,True,3,1,True,False,False,queued
+Saturday,192,female,young,17:18,18:21,63,Hats & Handbags;Pants;Tops;Skirts & Dresses,4,27,False,False,,False,True,2,13,False,True,True,purchased
+Saturday,193,female,young,17:21,18:06,45,Skirts & Dresses;Jeans,2,21,True,False,,True,True,3,0,True,False,False,queued
+Saturday,194,male,adult,17:22,18:26,64,Tops;Hats & Handbags;Stockings;Underwear,4,18,False,False,,False,False,,0,False,False,False,browsed
+Saturday,195,male,adult,17:24,17:47,23,Pants;Underwear,2,12,False,False,,False,False,,0,False,False,False,browsed
+Saturday,196,male,adult,17:29,17:38,9,Tops,1,6,False,False,,False,False,,0,False,False,False,browsed
+Saturday,197,male,young,17:31,18:33,62,Tops;Underwear;Skirts & Dresses;Stockings,4,19,False,False,,False,False,,0,False,False,False,browsed
+Saturday,198,female,senior,17:35,20:22,167,Stockings;Underwear;Pants;Jeans;Skirts & Dresses,5,83,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,199,female,young,17:39,19:07,88,Pants;Jeans;Stockings,3,49,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,200,female,adult,17:41,20:41,180,Jeans;Pants;Underwear;Skirts & Dresses;Hats & Handbags;Stockings,6,115,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,201,male,adult,17:44,18:27,43,Pants,1,3,True,True,0,False,True,5,10,False,True,True,purchased
+Saturday,202,male,adult,17:49,18:22,33,Underwear;Stockings,2,9,False,False,,False,True,3,10,True,False,False,queued
+Saturday,203,female,young,17:55,19:31,96,Jeans;Skirts & Dresses;Hats & Handbags;Stockings,4,33,True,True,0,False,True,1,0,False,True,True,purchased
+Saturday,204,female,senior,17:58,19:20,82,Tops;Hats & Handbags;Jeans,3,29,False,False,,False,True,1,0,False,True,True,purchased
+Saturday,205,female,adult,18:04,19:51,107,Tops;Underwear;Jeans;Stockings;Pants;Skirts & Dresses,6,63,False,False,,False,True,2,1,False,True,True,purchased
+Saturday,206,female,adult,18:07,20:18,131,Hats & Handbags;Pants;Skirts & Dresses;Underwear;Stockings,5,64,True,True,0,False,True,2,2,False,True,True,purchased
+Saturday,207,male,adult,18:20,18:28,8,Tops,1,5,False,False,,False,False,,0,False,False,False,browsed
+Saturday,208,female,adult,18:26,19:39,73,Pants;Hats & Handbags;Underwear,3,14,True,True,0,False,True,2,10,False,True,True,purchased
+Saturday,209,female,adult,18:31,,,Pants;Tops;Hats & Handbags;Underwear;Jeans;Skirts & Dresses,6,73,True,False,,False,False,,0,False,False,False,approached_fitting
+Saturday,210,female,adult,18:48,19:36,48,Stockings;Hats & Handbags;Skirts & Dresses,3,28,False,False,,False,False,,0,False,False,False,browsed
+Saturday,211,female,young,19:10,,,Hats & Handbags;Tops;Underwear;Pants;Skirts & Dresses;Jeans,6,80,False,False,,False,False,,0,False,False,False,browsed
+Saturday,212,male,adult,19:18,20:12,54,Stockings;Skirts & Dresses,2,12,True,True,0,False,True,2,2,False,True,True,purchased
+Saturday,213,female,young,19:59,,,Tops;Jeans;Underwear;Stockings,4,34,False,False,,False,False,,0,False,False,False,browsed
+Saturday,214,female,adult,20:10,20:53,43,Underwear;Pants;Stockings;Hats & Handbags,4,25,False,False,,False,False,,0,False,False,False,browsed
+Saturday,215,female,adult,20:13,,,Hats & Handbags;Underwear;Stockings,3,21,False,False,,False,False,,0,False,False,False,browsed
+Saturday,216,male,young,20:14,,,Tops;Skirts & Dresses;Stockings;Underwear,4,34,False,False,,False,False,,0,False,False,False,browsed
+Saturday,217,male,young,20:19,,,Jeans;Pants;Stockings;Tops,4,27,False,False,,False,False,,0,False,False,False,browsed
+Saturday,218,female,senior,20:27,,,Stockings;Pants,2,23,False,False,,False,False,,0,False,False,False,browsed
+Saturday,219,female,senior,20:59,,,,0,0,False,False,,False,False,,0,False,False,False,entered_only
+Sunday,1,female,young,10:21,11:54,93,Hats & Handbags;Skirts & Dresses;Pants;Underwear,4,48,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,2,male,senior,10:25,11:53,88,Hats & Handbags;Jeans;Underwear,3,41,False,False,,False,False,,0,False,False,False,browsed
+Sunday,3,male,young,10:32,10:50,18,Stockings,1,5,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,4,female,young,10:42,11:30,48,Hats & Handbags;Skirts & Dresses;Stockings;Jeans,4,20,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,5,female,adult,10:47,12:53,126,Underwear;Stockings;Hats & Handbags;Pants,4,43,True,True,0,False,True,2,4,False,True,True,purchased
+Sunday,6,female,adult,10:51,12:42,111,Underwear;Skirts & Dresses;Stockings;Jeans;Tops,5,44,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,7,female,young,10:56,12:48,112,Hats & Handbags;Skirts & Dresses;Stockings;Underwear;Jeans;Pants;Tops,7,88,False,False,,False,False,,0,False,False,False,browsed
+Sunday,8,female,senior,10:58,12:17,79,Pants;Skirts & Dresses;Underwear,3,40,False,False,,False,False,,0,False,False,False,browsed
+Sunday,9,female,young,10:59,12:16,77,Pants;Jeans;Underwear;Hats & Handbags,4,56,False,False,,False,True,2,0,True,False,False,queued
+Sunday,10,female,adult,11:11,14:09,178,Jeans;Skirts & Dresses;Stockings;Tops;Underwear;Hats & Handbags,6,50,True,True,0,False,True,2,4,False,True,True,purchased
+Sunday,11,female,young,11:12,13:32,140,Pants;Underwear;Skirts & Dresses;Jeans;Hats & Handbags,5,66,False,False,,False,False,,0,False,False,False,browsed
+Sunday,12,male,young,11:19,12:30,71,Jeans;Pants;Tops;Hats & Handbags;Underwear,5,48,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,13,female,adult,11:21,14:09,168,Tops;Hats & Handbags;Pants;Jeans;Skirts & Dresses,5,78,True,True,0,False,True,5,3,True,False,False,queued
+Sunday,14,female,adult,11:29,12:53,84,Stockings;Jeans;Underwear;Hats & Handbags;Tops;Skirts & Dresses,6,57,False,False,,False,False,,0,False,False,False,browsed
+Sunday,15,male,adult,11:49,12:37,48,Tops;Underwear;Jeans,3,17,False,False,,False,False,,0,False,False,False,browsed
+Sunday,16,female,young,11:55,12:21,26,Tops;Hats & Handbags,2,10,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,17,female,senior,12:00,14:58,178,Skirts & Dresses;Underwear;Stockings;Hats & Handbags;Tops;Jeans,6,69,True,True,0,False,True,5,0,True,False,False,queued
+Sunday,18,female,young,12:17,13:38,81,Stockings;Skirts & Dresses;Tops,3,24,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,19,female,senior,12:20,14:56,156,Jeans;Stockings;Hats & Handbags;Pants;Underwear,5,79,True,False,,True,True,5,0,True,False,False,queued
+Sunday,20,female,young,12:22,13:08,46,Hats & Handbags;Jeans;Stockings;Pants,4,22,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,21,male,young,12:27,12:41,14,Hats & Handbags,1,7,False,False,,False,False,,0,False,False,False,browsed
+Sunday,22,female,adult,12:30,14:01,91,Stockings;Hats & Handbags;Underwear,3,41,False,False,,False,False,,0,False,False,False,browsed
+Sunday,23,female,adult,12:33,13:27,54,Tops;Hats & Handbags,2,18,True,True,0,False,False,,0,False,False,False,used_fitting
+Sunday,24,female,senior,12:36,14:16,100,Tops;Pants;Stockings;Underwear;Hats & Handbags,5,59,False,False,,False,False,,0,False,False,False,browsed
+Sunday,25,male,young,12:40,13:44,64,Skirts & Dresses;Pants;Underwear;Jeans,4,42,False,False,,False,False,,0,False,False,False,browsed
+Sunday,26,female,young,12:42,13:02,20,Pants;Skirts & Dresses,2,9,False,False,,False,True,2,0,True,False,False,queued
+Sunday,27,male,adult,12:43,14:31,108,Underwear;Hats & Handbags;Skirts & Dresses;Jeans,4,34,False,False,,False,True,4,6,True,False,False,queued
+Sunday,28,male,senior,12:44,14:31,107,Underwear;Tops;Jeans,3,13,True,True,0,False,True,2,1,False,True,True,purchased
+Sunday,29,male,adult,12:46,13:17,31,Tops;Pants,2,8,False,False,,False,True,2,4,False,True,True,purchased
+Sunday,30,female,adult,12:47,14:28,101,Jeans;Stockings;Underwear;Skirts & Dresses,4,56,True,True,0,False,True,2,1,True,False,False,queued
+Sunday,31,male,adult,12:51,14:03,72,Skirts & Dresses;Underwear;Jeans;Tops,4,35,True,True,0,False,False,,0,False,False,False,used_fitting
+Sunday,32,male,young,12:55,13:47,52,Jeans;Stockings;Skirts & Dresses;Pants,4,24,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,33,female,young,12:57,13:06,9,Pants,1,6,False,False,,False,False,,0,False,False,False,browsed
+Sunday,34,male,senior,12:58,14:19,81,Jeans;Underwear;Hats & Handbags,3,19,False,False,,False,True,3,14,False,True,True,purchased
+Sunday,35,male,young,12:59,13:41,42,Underwear;Jeans;Stockings;Pants;Skirts & Dresses,5,26,False,False,,False,False,,0,False,False,False,browsed
+Sunday,36,male,adult,13:00,13:25,25,Jeans;Skirts & Dresses,2,6,False,False,,False,False,,0,False,False,False,browsed
+Sunday,37,male,adult,13:01,13:39,38,Pants;Underwear;Tops,3,25,False,False,,False,False,,0,False,False,False,browsed
+Sunday,38,female,adult,13:02,14:37,95,Stockings;Tops,2,20,True,True,0,False,True,2,10,False,True,True,purchased
+Sunday,39,female,adult,13:07,15:05,118,Skirts & Dresses;Tops;Underwear;Stockings;Jeans,5,52,True,True,0,False,True,5,9,True,False,False,queued
+Sunday,40,male,adult,13:09,13:33,24,Hats & Handbags;Stockings,2,8,False,False,,False,False,,0,False,False,False,browsed
+Sunday,41,female,adult,13:12,13:41,29,Underwear,1,6,False,False,,False,True,2,5,False,True,True,purchased
+Sunday,42,female,senior,13:13,14:57,104,Tops;Skirts & Dresses;Stockings;Jeans,4,43,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,43,male,adult,13:14,13:20,6,Tops,1,3,False,False,,False,False,,0,False,False,False,browsed
+Sunday,44,female,adult,13:15,14:06,51,Jeans;Underwear,2,23,True,False,,True,True,5,6,True,False,False,queued
+Sunday,45,female,adult,13:21,14:18,57,Tops;Underwear,2,18,True,False,,True,True,3,5,True,False,False,queued
+Sunday,46,female,adult,13:22,14:39,77,Skirts & Dresses;Underwear,2,13,True,True,0,False,True,2,1,False,True,True,purchased
+Sunday,47,male,adult,13:23,14:02,39,Hats & Handbags;Jeans;Pants,3,14,False,False,,False,True,4,1,True,False,False,queued
+Sunday,48,female,senior,13:24,14:50,86,Hats & Handbags;Tops;Underwear;Skirts & Dresses,4,37,False,False,,False,False,,0,False,False,False,browsed
+Sunday,49,female,young,13:26,13:52,26,Underwear;Skirts & Dresses,2,7,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,50,male,senior,13:38,14:07,29,Tops,1,5,True,False,,True,True,3,8,True,False,False,queued
+Sunday,51,male,young,13:39,15:06,87,Skirts & Dresses;Jeans;Pants;Hats & Handbags,4,44,False,False,,False,True,6,14,False,True,True,purchased
+Sunday,52,female,young,13:46,15:59,133,Hats & Handbags;Pants;Skirts & Dresses;Jeans;Tops;Underwear,6,49,True,True,0,False,True,2,2,False,True,True,purchased
+Sunday,53,male,adult,13:50,14:03,13,Hats & Handbags,1,4,False,False,,False,False,,0,False,False,False,browsed
+Sunday,54,male,adult,13:51,15:08,77,Hats & Handbags;Tops;Skirts & Dresses;Underwear,4,22,False,False,,False,True,3,12,False,True,True,purchased
+Sunday,55,female,adult,13:55,16:28,153,Jeans;Skirts & Dresses;Hats & Handbags;Underwear;Tops;Stockings;Pants,7,83,True,True,0,False,True,2,3,False,True,True,purchased
+Sunday,56,female,young,13:59,15:32,93,Pants;Underwear;Hats & Handbags;Skirts & Dresses,4,40,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,57,male,adult,14:01,14:53,52,Hats & Handbags,1,8,True,True,0,False,True,3,2,True,False,False,queued
+Sunday,58,female,adult,14:03,16:20,137,Hats & Handbags;Tops;Jeans;Skirts & Dresses,4,60,True,True,0,False,False,,0,False,False,False,used_fitting
+Sunday,59,male,adult,14:04,14:17,13,Jeans,1,4,False,False,,False,True,5,0,True,False,False,queued
+Sunday,60,male,adult,14:07,16:08,121,Skirts & Dresses;Stockings;Underwear;Jeans;Tops;Hats & Handbags,6,40,True,True,0,False,True,2,4,False,True,True,purchased
+Sunday,61,female,adult,14:11,14:58,47,Pants;Skirts & Dresses;Stockings,3,16,False,False,,False,True,2,10,False,True,True,purchased
+Sunday,62,male,senior,14:12,15:43,91,Tops;Underwear;Pants;Skirts & Dresses,4,21,True,True,0,False,True,2,2,False,True,True,purchased
+Sunday,63,male,senior,14:18,15:19,61,Hats & Handbags;Stockings;Jeans,3,23,False,False,,False,False,,0,False,False,False,browsed
+Sunday,64,female,senior,14:24,15:25,61,Stockings;Underwear;Pants;Jeans,4,31,False,False,,False,False,,0,False,False,False,browsed
+Sunday,65,male,young,14:26,15:15,49,Jeans;Stockings;Hats & Handbags;Underwear,4,29,False,False,,False,True,2,2,True,False,False,queued
+Sunday,66,male,senior,14:27,15:21,54,Pants;Skirts & Dresses,2,13,False,False,,False,True,2,2,False,True,True,purchased
+Sunday,67,female,young,14:28,16:08,100,Tops;Skirts & Dresses;Jeans,3,41,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,68,female,young,14:31,16:53,142,Pants;Stockings;Underwear;Skirts & Dresses;Tops;Jeans,6,74,True,True,0,False,True,5,0,True,False,False,queued
+Sunday,69,female,young,14:32,15:41,69,Skirts & Dresses;Jeans;Underwear,3,32,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,70,male,young,14:33,14:57,24,Stockings,1,5,False,False,,False,True,4,10,True,False,False,queued
+Sunday,71,male,young,14:34,16:12,98,Underwear;Skirts & Dresses;Hats & Handbags;Jeans;Tops;Pants,6,43,False,False,,False,True,2,4,True,False,False,queued
+Sunday,72,female,adult,14:40,16:12,92,Stockings;Jeans;Underwear;Skirts & Dresses;Tops,5,58,False,False,,False,True,3,1,True,False,False,queued
+Sunday,73,male,young,14:48,16:21,93,Tops;Stockings;Skirts & Dresses;Hats & Handbags;Jeans;Pants,6,53,False,False,,False,False,,0,False,False,False,browsed
+Sunday,74,male,senior,14:59,16:57,118,Underwear;Jeans;Skirts & Dresses;Pants;Stockings,5,46,False,False,,False,True,3,4,True,False,False,queued
+Sunday,75,female,young,15:03,16:53,110,Skirts & Dresses;Stockings;Tops;Underwear,4,65,True,False,,True,True,4,5,True,False,False,queued
+Sunday,76,female,senior,15:06,17:29,143,Jeans;Skirts & Dresses;Pants;Underwear;Tops;Stockings,6,62,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,77,male,adult,15:11,16:22,71,Underwear;Hats & Handbags;Stockings;Tops,4,19,False,False,,False,True,2,2,False,True,True,purchased
+Sunday,78,female,adult,15:16,17:01,105,Jeans;Stockings;Hats & Handbags;Skirts & Dresses,4,36,True,True,0,False,True,3,1,True,False,False,queued
+Sunday,79,male,young,15:26,15:47,21,Underwear,1,2,False,False,,False,True,2,5,False,True,True,purchased
+Sunday,80,male,young,15:28,15:50,22,Hats & Handbags;Underwear,2,7,False,False,,False,True,2,1,False,True,True,purchased
+Sunday,81,male,adult,15:29,16:55,86,Underwear;Hats & Handbags;Tops;Pants,4,39,False,False,,False,True,2,2,False,True,True,purchased
+Sunday,82,male,adult,15:34,16:03,29,Hats & Handbags,1,4,True,False,,True,True,4,3,True,False,False,queued
+Sunday,83,female,adult,15:39,16:57,78,Hats & Handbags;Tops;Stockings,3,28,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,84,female,adult,15:41,16:21,40,Tops;Pants,2,9,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,85,female,young,15:42,16:37,55,Jeans;Underwear;Stockings;Pants;Tops,5,36,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,86,male,young,15:43,15:56,13,Stockings,1,2,False,False,,False,True,3,2,True,False,False,queued
+Sunday,87,female,young,15:45,16:47,62,Skirts & Dresses;Pants;Jeans;Hats & Handbags;Underwear,5,39,False,False,,False,False,,0,False,False,False,browsed
+Sunday,88,male,young,15:46,18:01,135,Hats & Handbags;Underwear;Skirts & Dresses;Stockings;Tops,5,44,True,True,0,False,True,4,6,True,False,False,queued
+Sunday,89,female,senior,16:00,18:30,150,Pants;Tops;Jeans;Underwear;Skirts & Dresses;Hats & Handbags,6,53,True,True,0,False,True,5,20,False,True,True,purchased
+Sunday,90,female,adult,16:01,17:11,70,Underwear;Tops,2,19,True,False,,True,True,6,9,False,True,True,purchased
+Sunday,91,male,senior,16:04,17:32,88,Tops;Underwear;Skirts & Dresses;Stockings,4,25,False,False,,False,True,3,1,True,False,False,queued
+Sunday,92,female,adult,16:05,18:20,135,Hats & Handbags;Tops;Skirts & Dresses;Jeans;Stockings;Pants,6,83,True,True,0,False,True,7,2,True,False,False,queued
+Sunday,93,female,adult,16:06,17:02,56,Skirts & Dresses;Hats & Handbags;Stockings;Underwear,4,25,False,False,,False,True,4,4,False,True,True,purchased
+Sunday,94,male,young,16:09,16:19,10,Hats & Handbags,1,5,False,False,,False,False,,0,False,False,False,browsed
+Sunday,95,female,adult,16:11,17:46,95,Stockings;Underwear;Jeans;Pants;Skirts & Dresses,5,41,False,False,,False,True,4,3,True,False,False,queued
+Sunday,96,female,adult,16:13,17:03,50,Hats & Handbags;Pants,2,11,True,True,0,False,True,3,4,True,False,False,queued
+Sunday,97,male,adult,16:14,17:18,64,Skirts & Dresses;Underwear;Tops,3,11,False,False,,False,True,3,4,False,True,True,purchased
+Sunday,98,female,senior,16:15,17:48,93,Hats & Handbags;Tops;Jeans;Pants,4,39,False,False,,False,True,2,4,False,True,True,purchased
+Sunday,99,female,adult,16:24,18:18,114,Pants;Jeans;Skirts & Dresses;Hats & Handbags;Stockings;Underwear,6,51,True,False,,True,True,3,13,False,True,True,purchased
+Sunday,100,female,adult,16:25,18:50,145,Hats & Handbags;Pants;Tops;Skirts & Dresses;Underwear,5,78,False,False,,False,False,,0,False,False,False,browsed
+Sunday,101,male,adult,16:27,17:09,42,Skirts & Dresses;Pants,2,10,False,False,,False,True,4,0,True,False,False,queued
+Sunday,102,male,young,16:28,16:42,14,Tops,1,8,False,False,,False,False,,0,False,False,False,browsed
+Sunday,103,female,senior,16:31,20:15,224,Stockings;Tops;Underwear;Hats & Handbags;Skirts & Dresses;Pants,6,119,True,True,0,False,False,,0,False,False,False,used_fitting
+Sunday,104,male,young,16:32,17:26,54,Hats & Handbags;Pants;Stockings;Underwear,4,30,False,False,,False,True,4,0,True,False,False,queued
+Sunday,105,male,adult,16:36,17:55,79,Underwear;Pants;Tops,3,28,False,False,,False,True,3,8,False,True,True,purchased
+Sunday,106,female,adult,16:37,18:02,85,Underwear;Pants;Stockings;Skirts & Dresses;Hats & Handbags,5,38,False,False,,False,False,,0,False,False,False,browsed
+Sunday,107,female,adult,16:43,19:46,183,Jeans;Underwear;Tops;Hats & Handbags;Stockings;Skirts & Dresses;Pants,7,106,True,True,0,False,True,2,5,False,True,True,purchased
+Sunday,108,male,senior,16:44,18:03,79,Underwear;Jeans;Stockings;Tops,4,25,False,False,,False,True,2,4,False,True,True,purchased
+Sunday,109,female,adult,16:46,18:46,120,Skirts & Dresses;Tops;Underwear;Jeans;Hats & Handbags;Stockings,6,76,False,False,,False,True,2,2,False,True,True,purchased
+Sunday,110,male,adult,16:48,18:41,113,Skirts & Dresses;Stockings;Tops;Hats & Handbags,4,34,True,True,0,False,True,3,3,False,True,True,purchased
+Sunday,111,male,adult,16:49,18:06,77,Stockings;Skirts & Dresses,2,14,True,True,0,False,True,6,0,True,False,False,queued
+Sunday,112,female,adult,16:51,17:39,48,Jeans;Pants,2,8,True,True,0,False,True,2,3,False,True,True,purchased
+Sunday,113,male,senior,16:54,18:10,76,Jeans;Stockings;Pants;Underwear,4,21,True,False,,True,True,2,7,False,True,True,purchased
+Sunday,114,male,adult,16:56,17:47,51,Jeans;Pants,2,23,False,False,,False,False,,0,False,False,False,browsed
+Sunday,115,male,young,16:58,17:37,39,Hats & Handbags,1,4,True,True,0,False,True,2,3,False,True,True,purchased
+Sunday,116,male,adult,16:59,17:04,5,Tops,1,4,False,False,,False,False,,0,False,False,False,browsed
+Sunday,117,female,adult,17:00,19:00,120,Stockings;Underwear;Hats & Handbags;Pants,4,50,True,True,0,False,False,,0,False,False,False,used_fitting
+Sunday,118,female,senior,17:01,18:43,102,Tops;Skirts & Dresses;Underwear;Jeans,4,29,True,True,0,False,True,3,1,True,False,False,queued
+Sunday,119,male,young,17:03,17:48,45,Underwear;Hats & Handbags;Skirts & Dresses,3,16,False,False,,False,False,,0,False,False,False,browsed
+Sunday,120,male,adult,17:05,18:21,76,Tops;Skirts & Dresses;Stockings;Jeans,4,22,False,False,,False,True,7,12,True,False,False,queued
+Sunday,121,female,adult,17:09,17:26,17,Hats & Handbags,1,3,False,False,,False,True,2,1,False,True,True,purchased
+Sunday,122,male,adult,17:10,18:11,61,Hats & Handbags;Stockings;Pants,3,24,False,False,,False,True,7,1,True,False,False,queued
+Sunday,123,female,senior,17:16,19:46,150,Tops;Pants;Hats & Handbags,3,65,True,True,0,False,True,3,10,False,True,True,purchased
+Sunday,124,female,young,17:29,19:03,94,Hats & Handbags;Skirts & Dresses;Tops;Pants,4,41,True,True,0,False,True,2,5,False,True,True,purchased
+Sunday,125,male,senior,17:33,18:29,56,Skirts & Dresses;Hats & Handbags,2,10,False,False,,False,True,4,22,True,False,False,queued
+Sunday,126,female,young,17:34,19:47,133,Jeans;Skirts & Dresses;Stockings;Underwear;Tops;Hats & Handbags,6,73,True,True,0,False,True,2,0,True,False,False,queued
+Sunday,127,male,adult,17:35,18:31,56,Skirts & Dresses;Pants;Jeans,3,26,False,False,,False,True,4,3,True,False,False,queued
+Sunday,128,female,adult,17:39,19:29,110,Stockings;Tops;Skirts & Dresses;Pants;Underwear,5,42,True,True,0,False,True,4,12,True,False,False,queued
+Sunday,129,male,adult,17:45,18:06,21,Stockings;Pants,2,8,False,False,,False,True,5,4,True,False,False,queued
+Sunday,130,female,young,17:50,19:17,87,Jeans;Pants;Skirts & Dresses;Hats & Handbags,4,30,True,True,0,False,True,2,4,False,True,True,purchased
+Sunday,131,male,young,17:51,18:29,38,Stockings,1,2,False,False,,False,True,6,23,False,True,True,purchased
+Sunday,132,male,adult,17:52,19:03,71,Jeans;Tops,2,10,True,True,0,False,True,3,7,True,False,False,queued
+Sunday,133,male,adult,17:53,18:13,20,Hats & Handbags;Skirts & Dresses,2,5,False,False,,False,True,6,0,True,False,False,queued
+Sunday,134,female,young,17:54,19:56,122,Hats & Handbags;Underwear;Jeans;Tops;Pants;Skirts & Dresses;Stockings,7,64,False,False,,False,False,,0,False,False,False,browsed
+Sunday,135,male,adult,17:56,18:20,24,Tops;Skirts & Dresses,2,7,False,False,,False,True,6,1,True,False,False,queued
+Sunday,136,female,senior,17:57,20:54,177,Stockings;Skirts & Dresses;Tops;Hats & Handbags;Pants;Jeans,6,67,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,137,male,adult,18:00,18:34,34,Jeans,1,4,False,False,,False,True,4,4,True,False,False,queued
+Sunday,138,female,adult,18:02,20:41,159,Stockings;Skirts & Dresses;Hats & Handbags;Tops;Underwear;Jeans,6,46,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,139,male,adult,18:03,18:15,12,Jeans,1,4,False,False,,False,False,,0,False,False,False,browsed
+Sunday,140,female,senior,18:06,18:40,34,Underwear,1,9,True,False,,True,True,2,3,False,True,True,purchased
+Sunday,141,male,adult,18:07,19:30,83,Skirts & Dresses;Stockings;Jeans;Pants,4,19,False,False,,False,True,3,7,False,True,True,purchased
+Sunday,142,male,adult,18:18,20:01,103,Stockings;Pants;Hats & Handbags;Tops,4,44,False,False,,False,True,3,5,False,True,True,purchased
+Sunday,143,female,adult,18:19,20:20,121,Pants;Jeans;Tops;Stockings,4,66,True,True,0,False,True,1,0,False,True,True,purchased
+Sunday,144,male,senior,18:26,19:14,48,Pants;Tops,2,11,False,False,,False,True,1,0,False,True,True,purchased
+Sunday,145,male,adult,18:31,18:51,20,Hats & Handbags,1,3,False,False,,False,True,2,2,False,True,True,purchased
+Sunday,146,male,adult,19:16,19:39,23,Underwear,1,4,False,False,,False,True,2,5,False,True,True,purchased
+Sunday,147,female,adult,19:37,,,Pants;Jeans;Tops;Skirts & Dresses,4,56,False,False,,False,False,,0,False,False,False,browsed
+Sunday,148,female,adult,20:00,,,Skirts & Dresses;Pants;Stockings;Jeans;Tops;Underwear,6,34,False,False,,False,False,,0,False,False,False,browsed
+Sunday,149,male,young,20:23,,,Pants;Stockings,2,17,False,False,,False,False,,0,False,False,False,browsed
+Sunday,150,female,young,20:29,,,Pants;Hats & Handbags;Tops,3,20,False,False,,False,False,,0,False,False,False,browsed
+Sunday,151,male,adult,20:55,,,Skirts & Dresses,1,0,False,False,,False,False,,0,False,False,False,browsed

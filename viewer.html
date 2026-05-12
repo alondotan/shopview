@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Store Simulation Viewer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #12121f;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    gap: 8px;
+    padding: 10px;
+}
+
+/* ── Controls ── */
+#controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1c1c30;
+    border-radius: 8px;
+    padding: 8px 14px;
+    flex-shrink: 0;
+}
+#controls button {
+    background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
+    border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px;
+    transition: background .15s;
+}
+#controls button:hover:not(:disabled) { background: #3a3a6a; }
+#controls button:disabled { opacity: .35; cursor: default; }
+#timeline { flex: 1; accent-color: #5c8ee8; }
+#ts-display { font-family: monospace; font-size: 20px; font-weight: bold; color: #6ab0ff; min-width: 56px; }
+#frame-info { color: #666; font-size: 11px; min-width: 80px; }
+select {
+    background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
+    border-radius: 5px; padding: 4px 6px; font-size: 12px;
+}
+
+/* ── Tabs ── */
+#tab-bar {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.tab-btn {
+    background: #1c1c30; color: #777; border: 1px solid #2a2a4a;
+    border-radius: 7px 7px 0 0; padding: 6px 18px; cursor: pointer;
+    font-size: 13px; transition: all .15s;
+}
+.tab-btn:hover { color: #ccc; background: #22223a; }
+.tab-btn.active { background: #1c1c30; color: #6ab0ff; border-bottom-color: #1c1c30; }
+
+/* ── Tab panels ── */
+.tab-panel {
+    display: none;
+    flex: 1;
+    gap: 10px;
+    min-height: 0;
+    background: #1c1c30;
+    border-radius: 0 8px 8px 8px;
+    padding: 10px;
+}
+.tab-panel.active { display: flex; }
+
+/* ── Canvas wrap (animation) ── */
+#canvas-wrap {
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-start; flex-shrink: 0;
+}
+canvas { border-radius: 4px; display: block; }
+
+#legend { display: flex; flex-wrap: wrap; gap: 6px 12px; width: 100%; }
+.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #999; }
+.leg-dot { width: 13px; height: 13px; border-radius: 3px; border: 1px solid rgba(255,255,255,.15); flex-shrink:0; }
+#in-store { font-size: 12px; color: #888; }
+
+/* ── Right panel (animation) ── */
+#right { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; }
+#drop-zone {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 14px; border: 2px dashed #2e2e50;
+    border-radius: 8px; color: #555; font-size: 15px; transition: border-color .2s;
+}
+#drop-zone.over { border-color: #5c8ee8; }
+#drop-zone label {
+    cursor: pointer; background: #2a2a4a; color: #aac; border: 1px solid #3a3a5a;
+    border-radius: 7px; padding: 8px 22px; font-size: 13px; transition: background .15s;
+}
+#drop-zone label:hover { background: #3a3a6a; }
+#drop-zone input[type=file] { display: none; }
+
+#event-log {
+    background: #16162a; border-radius: 8px; padding: 10px 12px;
+    overflow-y: auto; flex: 1; display: none; min-height: 0;
+}
+#event-log h3 { font-size: 13px; color: #6ab0ff; margin-bottom: 8px; }
+.ev { padding: 3px 0; border-bottom: 1px solid #1e1e35; font-family: monospace; font-size: 11.5px; line-height: 1.5; }
+.ev .ts  { color: #555; }
+.ev .sid { font-weight: bold; }
+.ev .act { color: #90caf9; }
+.ev .det { color: #666; display: block; padding-left: 10px; }
+
+/* ══════════════════════════════════
+   ANALYTICS TAB
+══════════════════════════════════ */
+#analytics-left {
+    display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: flex-start;
+}
+#heat-scale {
+    display: flex; align-items: center; gap: 8px; font-size: 11px; color: #777;
+    width: 100%;
+}
+#heat-gradient {
+    flex: 1; height: 12px; border-radius: 6px;
+    background: linear-gradient(to right, #1a237e, #1565c0, #00897b, #f9a825, #e53935);
+}
+
+#analytics-right {
+    flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+    padding-right: 4px;
+}
+
+/* ── KPI cards ── */
+#kpis { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpi {
+    background: #16162a; border: 1px solid #2a2a4a; border-radius: 8px;
+    padding: 10px 14px; min-width: 110px; flex: 1;
+}
+.kpi-val { font-size: 22px; font-weight: bold; color: #6ab0ff; font-family: monospace; }
+.kpi-val.red { color: #ef9a9a; }
+.kpi-val.green { color: #a5d6a7; }
+.kpi-val.amber { color: #ffcc80; }
+.kpi-label { font-size: 11px; color: #777; margin-top: 2px; }
+
+/* ── Section bars ── */
+.analytics-section { background: #16162a; border-radius: 8px; padding: 12px 14px; }
+.analytics-section h4 { font-size: 13px; color: #6ab0ff; margin-bottom: 10px; }
+
+.sec-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.sec-name { width: 130px; font-size: 12px; color: #bbb; flex-shrink: 0; text-align: right; }
+.sec-bar-wrap { flex: 1; background: #2a2a4a; border-radius: 3px; height: 14px; }
+.sec-bar { height: 100%; border-radius: 3px; background: #5c8ee8; min-width: 2px; transition: width .3s; }
+.sec-count { width: 36px; font-size: 12px; color: #888; font-family: monospace; text-align: right; }
+
+/* ── Profile table ── */
+.prof-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.prof-table th { color: #777; font-weight: normal; padding: 4px 8px; text-align: right; border-bottom: 1px solid #2a2a4a; }
+.prof-table th:first-child { text-align: left; }
+.prof-table td { padding: 5px 8px; border-bottom: 1px solid #1e1e30; text-align: right; font-family: monospace; }
+.prof-table td:first-child { text-align: left; font-family: inherit; }
+.prof-table tr:last-child td { border: none; }
+
+/* ── Behavior grid ── */
+.behavior-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.beh-item {
+    background: #1e1e35; border-radius: 6px; padding: 8px 12px; font-size: 12px; flex: 1; min-width: 140px;
+}
+.beh-val { font-size: 17px; font-weight: bold; color: #90caf9; font-family: monospace; }
+.beh-label { color: #777; margin-top: 2px; }
+
+/* ── Log type banner ── */
+.log-banner {
+    font-size: 12px; padding: 6px 14px; border-radius: 6px;
+    flex-shrink: 0; border: 1px solid;
+}
+.log-banner.video  { background: #0d2137; border-color: #1565c0; color: #90caf9; }
+.log-banner.truth  { background: #1a1a0a; border-color: #5d4037; color: #ffcc80; }
+
+/* ── Filter bar ── */
+#filter-bar {
+    background: #16162a; border: 1px solid #2a2a4a; border-radius: 8px;
+    padding: 10px 14px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+}
+#filter-bar > span { font-size: 11px; color: #777; font-weight: bold; letter-spacing: .5px; }
+.filter-group { display: flex; align-items: center; gap: 7px; }
+.filter-label { font-size: 11px; color: #777; }
+.filter-btns  { display: flex; gap: 4px; }
+.filt-btn {
+    background: #1e1e35; border: 1px solid #2a2a4a; border-radius: 4px;
+    color: #aaa; font-size: 11px; padding: 3px 9px; cursor: pointer; transition: all .15s;
+}
+.filt-btn.active { background: #3a5fad; border-color: #5c8ee8; color: #fff; }
+.filt-btn:hover:not(.active) { border-color: #5c8ee8; color: #ddd; }
+
+/* ── Demographics ── */
+.demo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.demo-icon  { font-size: 15px; width: 20px; text-align: center; }
+.demo-label { width: 120px; font-size: 12px; color: #ccc; flex-shrink: 0; }
+
+/* ── Conversion funnel ── */
+.funnel-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.funnel-label { width: 160px; font-size: 12px; color: #bbb; flex-shrink: 0; text-align: right; }
+.funnel-bar-wrap { flex: 1; background: #2a2a4a; border-radius: 3px; height: 18px; }
+.funnel-bar { height: 100%; border-radius: 3px; min-width: 2px; transition: width .4s; }
+.funnel-count { width: 36px; font-size: 12px; color: #888; font-family: monospace; text-align: right; }
+.funnel-pct { width: 44px; font-size: 13px; font-weight: bold; font-family: monospace; text-align: right; color: #6ab0ff; }
+.funnel-drop { font-size: 11px; color: #555; text-align: right; padding-right: 8px; margin: 1px 0 4px; font-family: monospace; display: flex; align-items: center; gap: 6px; }
+.funnel-drop-bar { height: 2px; flex: 1; background: #2a2a4a; border-radius: 1px; }
+.funnel-drop-val { white-space: nowrap; flex-shrink: 0; }
+
+/* ── Hourly traffic ── */
+.traffic-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.traffic-hour { width: 44px; font-size: 11px; color: #777; font-family: monospace; flex-shrink: 0; text-align: right; }
+.traffic-bar-wrap { flex: 1; background: #2a2a4a; border-radius: 3px; height: 14px; }
+.traffic-bar { height: 100%; border-radius: 3px; background: #3a5fad; min-width: 2px; transition: width .3s; }
+.traffic-count { width: 32px; font-size: 11px; color: #888; font-family: monospace; }
+.traffic-peak { font-size: 10px; color: #f9a825; font-weight: bold; }
+
+/* ── Day comparison table ── */
+.day-cmp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.day-cmp-table th { color: #777; font-weight: normal; padding: 4px 8px; text-align: right; border-bottom: 1px solid #2a2a4a; }
+.day-cmp-table th:first-child { text-align: left; }
+.day-cmp-table td { padding: 5px 8px; border-bottom: 1px solid #1e1e30; text-align: right; font-family: monospace; }
+.day-cmp-table td:first-child { text-align: left; font-family: inherit; font-weight: bold; }
+.day-cmp-table tr:last-child td { border: none; }
+.day-cmp-table tr.active-day td { background: rgba(92,142,232,0.12); }
+.day-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+.demo-count { width: 32px; font-size: 12px; color: #888; font-family: monospace; text-align: right; flex-shrink: 0; }
+.demo-bar-wrap { flex: 1; background: #2a2a4a; border-radius: 3px; height: 12px; }
+.demo-bar { height: 100%; border-radius: 3px; min-width: 2px; transition: width .3s; opacity: .85; }
+.demo-pct { width: 40px; font-size: 12px; font-family: monospace; text-align: right; flex-shrink: 0; color: #bbb; }
+.demo-time { width: 44px; font-size: 11px; font-family: monospace; text-align: right; flex-shrink: 0; color: #777; }
+.demo-sep { font-size: 11px; color: #333; letter-spacing: 1px; margin: 4px 0 6px; }
+
+/* ══════════════════════════════════════════════════
+   CHAT TAB
+══════════════════════════════════════════════════ */
+#chat-panel {
+    display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 0;
+}
+#chat-info {
+    font-size: 12px; color: #777; padding: 6px 10px; border-bottom: 1px solid #2a2a4a; flex-shrink: 0;
+}
+#chat-info span { color: #6ab0ff; font-family: monospace; }
+#chat-messages {
+    flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;
+    min-height: 0;
+}
+.chat-msg { display: flex; flex-direction: column; max-width: 80%; gap: 4px; }
+.chat-msg.user  { align-self: flex-end; align-items: flex-end; }
+.chat-msg.asst  { align-self: flex-start; align-items: flex-start; }
+.chat-bubble {
+    padding: 9px 13px; border-radius: 14px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+}
+.chat-msg.user .chat-bubble { background: #2a4a8a; color: #ddeeff; border-bottom-right-radius: 4px; }
+.chat-msg.asst .chat-bubble { background: #1e1e35; color: #ddd;    border-bottom-left-radius: 4px; }
+.chat-msg.asst .chat-bubble b  { color: #90caf9; }
+.chat-msg.asst .chat-bubble code { background: #0d0d1e; padding: 1px 5px; border-radius: 3px; font-size: 11.5px; }
+.chat-typing { color: #555; font-size: 20px; letter-spacing: 3px; padding: 4px 10px; }
+#chat-input-row {
+    display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #2a2a4a; flex-shrink: 0;
+}
+#chat-input {
+    flex: 1; background: #16162a; border: 1px solid #3a3a5a; border-radius: 8px;
+    color: #ddd; font-size: 13px; padding: 8px 12px; resize: none; outline: none;
+    font-family: 'Segoe UI', sans-serif; min-height: 38px; max-height: 120px;
+}
+#chat-input:focus { border-color: #5c8ee8; }
+#chat-send {
+    background: #2a4a8a; color: #aacfff; border: 1px solid #3a5fad; border-radius: 8px;
+    padding: 8px 16px; cursor: pointer; font-size: 13px; transition: background .15s; flex-shrink: 0;
+}
+#chat-send:hover:not(:disabled) { background: #3a5fad; }
+#chat-send:disabled { opacity: .4; cursor: default; }
+#chat-no-server {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: #555; font-size: 14px; text-align: center; line-height: 1.8;
+}
+/* ── Chart wrapper in chat ── */
+.chart-wrap {
+    background: #16162a; border-radius: 10px; padding: 12px;
+    max-width: 520px; width: 100%;
+}
+.chart-wrap canvas { max-height: 280px; }
+
+/* ── Markdown tables in chat ── */
+.chat-bubble table {
+    border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px;
+}
+.chat-bubble th {
+    background: #1a1a35; color: #6ab0ff; font-weight: 600;
+    padding: 7px 12px; text-align: left; border-bottom: 2px solid #3a3a6a;
+    white-space: nowrap;
+}
+.chat-bubble td {
+    padding: 6px 12px; border-bottom: 1px solid #1e1e38; color: #ccc;
+}
+.chat-bubble tr:last-child td { border-bottom: none; }
+.chat-bubble tr:hover td { background: rgba(92,142,232,0.07); }
+.chat-bubble td:not(:first-child), .chat-bubble th:not(:first-child) { text-align: right; }
+.chat-bubble ul, .chat-bubble ol { padding-left: 18px; margin: 4px 0; }
+.chat-bubble li { margin: 2px 0; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Controls (always visible) -->
+<div id="controls">
+    <button id="btnPlay"  disabled>▶ Play</button>
+    <button id="btnPause" disabled>⏸</button>
+    <button id="btnReset" disabled>⏮</button>
+    <input  id="timeline" type="range" min="0" max="0" value="0" disabled>
+    <span   id="ts-display">--:--</span>
+    <span   id="day-display" style="font-family:monospace;font-size:13px;font-weight:bold;color:#f9a825;display:none"></span>
+    <span   id="frame-info"></span>
+    <label style="font-size:12px;color:#777">Speed
+        <select id="speedSel">
+            <option value="2000">½×</option>
+            <option value="1000" selected>1×</option>
+            <option value="500">2×</option>
+            <option value="200">5×</option>
+            <option value="100">10×</option>
+        </select>
+    </label>
+    <label id="day-ctrl" style="font-size:12px;color:#777;display:none">Day
+        <select id="daySel">
+            <option value="All">All days</option>
+        </select>
+    </label>
+    <label id="shopper-ctrl" style="font-size:12px;color:#777;display:none">Shopper
+        <select id="shopperSel">
+            <option value="all">All shoppers</option>
+        </select>
+    </label>
+    <label style="font-size:12px;color:#777;margin-left:8px">
+        <input type="file" id="fileIn" accept=".csv" style="display:none">
+        <span id="fileLabel" style="cursor:pointer;color:#5c8ee8;text-decoration:underline">Load CSV</span>
+    </label>
+</div>
+
+<!-- Tab bar -->
+<div id="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('animation')">▶ Animation</button>
+    <button class="tab-btn"        onclick="switchTab('analytics')">📊 Analytics</button>
+    <button class="tab-btn"        onclick="switchTab('chat')">💬 Chat</button>
+</div>
+
+<!-- Animation tab -->
+<div id="tab-animation" class="tab-panel active">
+    <div id="canvas-wrap">
+        <canvas id="c"></canvas>
+        <div id="legend"></div>
+        <div id="in-store"></div>
+    </div>
+    <div id="right">
+        <div id="drop-zone">
+            <div>📹 Load <code>*_video.csv</code></div>
+            <label>Choose file <input type="file" id="fileIn2" accept=".csv"></label>
+            <div style="font-size:12px">or drag &amp; drop here</div>
+        </div>
+        <div id="event-log">
+            <h3>📋 Event Log</h3>
+            <div id="log-entries"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics tab -->
+<div id="tab-analytics" class="tab-panel">
+    <div id="analytics-left">
+        <div style="font-size:12px;color:#6ab0ff;margin-bottom:4px;font-weight:bold">Heat Map — minutes spent per cell</div>
+        <canvas id="heatCanvas"></canvas>
+        <div id="heat-scale">
+            <span>low</span>
+            <div id="heat-gradient"></div>
+            <span>high</span>
+        </div>
+    </div>
+    <div id="analytics-right">
+        <!-- Filter bar -->
+        <div id="filter-bar">
+            <span>FILTER</span>
+            <div class="filter-group">
+                <span class="filter-label">Gender</span>
+                <div class="filter-btns" id="filter-gender">
+                    <button class="filt-btn active" data-val="all">All</button>
+                    <button class="filt-btn" data-val="female">♀ Female</button>
+                    <button class="filt-btn" data-val="male">♂ Male</button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Age</span>
+                <div class="filter-btns" id="filter-age">
+                    <button class="filt-btn active" data-val="all">All</button>
+                    <button class="filt-btn" data-val="young">Young</button>
+                    <button class="filt-btn" data-val="adult">Adult</button>
+                    <button class="filt-btn" data-val="senior">Senior</button>
+                </div>
+            </div>
+            <div class="filter-group" id="filter-day-group" style="display:none">
+                <span class="filter-label">Day</span>
+                <div class="filter-btns" id="filter-day"></div>
+            </div>
+        </div>
+        <div id="kpis"></div>
+        <div class="analytics-section" id="day-comparison-section" style="display:none">
+            <h4>Week at a Glance</h4>
+            <table class="day-cmp-table" id="day-cmp-table">
+                <thead><tr>
+                    <th>Day</th><th>Visitors</th><th>Purchased</th>
+                    <th>Conv%</th><th>Avg stay</th><th>Peak hour</th>
+                </tr></thead>
+                <tbody id="day-cmp-body"></tbody>
+            </table>
+        </div>
+        <div class="analytics-section">
+            <h4>Demographics</h4>
+            <div id="demo-grid"></div>
+        </div>
+        <div class="analytics-section">
+            <h4>Section Popularity</h4>
+            <div id="section-bars"></div>
+        </div>
+        <div class="analytics-section">
+            <h4>Shopping Behavior</h4>
+            <div class="behavior-grid" id="behavior-grid"></div>
+        </div>
+        <div class="analytics-section">
+            <h4>Conversion Funnel</h4>
+            <div id="funnel"></div>
+        </div>
+        <div class="analytics-section">
+            <h4>Hourly Traffic</h4>
+            <div id="hourly-traffic"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat tab -->
+<div id="tab-chat" class="tab-panel" style="padding:0; overflow:hidden;">
+    <div id="chat-no-server">
+        בודק חיבור לשרת…
+    </div>
+    <div id="chat-panel" style="display:none">
+        <div id="chat-info">צ'אט על נתוני: <span id="chat-file-name">week_summary.csv</span> — <span id="chat-row-count">…</span> קונים</div>
+        <div id="chat-messages"></div>
+        <div id="chat-input-row">
+            <textarea id="chat-input" placeholder="שאל שאלה על הנתונים…" rows="1"></textarea>
+            <button id="chat-send">שלח ↑</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  STORE GRID
+// ══════════════════════════════════════════════════
+const ROWS = 8, COLS = 14;
+const GRID = [
+  ['D','D','D','','','','','','','','','','',''],
+  ['','','','','','','Cw','Cf','','','','','U',''],
+  ['H','','T','T','','','C','C','','P','','','St',''],
+  ['H','','T','T','','','','','','P','','','St',''],
+  ['','','','','','','','','','P','','','',''],
+  ['Sk','','T','T','','','','','','P','','','',''],
+  ['Sk','','T','T','','','','','','','','','J',''],
+  ['Sk','','','','','','E','','','','','','J',''],
+];
+
+const CELL_BG = {
+  '':'#1e1e2e', 'D':'#4a148c', 'Cw':'#e65100', 'Cf':'#f9a825', 'E':'#1b5e20',
+  'T':'#0d47a1', 'H':'#880e4f', 'Sk':'#b71c1c',
+  'P':'#33691e', 'U':'#bf360c', 'St':'#004d40', 'J':'#01579b', 'C':'#e65100',
+};
+const CELL_LABEL_COLOR = {
+  '':null, 'D':'#ce93d8', 'Cw':'#ffcc80', 'Cf':'#fff9c4', 'E':'#a5d6a7',
+  'T':'#90caf9', 'H':'#f48fb1', 'Sk':'#ef9a9a',
+  'P':'#c5e1a5', 'U':'#ffab91', 'St':'#80cbc4', 'J':'#81d4fa', 'C':'#ffcc80',
+};
+const LEGEND_NAMES = {
+  '':'Aisle', 'D':'Dressing Room', 'Cw':'Checkout Queue', 'Cf':'Payment Counter', 'E':'Entrance/Exit',
+  'T':'Tops', 'H':'Hats & Bags', 'Sk':'Skirts', 'P':'Pants',
+  'U':'Underwear', 'St':'Stockings', 'J':'Jeans', 'C':'Checkout',
+};
+const SHOPPER_PALETTE = [
+  '#f44336','#e91e63','#9c27b0','#3f51b5','#03a9f4',
+  '#009688','#8bc34a','#ff9800','#ff5722','#00bcd4',
+  '#ffc107','#673ab7','#4caf50','#2196f3','#ffeb3b',
+];
+const PROFILE_LETTER = { quick_buyer:'Q', browser:'B', indecisive:'I', window_shopper:'W', regular:'R' };
+const PROFILE_RING   = { quick_buyer:'#ffd700', browser:'#00e5ff', indecisive:'#ce93d8', window_shopper:'#9e9e9e', regular:'#a5d6a7' };
+const PROFILE_LABEL  = { quick_buyer:'Quick buyer', browser:'Browser', indecisive:'Indecisive', window_shopper:'Window shopper', regular:'Regular' };
+
+// ══════════════════════════════════════════════════
+//  CANVAS SETUP
+// ══════════════════════════════════════════════════
+const canvas     = document.getElementById('c');
+const heatCanvas = document.getElementById('heatCanvas');
+const ctx        = canvas.getContext('2d');
+const hCtx       = heatCanvas.getContext('2d');
+const CELL = 50, PAD = 26;
+
+canvas.width  = heatCanvas.width  = COLS * CELL + PAD;
+canvas.height = heatCanvas.height = ROWS * CELL + PAD;
+document.getElementById('canvas-wrap').style.width = canvas.width + 'px';
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let allRows         = [];
+let timestamps      = [];   // display time (HH:MM) per frame
+let frameDays       = [];   // day name per frame (parallel to timestamps)
+let frameEvents     = [];
+let shoppers        = {};
+let prevPos         = {};
+let shopperProfiles = {};
+let currentFrame    = 0;
+let playing         = false;
+let raf             = null;
+let frameTimer      = null;
+let logBuf          = [];
+let filterGender      = 'all';
+let filterAge         = 'all';
+let selectedDay       = 'All';
+let selectedShopperId = 'all';
+let dayList           = [];
+
+const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+// ══════════════════════════════════════════════════
+//  CSV PARSING
+// ══════════════════════════════════════════════════
+function parseLine(line) {
+    const parts = [];
+    let cur = '', inQ = false;
+    for (const ch of line) {
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { parts.push(cur.trim()); cur = ''; }
+        else cur += ch;
+    }
+    parts.push(cur.trim());
+    return parts;
+}
+
+function loadCSVText(text) {
+    const lines = text.trim().split(/\r?\n/);
+    allRows = [];
+    const header = parseLine(lines[0]);
+    const hasDay = header[0] === 'day';
+    const o = hasDay ? 1 : 0;   // column offset
+    for (let i = 1; i < lines.length; i++) {
+        const p = parseLine(lines[i]);
+        if (p.length < 5 + o) continue;
+        allRows.push({
+            day:        hasDay ? p[0] : null,
+            timestamp:  p[o],
+            shopper_id: p[o + 1],
+            action:     p[o + 2],
+            row:        p[o + 3],
+            col:        parseInt(p[o + 4]),
+            details:    p.slice(o + 5).join(',').replace(/^"|"$/g, ''),
+        });
+    }
+
+    // Detect days and populate selector
+    dayList = [...new Set(allRows.map(r => r.day).filter(Boolean))];
+    selectedDay = 'All';
+    const dayLabel = document.getElementById('day-ctrl');
+    const daySel   = document.getElementById('daySel');
+    if (dayList.length > 1) {
+        daySel.innerHTML = '<option value="All">All days</option>' +
+            dayList.map(d => `<option value="${d}">${d}</option>`).join('');
+        daySel.value = 'All';
+        dayLabel.style.display = '';
+        // also populate analytics day filter
+        const fdg = document.getElementById('filter-day-group');
+        document.getElementById('filter-day').innerHTML =
+            ['All', ...dayList].map((d, i) =>
+                `<button class="filt-btn${i===0?' active':''}" data-val="${d}">${d==='All'?'All':d.slice(0,3)}</button>`
+            ).join('');
+        fdg.style.display = '';
+    } else {
+        dayLabel.style.display = 'none';
+        document.getElementById('filter-day-group').style.display = 'none';
+    }
+
+    rebuildShopperList();
+    rebuildAnimation();
+    enableControls();
+    buildLegend();
+    renderStatic(ctx);
+}
+
+function getActiveRows() {
+    let rows = selectedDay === 'All' ? allRows : allRows.filter(r => r.day === selectedDay);
+    if (selectedShopperId !== 'all') rows = rows.filter(r => r.shopper_id === selectedShopperId);
+    return rows;
+}
+
+function rebuildShopperList() {
+    const rows = selectedDay === 'All' ? allRows : allRows.filter(r => r.day === selectedDay);
+    const ids = [...new Set(rows.map(r => r.shopper_id))].sort((a, b) => +a - +b);
+    const sel = document.getElementById('shopperSel');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="all">All shoppers</option>' +
+        ids.map(id => `<option value="${id}">#${id}</option>`).join('');
+    if (ids.includes(prev)) { sel.value = prev; }
+    else { sel.value = 'all'; selectedShopperId = 'all'; }
+    document.getElementById('shopper-ctrl').style.display = '';
+}
+
+function rebuildAnimation() {
+    const rows = getActiveRows();
+    const multiDay = dayList.length > 1 && selectedDay === 'All';
+    const tsMap = new Map();
+    for (const r of rows) {
+        // Use "Day|HH:MM" composite key in multi-day mode to avoid collisions
+        const key = multiDay ? (r.day + '|' + r.timestamp) : r.timestamp;
+        if (!tsMap.has(key)) tsMap.set(key, []);
+        tsMap.get(key).push(r);
+    }
+    const sortedKeys = [...tsMap.keys()].sort((a, b) => {
+        if (multiDay) {
+            const [dA, tA] = a.split('|');
+            const [dB, tB] = b.split('|');
+            const di = DAY_ORDER.indexOf(dA) - DAY_ORDER.indexOf(dB);
+            return di !== 0 ? di : tA.localeCompare(tB);
+        }
+        return a.localeCompare(b);
+    });
+    timestamps  = sortedKeys.map(k => multiDay ? k.split('|')[1] : k);
+    frameDays   = sortedKeys.map(k => multiDay ? k.split('|')[0] : (rows[0]?.day || null));
+    frameEvents = sortedKeys.map(k => tsMap.get(k));
+    reset();
+}
+
+// ══════════════════════════════════════════════════
+//  COORD HELPERS
+// ══════════════════════════════════════════════════
+function csvToIdx(rowChar, colNum) { return { ri: rowChar.charCodeAt(0) - 97, ci: 14 - colNum }; }
+function idxToXY(ri, ci) { return { x: PAD + ci * CELL + CELL / 2, y: PAD + ri * CELL + CELL / 2 }; }
+function shopperColor(id) { return SHOPPER_PALETTE[(parseInt(id) - 1) % SHOPPER_PALETTE.length]; }
+
+// ══════════════════════════════════════════════════
+//  GRID RENDERER (shared by both canvases)
+// ══════════════════════════════════════════════════
+function renderStatic(c) {
+    c.clearRect(0, 0, COLS * CELL + PAD, ROWS * CELL + PAD);
+    c.fillStyle = '#444';
+    c.font = '10px monospace';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    for (let r = 0; r < ROWS; r++)
+        c.fillText(String.fromCharCode(97 + r), PAD / 2, PAD + r * CELL + CELL / 2);
+    for (let col = 0; col < COLS; col++)
+        c.fillText(String(14 - col), PAD + col * CELL + CELL / 2, PAD / 2);
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let col = 0; col < COLS; col++) {
+            const cell = GRID[r][col];
+            const x = PAD + col * CELL, y = PAD + r * CELL;
+            c.fillStyle = CELL_BG[cell] || '#1e1e2e';
+            rr(c, x + 1, y + 1, CELL - 2, CELL - 2, 4); c.fill();
+            const lc = CELL_LABEL_COLOR[cell];
+            if (lc && cell) {
+                c.fillStyle = lc;
+                c.font = cell.length > 2 ? '9px sans-serif' : '10px sans-serif';
+                c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.fillText(cell, x + CELL / 2, y + CELL / 2);
+            }
+        }
+    }
+}
+
+function rr(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+    c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+    c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+// ══════════════════════════════════════════════════
+//  ANIMATION RENDERING
+// ══════════════════════════════════════════════════
+function renderShoppers(progress) {
+    renderStatic(ctx);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+    for (const [id, cur] of Object.entries(shoppers)) {
+        const prev = prevPos[id] || cur;
+        const ri = prev.ri + (cur.ri - prev.ri) * progress;
+        const ci = prev.ci + (cur.ci - prev.ci) * progress;
+        const { x, y } = idxToXY(ri, ci);
+        const col = shopperColor(id);
+        const prof = shopperProfiles[id];
+        const ringCol = PROFILE_RING[prof] || '#ffffff';
+
+        // Profile ring
+        ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2);
+        ctx.strokeStyle = ringCol; ctx.lineWidth = 2.5; ctx.stroke();
+
+        // Glow + fill
+        ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2);
+        ctx.fillStyle = col; ctx.fill(); ctx.restore();
+
+        // ID + profile letter
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText(id, x, y + 2);
+        if (prof) {
+            ctx.fillStyle = ringCol; ctx.font = 'bold 7px sans-serif';
+            ctx.fillText(PROFILE_LETTER[prof] || '?', x, y - 5);
+        }
+
+        // Item count badge
+        if (cur.items > 0) {
+            const bx = x + 10, by = y - 10;
+            ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff9800'; ctx.fill();
+            ctx.strokeStyle = '#12121f'; ctx.lineWidth = 1.5; ctx.stroke();
+            ctx.fillStyle = '#000'; ctx.font = 'bold 8px sans-serif';
+            ctx.fillText(String(cur.items), bx, by);
+        }
+    }
+}
+
+// ══════════════════════════════════════════════════
+//  FRAME LOGIC
+// ══════════════════════════════════════════════════
+function applyFrame(fi, silent) {
+    const events = frameEvents[fi] || [];
+    if (!silent) {
+        // Clear store between days so previous-day shoppers don't bleed into the next day
+        const prevDay = frameDays[fi - 1] || null;
+        const curDay  = frameDays[fi]     || null;
+        if (prevDay && curDay && prevDay !== curDay) {
+            shoppers = {}; prevPos = {}; shopperProfiles = {};
+        }
+        prevPos = {};
+        for (const [id, s] of Object.entries(shoppers)) prevPos[id] = { ri: s.ri, ci: s.ci };
+    }
+
+    const latest = new Map();
+    for (const ev of events) latest.set(ev.shopper_id, ev);
+
+    for (const [id, ev] of latest) {
+        const { ri, ci } = csvToIdx(ev.row, ev.col);
+        if (ev.action === 'EXITED') {
+            delete shoppers[id]; delete prevPos[id];
+        } else {
+            if (!shoppers[id]) prevPos[id] = { ri, ci };
+            shoppers[id] = { ri, ci, action: ev.action, details: ev.details, items: shoppers[id]?.items || 0 };
+            if (ev.action === 'ENTERED') {
+                const m = ev.details.match(/profile=([a-z_]+)/);
+                if (m) shopperProfiles[id] = m[1];
+            }
+        }
+    }
+
+    for (const ev of events) {
+        const id = ev.shopper_id;
+        if (!shoppers[id]) continue;
+        if (ev.action === 'PICKED_ITEM') shoppers[id].items++;
+        else if (ev.action === 'LEFT_FITTING') {
+            const m = ev.details.match(/keeping=(\d+)/);
+            shoppers[id].items = m ? parseInt(m[1]) : 0;
+        } else if (ev.action === 'ABANDONED_QUEUE' || ev.action === 'CHECKOUT_COMPLETED') {
+            shoppers[id].items = 0;
+        }
+    }
+
+    if (!silent) {
+        for (const ev of [...events].reverse()) logBuf.unshift(ev);
+        if (logBuf.length > 120) logBuf = logBuf.slice(0, 120);
+        flushLog();
+        document.getElementById('ts-display').textContent = timestamps[fi] || '--:--';
+        document.getElementById('frame-info').textContent = `${fi + 1} / ${timestamps.length}`;
+        document.getElementById('timeline').value = fi;
+        // Show current day when watching a multi-day file with "All days" selected
+        const dayDisp = document.getElementById('day-display');
+        const curDay  = frameDays[fi] || '';
+        if (dayList.length > 1 && selectedDay === 'All' && curDay) {
+            dayDisp.textContent = curDay;
+            dayDisp.style.display = '';
+        } else {
+            dayDisp.style.display = 'none';
+        }
+        document.getElementById('in-store').textContent = `Shoppers in store: ${Object.keys(shoppers).length}`;
+    }
+}
+
+function flushLog() {
+    document.getElementById('log-entries').innerHTML = logBuf.map(ev => {
+        const col = shopperColor(ev.shopper_id);
+        return `<div class="ev">
+            <span class="ts">${ev.timestamp}</span>
+            <span class="sid" style="color:${col}"> #${ev.shopper_id}</span>
+            <span class="act"> ${ev.action}</span>
+            ${ev.details ? `<span class="det">${ev.details}</span>` : ''}
+        </div>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  PLAYBACK
+// ══════════════════════════════════════════════════
+function playFrame(fi) {
+    applyFrame(fi, false);
+    const delay = parseInt(document.getElementById('speedSel').value);
+    const start = performance.now();
+    cancelAnimationFrame(raf);
+    function loop(now) {
+        const t = Math.min((now - start) / delay, 1);
+        renderShoppers(t);
+        if (t < 1) raf = requestAnimationFrame(loop);
+        else if (playing) {
+            currentFrame++;
+            if (currentFrame >= timestamps.length) { pause(); return; }
+            clearTimeout(frameTimer);
+            frameTimer = setTimeout(() => playFrame(currentFrame), 0);
+        }
+    }
+    raf = requestAnimationFrame(loop);
+}
+
+function play() {
+    if (currentFrame >= timestamps.length - 1) fullReset();
+    playing = true;
+    document.getElementById('btnPlay').disabled  = true;
+    document.getElementById('btnPause').disabled = false;
+    playFrame(currentFrame);
+}
+function pause() {
+    playing = false; clearTimeout(frameTimer); cancelAnimationFrame(raf);
+    document.getElementById('btnPlay').disabled  = false;
+    document.getElementById('btnPause').disabled = true;
+}
+function reset() {
+    pause();
+    shoppers = {}; prevPos = {}; shopperProfiles = {}; logBuf = []; currentFrame = 0;
+    document.getElementById('log-entries').innerHTML = '';
+    document.getElementById('ts-display').textContent = timestamps[0] || '--:--';
+    document.getElementById('day-display').style.display = 'none';
+    document.getElementById('frame-info').textContent = `0 / ${timestamps.length}`;
+    document.getElementById('timeline').value = 0;
+    document.getElementById('in-store').textContent = '';
+}
+function fullReset() { reset(); renderStatic(ctx); }
+
+function enableControls() {
+    document.getElementById('timeline').max      = timestamps.length - 1;
+    document.getElementById('timeline').disabled = false;
+    document.getElementById('btnPlay').disabled  = false;
+    document.getElementById('btnPause').disabled = true;
+    document.getElementById('btnReset').disabled = false;
+    document.getElementById('drop-zone').style.display  = 'none';
+    document.getElementById('event-log').style.display  = 'flex';
+    document.getElementById('event-log').style.flexDirection = 'column';
+}
+
+// ══════════════════════════════════════════════════
+//  LEGEND
+// ══════════════════════════════════════════════════
+function buildLegend() {
+    const seen = [...new Set(GRID.flat())];
+    const cellHtml = seen.map(t => `
+        <div class="leg"><div class="leg-dot" style="background:${CELL_BG[t]}"></div>${LEGEND_NAMES[t] || t}</div>`).join('');
+    const profHtml = Object.entries(PROFILE_LABEL).map(([k, label]) => `
+        <div class="leg">
+            <div class="leg-dot" style="background:transparent;border:2.5px solid ${PROFILE_RING[k]}"></div>
+            <span style="color:${PROFILE_RING[k]}">${PROFILE_LETTER[k]}</span>&nbsp;${label}
+        </div>`).join('');
+    document.getElementById('legend').innerHTML =
+        cellHtml +
+        '<div class="leg" style="width:100%;margin-top:4px;color:#555;font-size:10px">── profiles ──</div>' +
+        profHtml;
+}
+
+// ══════════════════════════════════════════════════
+//  ANALYTICS
+// ══════════════════════════════════════════════════
+function tsDiff(ts1, ts2) {
+    const [h1, m1] = ts1.split(':').map(Number);
+    const [h2, m2] = ts2.split(':').map(Number);
+    return (h2 * 60 + m2) - (h1 * 60 + m1);
+}
+function avg(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
+function pct(n, d) { return d ? Math.round(n / d * 100) + '%' : '—'; }
+function fmt(n) { return isNaN(n) || n === 0 ? '—' : Math.round(n) + 'm'; }
+
+function computeAnalytics() {
+    const cellTime = Array.from({length: ROWS}, () => new Array(COLS).fill(0));
+    const shopMap  = {};
+
+    const sourceRows = getActiveRows();
+
+    // First pass: collect gender/age metadata per shopper for filtering
+    // Key is day+id to avoid cross-day collision
+    const shopMeta = {};
+    for (const row of sourceRows) {
+        if (row.action === 'ENTERED') {
+            const gm = row.details.match(/gender[=~](\w+)/);
+            const am = row.details.match(/age[=~](\w+)/);
+            const key = (row.day || '') + '_' + row.shopper_id;
+            shopMeta[key] = {
+                gender: gm ? gm[1] : null,
+                age:    am ? am[1] : null,
+            };
+        }
+    }
+
+    // Build allowed-shopper set based on active filters
+    const allowedKeys = new Set(
+        Object.entries(shopMeta)
+            .filter(([, m]) =>
+                (filterGender === 'all' || m.gender === filterGender) &&
+                (filterAge    === 'all' || m.age    === filterAge))
+            .map(([k]) => k)
+    );
+
+    for (const row of sourceRows) {
+        const id  = row.shopper_id;
+        const key = (row.day || '') + '_' + id;
+        if (!allowedKeys.has(key)) continue;
+
+        const { ri, ci } = csvToIdx(row.row, row.col);
+        if (ri >= 0 && ri < ROWS && ci >= 0 && ci < COLS) cellTime[ri][ci]++;
+
+        if (!shopMap[key]) shopMap[key] = {
+            profile: null, gender: null, age: null,
+            entryTs: null, exitTs: null,
+            purchased: false, itemsBought: 0,
+            queueTs: null, queueWaits: [], joinedQueue: false,
+            fittingTs: null, fittingMins: 0,
+            fittingWaitTs: null, fittingWaitMins: 0,
+            leftInRoom: 0, pickedUp: 0, putBack: 0,
+            sectionVisits: [], usedFitting: false,
+            waitedForFitting: false, gaveUpFitting: false,
+        };
+        const d = shopMap[key];
+
+        switch (row.action) {
+            case 'ENTERED':
+                d.entryTs = row.timestamp;
+                const pm = row.details.match(/profile=([a-z_]+)/);
+                if (pm) d.profile = pm[1];
+                const gm2 = row.details.match(/gender[=~](\w+)/);
+                if (gm2) d.gender = gm2[1];
+                const am2 = row.details.match(/age[=~](\w+)/);
+                if (am2) d.age = am2[1];
+                break;
+            case 'EXITED':    d.exitTs = row.timestamp; break;
+            case 'PURCHASED':
+            case 'CHECKOUT_COMPLETED':
+                d.purchased = true;
+                const nm = row.details.match(/(\d+) item/);
+                if (nm) d.itemsBought = parseInt(nm[1]);
+                break;
+            case 'JOINED_QUEUE':    d.queueTs = row.timestamp; d.joinedQueue = true; break;
+            case 'REACHED_COUNTER':
+            case 'ABANDONED_QUEUE':
+                if (d.queueTs) { d.queueWaits.push(tsDiff(d.queueTs, row.timestamp)); d.queueTs = null; }
+                break;
+            case 'ARRIVED_FITTING_AREA':
+                d.fittingWaitTs = row.timestamp;
+                break;
+            case 'WAITING_FITTING':
+                d.waitedForFitting = true;
+                break;
+            case 'ENTERED_FITTING':
+                d.fittingTs = row.timestamp;
+                d.usedFitting = true;
+                if (d.fittingWaitTs) { d.fittingWaitMins += tsDiff(d.fittingWaitTs, row.timestamp); d.fittingWaitTs = null; }
+                break;
+            case 'GAVE_UP_FITTING':
+                d.gaveUpFitting = true;
+                d.waitedForFitting = true;
+                if (d.fittingWaitTs) { d.fittingWaitMins += tsDiff(d.fittingWaitTs, row.timestamp); d.fittingWaitTs = null; }
+                break;
+            case 'LEFT_FITTING':
+                if (d.fittingTs) { d.fittingMins += tsDiff(d.fittingTs, row.timestamp); d.fittingTs = null; }
+                const lm = row.details.match(/left_in_room=(\d+)/);
+                if (lm) d.leftInRoom += parseInt(lm[1]);
+                break;
+            case 'ARRIVED_SECTION': d.sectionVisits.push(row.details); break;
+            case 'PICKED_ITEM':     d.pickedUp++; break;
+            case 'PUT_BACK_SHELF':  d.putBack++; break;
+        }
+    }
+
+    const list = Object.values(shopMap);
+    const n    = list.length;
+    const purchasers = list.filter(s => s.purchased);
+    const storeTimes = list.filter(s => s.entryTs && s.exitTs).map(s => tsDiff(s.entryTs, s.exitTs));
+    const allQueueWaits = list.flatMap(s => s.queueWaits);
+    const fittingUsers  = list.filter(s => s.usedFitting);
+
+    // Section counts
+    const sectionCount = {};
+    for (const s of list) for (const sec of s.sectionVisits)
+        sectionCount[sec] = (sectionCount[sec] || 0) + 1;
+
+    // Demographics breakdown
+    function demoGroup(key) {
+        const map = {};
+        for (const s of list) {
+            const k = s[key] || 'unknown';
+            if (!map[k]) map[k] = { count: 0, purchased: 0, items: 0, times: [] };
+            map[k].count++;
+            if (s.purchased) { map[k].purchased++; map[k].items += s.itemsBought; }
+            if (s.entryTs && s.exitTs) map[k].times.push(tsDiff(s.entryTs, s.exitTs));
+        }
+        return map;
+    }
+    const byGender = demoGroup('gender');
+    const byAge    = demoGroup('age');
+
+    const queueAbandons    = list.filter(s => s.queueWaits.length && !s.purchased).length;
+    const fittingWaiters   = list.filter(s => s.waitedForFitting);
+    const fittingGaveUp    = list.filter(s => s.gaveUpFitting);
+    const allFittingWaits  = fittingWaiters.map(s => s.fittingWaitMins);
+
+    // Funnel
+    const browsedCount     = list.filter(s => s.sectionVisits.length > 0).length;
+    const queueJoinedCount = list.filter(s => s.joinedQueue).length;
+
+    // Hourly arrivals
+    const hourlyArrivals = {};
+    for (const s of list) {
+        if (!s.entryTs) continue;
+        const h = parseInt(s.entryTs.split(':')[0]);
+        hourlyArrivals[h] = (hourlyArrivals[h] || 0) + 1;
+    }
+
+    return {
+        n, purchasers: purchasers.length,
+        avgStoreTime: avg(storeTimes),
+        avgQueueWait: avg(allQueueWaits),
+        queueAbandons,
+        avgFittingTime: avg(fittingUsers.map(s => s.fittingMins)),
+        fittingUserCount: fittingUsers.length,
+        fittingWaiterCount: fittingWaiters.length,
+        fittingGaveUpCount: fittingGaveUp.length,
+        avgFittingWait: avg(allFittingWaits),
+        browsedCount, queueJoinedCount, hourlyArrivals,
+        byGender, byAge,
+        sectionCount, cellTime,
+    };
+}
+
+// Heat map colour — full jet spectrum: blue → cyan → green → yellow → red
+function heatColor(t, maxT) {
+    const r = t / maxT;
+    const hue = Math.round(240 - r * 240);
+    return `hsla(${hue},100%,${Math.round(38 + r * 27)}%,0.95)`;
+}
+
+function renderHeatMap(cellTime) {
+    hCtx.clearRect(0, 0, COLS * CELL + PAD, ROWS * CELL + PAD);
+
+    // Axis labels
+    hCtx.fillStyle = '#666';
+    hCtx.font = '10px monospace';
+    hCtx.textAlign = 'center';
+    hCtx.textBaseline = 'middle';
+    for (let r = 0; r < ROWS; r++)
+        hCtx.fillText(String.fromCharCode(97 + r), PAD / 2, PAD + r * CELL + CELL / 2);
+    for (let col = 0; col < COLS; col++)
+        hCtx.fillText(String(14 - col), PAD + col * CELL + CELL / 2, PAD / 2);
+
+    // Gray base for all cells (static / no-traffic areas)
+    hCtx.fillStyle = '#4a4a5a';
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const x = PAD + c * CELL, y = PAD + r * CELL;
+            rr(hCtx, x + 1, y + 1, CELL - 2, CELL - 2, 4);
+            hCtx.fill();
+        }
+    }
+
+    const flat = cellTime.flat().filter(v => v > 0);
+    if (!flat.length) return;
+    const maxT = Math.max(...flat);
+
+    // Smooth heatmap — only on aisle cells (GRID[r][c] === ''), fixtures stay gray
+    const off = document.createElement('canvas');
+    off.width = heatCanvas.width;
+    off.height = heatCanvas.height;
+    const oc = off.getContext('2d');
+    oc.filter = 'blur(28px)';
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (GRID[r][c] !== '') continue;
+            const t = cellTime[r][c];
+            if (!t) continue;
+            const x = PAD + c * CELL, y = PAD + r * CELL;
+            oc.fillStyle = heatColor(t, maxT);
+            oc.fillRect(x, y, CELL, CELL);
+        }
+    }
+    hCtx.drawImage(off, 0, 0);
+
+    // Count labels sharp on top (aisles only)
+    hCtx.textAlign = 'center'; hCtx.textBaseline = 'middle';
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (GRID[r][c] !== '') continue;
+            const t = cellTime[r][c];
+            if (!t) continue;
+            const x = PAD + c * CELL, y = PAD + r * CELL;
+            hCtx.fillStyle = t > maxT * 0.4 ? '#fff' : '#ddd';
+            hCtx.font = '9px monospace';
+            hCtx.fillText(t, x + CELL / 2, y + CELL / 2);
+        }
+    }
+
+    // Fixture overlay — draw section cells with their real colours and labels on top
+    hCtx.textAlign = 'center'; hCtx.textBaseline = 'middle';
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const cell = GRID[r][c];
+            if (cell === '') continue;
+            const x = PAD + c * CELL, y = PAD + r * CELL;
+            hCtx.fillStyle = CELL_BG[cell] || '#1e1e2e';
+            rr(hCtx, x + 1, y + 1, CELL - 2, CELL - 2, 4); hCtx.fill();
+            const lc = CELL_LABEL_COLOR[cell];
+            if (lc && cell) {
+                hCtx.fillStyle = lc;
+                hCtx.font = cell.length > 2 ? '9px sans-serif' : '10px sans-serif';
+                hCtx.fillText(cell, x + CELL / 2, y + CELL / 2);
+            }
+        }
+    }
+}
+
+function renderStats(a) {
+    const kpiData = [
+        { val: a.n,               cls: '',      label: 'Total shoppers' },
+        { val: `${a.purchasers} (${pct(a.purchasers, a.n)})`, cls: 'green', label: 'Purchased' },
+        { val: `${a.n - a.purchasers} (${pct(a.n - a.purchasers, a.n)})`, cls: 'red', label: 'Left empty-handed' },
+        { val: fmt(a.avgStoreTime), cls: '',     label: 'Avg time in store' },
+        { val: fmt(a.avgQueueWait), cls: 'amber', label: 'Avg queue wait' },
+        { val: a.queueAbandons,    cls: 'red',  label: 'Abandoned queue' },
+    ];
+    document.getElementById('kpis').innerHTML = kpiData.map(k => `
+        <div class="kpi">
+            <div class="kpi-val ${k.cls}">${k.val}</div>
+            <div class="kpi-label">${k.label}</div>
+        </div>`).join('');
+
+    // Demographics
+    const GENDER_META = {
+        female: { label: 'Female', icon: '♀', color: '#f48fb1' },
+        male:   { label: 'Male',   icon: '♂', color: '#90caf9' },
+    };
+    const AGE_META = {
+        young:  { label: 'Young (18–35)',  icon: '●', color: '#a5d6a7' },
+        adult:  { label: 'Adult (36–55)',  icon: '◆', color: '#ffcc80' },
+        senior: { label: 'Senior (56+)',   icon: '▲', color: '#ce93d8' },
+    };
+    function demoRows(map, metaMap) {
+        return Object.entries(map)
+            .sort((a, b) => b[1].count - a[1].count)
+            .map(([k, d]) => {
+                const m = metaMap[k] || { label: k, icon: '·', color: '#888' };
+                const barW = Math.round(d.purchased / Math.max(d.count, 1) * 100);
+                const avgT = d.times.length ? fmt(avg(d.times)) : '—';
+                const avgI = d.purchased ? (d.items / d.purchased).toFixed(1) : '—';
+                return `<div class="demo-row">
+                    <span class="demo-icon" style="color:${m.color}">${m.icon}</span>
+                    <span class="demo-label">${m.label}</span>
+                    <span class="demo-count">${d.count}</span>
+                    <div class="demo-bar-wrap"><div class="demo-bar" style="width:${barW}%;background:${m.color}"></div></div>
+                    <span class="demo-pct">${pct(d.purchased, d.count)}</span>
+                    <span class="demo-time">${avgT}</span>
+                    <span class="demo-time" style="color:#6ab0ff">${avgI}i</span>
+                </div>`;
+            }).join('');
+    }
+    document.getElementById('demo-grid').innerHTML =
+        '<div class="demo-sep">Gender</div>' + demoRows(a.byGender, GENDER_META) +
+        '<div class="demo-sep" style="margin-top:8px">Age</div>' + demoRows(a.byAge, AGE_META);
+
+    // Section bars
+    const sorted = Object.entries(a.sectionCount).sort((a, b) => b[1] - a[1]);
+    const maxSec = sorted[0]?.[1] || 1;
+    document.getElementById('section-bars').innerHTML = sorted.map(([sec, count]) => `
+        <div class="sec-row">
+            <div class="sec-name">${sec}</div>
+            <div class="sec-bar-wrap"><div class="sec-bar" style="width:${Math.round(count/maxSec*100)}%"></div></div>
+            <div class="sec-count">${count}</div>
+        </div>`).join('');
+
+    // Fitting room & queue behavior
+    const beh = [
+        { val: `${a.fittingUserCount} (${pct(a.fittingUserCount, a.n)})`, label: 'Used fitting room' },
+        { val: fmt(a.avgFittingTime),                                      label: 'Avg fitting room time' },
+        { val: `${a.fittingWaiterCount} (${pct(a.fittingWaiterCount, a.n)})`, label: 'Waited for fitting room' },
+        { val: fmt(a.avgFittingWait),                                      label: 'Avg fitting wait time' },
+        { val: `${a.fittingGaveUpCount} (${pct(a.fittingGaveUpCount, a.n)})`, label: 'Gave up on fitting room' },
+        { val: a.queueAbandons,                                            label: 'Abandoned queue' },
+    ];
+    document.getElementById('behavior-grid').innerHTML = beh.map(b => `
+        <div class="beh-item">
+            <div class="beh-val">${b.val}</div>
+            <div class="beh-label">${b.label}</div>
+        </div>`).join('');
+
+    // Conversion funnel
+    const funnelStages = [
+        { label: 'Entered store',      count: a.n,                color: '#5c8ee8' },
+        { label: 'Browsed sections',   count: a.browsedCount,     color: '#26a69a' },
+        { label: 'Used fitting room',  count: a.fittingUserCount, color: '#ce93d8' },
+        { label: 'Joined queue',       count: a.queueJoinedCount, color: '#ffcc80' },
+        { label: 'Completed purchase', count: a.purchasers,       color: '#a5d6a7' },
+    ];
+    document.getElementById('funnel').innerHTML = funnelStages.map((s, i) => {
+        const barW = Math.round(s.count / (a.n || 1) * 100);
+        const prev = i > 0 ? funnelStages[i - 1].count : s.count;
+        const lost = prev - s.count;
+        const lostPct = prev > 0 ? Math.round(lost / prev * 100) : 0;
+        const dropHtml = i > 0
+            ? `<div class="funnel-drop"><div class="funnel-drop-bar"></div><span class="funnel-drop-val" style="color:${lost>0?'#ef9a9a':'#555'}">▼ ${lostPct}% dropped (${lost})</span></div>`
+            : '';
+        return `${dropHtml}<div class="funnel-row">
+            <div class="funnel-label">${s.label}</div>
+            <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${barW}%;background:${s.color}"></div></div>
+            <div class="funnel-count">${s.count}</div>
+            <div class="funnel-pct">${pct(s.count, a.n)}</div>
+        </div>`;
+    }).join('');
+
+    // Hourly traffic
+    const hours = Object.keys(a.hourlyArrivals).map(Number).sort((x, y) => x - y);
+    if (hours.length) {
+        const maxH = Math.max(...hours.map(h => a.hourlyArrivals[h]));
+        const peakH = hours.find(h => a.hourlyArrivals[h] === maxH);
+        document.getElementById('hourly-traffic').innerHTML = hours.map(h => {
+            const cnt = a.hourlyArrivals[h];
+            const barW = Math.round(cnt / maxH * 100);
+            const isPeak = h === peakH;
+            return `<div class="traffic-row">
+                <div class="traffic-hour">${String(h).padStart(2,'0')}:00</div>
+                <div class="traffic-bar-wrap"><div class="traffic-bar" style="width:${barW}%;${isPeak?'background:#f9a825':''}"></div></div>
+                <div class="traffic-count">${cnt}</div>
+                ${isPeak ? '<span class="traffic-peak">peak</span>' : ''}
+            </div>`;
+        }).join('');
+    }
+}
+
+// ── Day comparison table ─────────────────────────────────────────────────
+const DAY_COLORS = {
+    Monday:'#5c8ee8', Tuesday:'#26a69a', Wednesday:'#ce93d8',
+    Thursday:'#ffcc80', Friday:'#ef9a9a', Saturday:'#a5d6a7', Sunday:'#f48fb1',
+};
+
+function renderDayComparison() {
+    if (!dayList.length) return;
+    document.getElementById('day-comparison-section').style.display = '';
+
+    const rows = [];
+    for (const day of dayList) {
+        const dayRows = allRows.filter(r => r.day === day);
+        const visitors  = new Set();
+        const purchasers = new Set();
+        const entryTs   = {};
+        const exitTs    = {};
+        const hourCnt   = {};
+
+        for (const r of dayRows) {
+            const k = r.shopper_id;
+            if (r.action === 'ENTERED') {
+                visitors.add(k); entryTs[k] = r.timestamp;
+                const h = parseInt(r.timestamp.split(':')[0]);
+                hourCnt[h] = (hourCnt[h] || 0) + 1;
+            }
+            if (r.action === 'CHECKOUT_COMPLETED' || r.action === 'PURCHASED') purchasers.add(k);
+            if (r.action === 'EXITED') exitTs[k] = r.timestamp;
+        }
+
+        const dwells = [];
+        for (const k of visitors) {
+            if (entryTs[k] && exitTs[k]) dwells.push(tsDiff(entryTs[k], exitTs[k]));
+        }
+
+        const maxH = Math.max(0, ...Object.values(hourCnt));
+        const peakH = Object.keys(hourCnt).find(h => hourCnt[h] === maxH);
+        const peakStr = peakH ? `${String(peakH).padStart(2,'0')}:00` : '—';
+
+        rows.push({
+            day, visitors: visitors.size, purchasers: purchasers.size,
+            conv: pct(purchasers.size, visitors.size),
+            avgStay: fmt(avg(dwells)), peakH: peakStr,
+        });
+    }
+
+    document.getElementById('day-cmp-body').innerHTML = rows.map(r => `
+        <tr class="${r.day === selectedDay ? 'active-day' : ''}">
+            <td><span class="day-dot" style="background:${DAY_COLORS[r.day]||'#888'}"></span>${r.day}</td>
+            <td>${r.visitors}</td>
+            <td>${r.purchasers}</td>
+            <td>${r.conv}</td>
+            <td>${r.avgStay}</td>
+            <td>${r.peakH}</td>
+        </tr>`).join('');
+}
+
+function renderAnalytics() {
+    if (!allRows.length) return;
+    const a = computeAnalytics();
+    renderHeatMap(a.cellTime);
+    renderStats(a);
+    renderDayComparison();
+}
+
+// ══════════════════════════════════════════════════
+//  TAB SWITCHING
+// ══════════════════════════════════════════════════
+function switchTab(tab) {
+    ['animation', 'analytics', 'chat'].forEach(t =>
+        document.getElementById('tab-' + t).classList.toggle('active', t === tab)
+    );
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', ['animation','analytics','chat'][i] === tab);
+    });
+    if (tab === 'analytics') renderAnalytics();
+}
+
+// ══════════════════════════════════════════════════
+//  EVENTS
+// ══════════════════════════════════════════════════
+function attachFileInput(el) {
+    el.addEventListener('change', e => {
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => loadCSVText(ev.target.result);
+        r.readAsText(f, 'utf-8');
+    });
+}
+attachFileInput(document.getElementById('fileIn'));
+attachFileInput(document.getElementById('fileIn2'));
+
+// Filter buttons
+function setupFilterGroup(groupId, stateKey) {
+    document.getElementById(groupId).addEventListener('click', e => {
+        const btn = e.target.closest('.filt-btn');
+        if (!btn) return;
+        document.querySelectorAll(`#${groupId} .filt-btn`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (stateKey === 'gender') filterGender = btn.dataset.val;
+        else if (stateKey === 'age') filterAge  = btn.dataset.val;
+        else if (stateKey === 'day') {
+            selectedDay = btn.dataset.val;
+            // sync animation day selector
+            document.getElementById('daySel').value = selectedDay;
+            rebuildShopperList();
+            rebuildAnimation();
+        }
+        renderAnalytics();
+    });
+}
+setupFilterGroup('filter-gender', 'gender');
+setupFilterGroup('filter-age',    'age');
+setupFilterGroup('filter-day',    'day');
+
+// Animation day selector
+document.getElementById('daySel').addEventListener('change', e => {
+    selectedDay = e.target.value;
+    // sync analytics filter buttons
+    document.querySelectorAll('#filter-day .filt-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.val === selectedDay);
+    });
+    rebuildShopperList();
+    rebuildAnimation();
+    if (document.getElementById('tab-analytics').classList.contains('active')) renderAnalytics();
+});
+
+// Animation shopper selector
+document.getElementById('shopperSel').addEventListener('change', e => {
+    selectedShopperId = e.target.value;
+    rebuildAnimation();
+});
+
+document.getElementById('fileLabel').addEventListener('click', () =>
+    document.getElementById('fileIn').click());
+
+document.getElementById('btnPlay').addEventListener('click',  play);
+document.getElementById('btnPause').addEventListener('click', pause);
+document.getElementById('btnReset').addEventListener('click', fullReset);
+
+document.getElementById('timeline').addEventListener('input', e => {
+    if (playing) pause();
+    const target = parseInt(e.target.value);
+    shoppers = {}; prevPos = {}; shopperProfiles = {}; logBuf = [];
+    for (let i = 0; i <= target; i++) applyFrame(i, i < target);
+    currentFrame = target;
+    renderShoppers(1); flushLog();
+    document.getElementById('ts-display').textContent = timestamps[target] || '--:--';
+    document.getElementById('frame-info').textContent = `${target + 1} / ${timestamps.length}`;
+    document.getElementById('in-store').textContent = `Shoppers in store: ${Object.keys(shoppers).length}`;
+});
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => loadCSVText(ev.target.result);
+    r.readAsText(f, 'utf-8');
+});
+
+buildLegend();
+renderStatic(ctx);
+
+// ══════════════════════════════════════════════════
+//  CHAT
+// ══════════════════════════════════════════════════
+let chatHistory = [];
+let chatBusy    = false;
+
+function simpleMarkdown(raw) {
+    // Escape HTML first
+    let text = raw
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Tables: collect runs of pipe-lines
+    text = text.replace(/((?:^\|.+\n?)+)/gm, tableBlock => {
+        const lines = tableBlock.trim().split('\n').filter(l => l.trim());
+        if (lines.length < 2) return tableBlock;
+        const isSep = l => /^\|[-| :]+\|?\s*$/.test(l);
+        // find separator row
+        const sepIdx = lines.findIndex(isSep);
+        if (sepIdx < 1) return tableBlock;
+
+        const parseRow = l => l.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        const headers = parseRow(lines[0]);
+        const body    = lines.slice(sepIdx + 1).map(parseRow);
+
+        const thCells = headers.map(h => `<th>${h}</th>`).join('');
+        const rows    = body.map(cells =>
+            '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>'
+        ).join('');
+        return `<table><thead><tr>${thCells}</tr></thead><tbody>${rows}</tbody></table>`;
+    });
+
+    // Inline formatting
+    text = text
+        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+        .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+        .replace(/`([^`]+)`/g,     '<code>$1</code>')
+        .replace(/^### (.+)$/gm,   '<b style="color:#90caf9">$1</b>')
+        .replace(/^## (.+)$/gm,    '<b style="color:#6ab0ff;font-size:13.5px">$1</b>')
+        .replace(/^# (.+)$/gm,     '<b style="color:#6ab0ff;font-size:14px">$1</b>')
+        .replace(/^- (.+)$/gm,     '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        .replace(/\n/g, '<br>');
+
+    return text;
+}
+
+function chatTextBubble() {
+    const msgs = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg asst';
+    wrap.innerHTML = '<div class="chat-bubble streaming-bubble"></div>';
+    msgs.appendChild(wrap);
+    return wrap.querySelector('.streaming-bubble');
+}
+
+function chatAppend(role, text) {
+    const msgs = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = `chat-msg ${role}`;
+    wrap.innerHTML = `<div class="chat-bubble">${simpleMarkdown(text)}</div>`;
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function chatAppendChart(config) {
+    const msgs = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg asst';
+    wrap.innerHTML = '<div class="chart-wrap"><canvas></canvas></div>';
+    msgs.appendChild(wrap);
+    // Dark theme defaults
+    Chart.defaults.color = '#999';
+    Chart.defaults.borderColor = '#2a2a4a';
+    new Chart(wrap.querySelector('canvas'), config);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function chatSend() {
+    if (chatBusy) return;
+    const inp = document.getElementById('chat-input');
+    const text = inp.value.trim();
+    if (!text) return;
+
+    inp.value = '';
+    inp.style.height = '';
+    chatHistory.push({ role: 'user', content: text });
+    chatAppend('user', text);
+    chatBusy = true;
+    document.getElementById('chat-send').disabled = true;
+
+    let historyText = '';
+    let streamBubble = null;
+    let streamText   = '';
+
+    try {
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: chatHistory }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            chatAppend('asst', `שגיאה: ${err.error || res.statusText}`);
+            chatHistory.pop();
+            return;
+        }
+
+        const reader  = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const payload = line.slice(6);
+                if (payload === '[DONE]') break;
+                const evt = JSON.parse(payload);
+
+                if (evt.type === 'text') {
+                    // Append to current streaming bubble (create one if needed)
+                    if (!streamBubble) streamBubble = chatTextBubble();
+                    streamText += evt.chunk;
+                    streamBubble.innerHTML = simpleMarkdown(streamText);
+                    document.getElementById('chat-messages').scrollTop = 9999;
+
+                } else if (evt.type === 'chart') {
+                    // Finalise any open text bubble, then render chart
+                    if (streamBubble) { streamBubble.classList.remove('streaming-bubble'); streamBubble = null; streamText = ''; }
+                    chatAppendChart(evt.config);
+
+                } else if (evt.type === 'history') {
+                    historyText = evt.text;
+                }
+            }
+        }
+        // Finalise last text bubble
+        if (streamBubble) streamBubble.classList.remove('streaming-bubble');
+        chatHistory.push({ role: 'assistant', content: historyText || streamText });
+
+    } catch (e) {
+        chatAppend('asst', `שגיאת רשת: ${e.message}`);
+        chatHistory.pop();
+    } finally {
+        chatBusy = false;
+        document.getElementById('chat-send').disabled = false;
+        document.getElementById('chat-input').focus();
+    }
+}
+
+document.getElementById('chat-send').addEventListener('click', chatSend);
+document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
+});
+document.getElementById('chat-input').addEventListener('input', function () {
+    this.style.height = '';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Check if running via server
+fetch('/api/summary-info')
+    .then(r => r.json())
+    .then(info => {
+        if (info.error) {
+            document.getElementById('chat-no-server').innerHTML =
+                `⚠️ ${info.error}`;
+            return;
+        }
+        document.getElementById('chat-no-server').style.display = 'none';
+        document.getElementById('chat-panel').style.display = 'flex';
+        document.getElementById('chat-file-name').textContent = info.file;
+        document.getElementById('chat-row-count').textContent = info.rows;
+    })
+    .catch(() => {
+        document.getElementById('chat-no-server').innerHTML =
+            '⚠️ הצ\'אט זמין רק דרך השרת.<br>' +
+            'הרץ: <code>python server.py</code> ופתח <a href="http://localhost:5000" style="color:#6ab0ff">localhost:5000</a>';
+    });
+</script>
+</body>
+</html>

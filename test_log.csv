@@ -1,0 +1,707 @@
+timestamp,shopper_id,action,row,col,details
+10:01,1,ENTERED,h,8,"speed=2 fitting_room=True plan=[Stockings, Tops]"
+10:01,1,MOVING,g,7,heading to Stockings
+10:02,1,MOVING,g,5,heading to Stockings
+10:03,1,MOVING,f,4,heading to Stockings
+10:04,2,ENTERED,h,8,speed=2 fitting_room=True plan=[Hats & Handbags]
+10:04,1,MOVING,d,4,heading to Stockings
+10:04,2,MOVING,f,8,heading to Hats & Handbags
+10:05,3,ENTERED,h,8,"speed=3 fitting_room=True plan=[Stockings, Jeans]"
+10:05,1,ARRIVED_SECTION,d,3,Stockings
+10:05,2,MOVING,e,9,heading to Hats & Handbags
+10:05,3,MOVING,g,6,heading to Stockings
+10:06,1,BROWSING,d,3,Stockings
+10:06,2,MOVING,e,11,heading to Hats & Handbags
+10:06,3,MOVING,f,4,heading to Stockings
+10:07,1,BROWSING,d,3,Stockings
+10:07,2,MOVING,e,13,heading to Hats & Handbags
+10:07,3,ARRIVED_SECTION,d,3,Stockings
+10:08,1,BROWSING,d,3,Stockings
+10:08,2,ARRIVED_SECTION,d,13,Hats & Handbags
+10:08,3,BROWSING,d,3,Stockings
+10:09,1,BROWSING,d,3,Stockings
+10:09,2,BROWSING,d,13,Hats & Handbags
+10:09,3,BROWSING,d,3,Stockings
+10:10,4,ENTERED,h,8,"speed=2 fitting_room=True plan=[Hats & Handbags, Skirts & Dresses]"
+10:10,1,BROWSING,d,3,Stockings
+10:10,2,PICKED_ITEM,d,13,Hats & Handbags
+10:10,2,HEADING,d,13,fitting room
+10:10,3,BROWSING,d,3,Stockings
+10:10,4,MOVING,f,8,heading to Hats & Handbags
+10:11,1,PICKED_ITEM,d,3,Stockings
+10:11,2,MOVING,b,13,heading to fitting room
+10:11,3,PICKED_ITEM,d,3,Stockings
+10:11,4,MOVING,e,9,heading to Hats & Handbags
+10:12,5,ENTERED,h,8,speed=1 fitting_room=False plan=[Pants]
+10:12,1,MOVING,b,3,heading to Tops
+10:12,2,MOVING,a,13,heading to fitting room
+10:12,2,ENTERED_FITTING,a,13,
+10:12,3,ARRIVED_SECTION,g,3,Jeans
+10:12,4,MOVING,e,11,heading to Hats & Handbags
+10:12,5,MOVING,g,8,heading to Pants
+10:13,6,ENTERED,h,8,"speed=3 fitting_room=False plan=[Underwear, Hats & Handbags, Tops]"
+10:13,1,MOVING,b,5,heading to Tops
+10:13,2,IN_FITTING,a,13,1/4 min
+10:13,3,BROWSING,g,3,Jeans
+10:13,4,MOVING,e,13,heading to Hats & Handbags
+10:13,5,MOVING,f,8,heading to Pants
+10:13,6,MOVING,e,8,heading to Underwear
+10:14,7,ENTERED,h,8,speed=1 fitting_room=False plan=[Jeans]
+10:14,1,MOVING,b,7,heading to Tops
+10:14,2,IN_FITTING,a,13,2/4 min
+10:14,3,BROWSING,g,3,Jeans
+10:14,4,ARRIVED_SECTION,d,13,Hats & Handbags
+10:14,5,MOVING,f,7,heading to Pants
+10:14,6,MOVING,d,6,heading to Underwear
+10:14,7,MOVING,h,7,heading to Jeans
+10:15,1,MOVING,b,9,heading to Tops
+10:15,2,IN_FITTING,a,13,3/4 min
+10:15,3,BROWSING,g,3,Jeans
+10:15,4,BROWSING,d,13,Hats & Handbags
+10:15,5,ARRIVED_SECTION,f,6,Pants
+10:15,6,MOVING,b,5,heading to Underwear
+10:15,7,MOVING,h,6,heading to Jeans
+10:16,8,ENTERED,h,8,"speed=3 fitting_room=False plan=[Skirts & Dresses, Jeans]"
+10:16,1,ARRIVED_SECTION,c,10,Tops
+10:16,2,LEFT_FITTING,a,13,returned=0 keeping=1
+10:16,2,HEADING,a,13,checkout
+10:16,3,BROWSING,g,3,Jeans
+10:16,4,BROWSING,d,13,Hats & Handbags
+10:16,5,BROWSING,f,6,Pants
+10:16,6,ARRIVED_SECTION,b,3,Underwear
+10:16,7,MOVING,h,5,heading to Jeans
+10:16,8,MOVING,h,11,heading to Skirts & Dresses
+10:17,1,BROWSING,c,10,Tops
+10:17,2,MOVING,b,12,heading to checkout
+10:17,3,BROWSING,g,3,Jeans
+10:17,4,PICKED_ITEM,d,13,Hats & Handbags
+10:17,5,BROWSING,f,6,Pants
+10:17,6,BROWSING,b,3,Underwear
+10:17,7,MOVING,h,4,heading to Jeans
+10:17,8,ARRIVED_SECTION,h,13,Skirts & Dresses
+10:18,9,ENTERED,h,8,"speed=2 fitting_room=True plan=[Stockings, Skirts & Dresses]"
+10:18,1,BROWSING,c,10,Tops
+10:18,2,MOVING,b,10,heading to checkout
+10:18,3,NO_PICK,g,3,Jeans
+10:18,3,HEADING,g,3,fitting room
+10:18,4,ARRIVED_SECTION,f,13,Skirts & Dresses
+10:18,5,BROWSING,f,6,Pants
+10:18,6,PICKED_ITEM,b,3,Underwear
+10:18,7,ARRIVED_SECTION,h,3,Jeans
+10:18,8,BROWSING,h,13,Skirts & Dresses
+10:18,9,MOVING,g,7,heading to Stockings
+10:19,1,PICKED_ITEM,c,10,Tops
+10:19,1,HEADING,c,10,fitting room
+10:19,2,MOVING,b,9,heading to checkout
+10:19,2,JOINED_QUEUE,b,9,position #1
+10:19,3,MOVING,d,3,heading to fitting room
+10:19,4,BROWSING,f,13,Skirts & Dresses
+10:19,5,BROWSING,f,6,Pants
+10:19,6,MOVING,b,6,heading to Hats & Handbags
+10:19,7,BROWSING,h,3,Jeans
+10:19,8,BROWSING,h,13,Skirts & Dresses
+10:19,9,MOVING,g,5,heading to Stockings
+10:20,10,ENTERED,h,8,"speed=3 fitting_room=False plan=[Hats & Handbags, Stockings, Pants]"
+10:20,2,CHECKOUT_CALLED,b,9,started being served
+10:20,1,MOVING,a,10,heading to fitting room
+10:20,2,AT_CHECKOUT,b,9,1/5 min
+10:20,3,MOVING,a,3,heading to fitting room
+10:20,4,NO_PICK,f,13,Skirts & Dresses
+10:20,4,HEADING,f,13,fitting room
+10:20,5,PICKED_ITEM,f,6,Pants
+10:20,5,HEADING,f,6,checkout
+10:20,6,MOVING,b,9,heading to Hats & Handbags
+10:20,7,PICKED_ITEM,h,3,Jeans
+10:20,7,HEADING,h,3,checkout
+10:20,8,PICKED_ITEM,h,13,Skirts & Dresses
+10:20,9,MOVING,f,4,heading to Stockings
+10:20,10,MOVING,e,8,heading to Hats & Handbags
+10:21,1,MOVING,a,12,heading to fitting room
+10:21,1,ENTERED_FITTING,a,12,
+10:21,2,AT_CHECKOUT,b,9,2/5 min
+10:21,3,MOVING,a,6,heading to fitting room
+10:21,4,MOVING,d,13,heading to fitting room
+10:21,5,MOVING,e,6,heading to checkout
+10:21,6,MOVING,b,12,heading to Hats & Handbags
+10:21,7,MOVING,g,3,heading to checkout
+10:21,8,MOVING,h,10,heading to Jeans
+10:21,9,MOVING,d,4,heading to Stockings
+10:21,10,MOVING,e,11,heading to Hats & Handbags
+10:22,11,ENTERED,h,8,"speed=3 fitting_room=True plan=[Skirts & Dresses, Hats & Handbags, Stockings, Pants]"
+10:22,1,IN_FITTING,a,12,1/8 min
+10:22,2,AT_CHECKOUT,b,9,3/5 min
+10:22,3,MOVING,a,9,heading to fitting room
+10:22,4,MOVING,b,13,heading to fitting room
+10:22,5,MOVING,d,6,heading to checkout
+10:22,6,ARRIVED_SECTION,c,13,Hats & Handbags
+10:22,7,MOVING,f,3,heading to checkout
+10:22,8,MOVING,h,7,heading to Jeans
+10:22,9,ARRIVED_SECTION,d,3,Stockings
+10:22,10,ARRIVED_SECTION,d,13,Hats & Handbags
+10:22,11,MOVING,h,11,heading to Skirts & Dresses
+10:23,12,ENTERED,h,8,"speed=1 fitting_room=False plan=[Underwear, Tops, Pants, Jeans]"
+10:23,1,IN_FITTING,a,12,2/8 min
+10:23,2,AT_CHECKOUT,b,9,4/5 min
+10:23,3,MOVING,a,12,heading to fitting room
+10:23,3,ENTERED_FITTING,a,12,
+10:23,4,MOVING,a,13,heading to fitting room
+10:23,4,ENTERED_FITTING,a,13,
+10:23,5,MOVING,c,6,heading to checkout
+10:23,6,BROWSING,c,13,Hats & Handbags
+10:23,7,MOVING,e,3,heading to checkout
+10:23,8,MOVING,h,4,heading to Jeans
+10:23,9,BROWSING,d,3,Stockings
+10:23,10,BROWSING,d,13,Hats & Handbags
+10:23,11,ARRIVED_SECTION,h,13,Skirts & Dresses
+10:23,12,MOVING,g,8,heading to Underwear
+10:24,13,ENTERED,h,8,speed=3 fitting_room=False plan=[Stockings]
+10:24,1,IN_FITTING,a,12,3/8 min
+10:24,2,PURCHASED,b,9,1 item(s): Hats & Handbags
+10:24,3,IN_FITTING,a,12,1/8 min
+10:24,4,IN_FITTING,a,13,1/7 min
+10:24,5,MOVING,b,6,heading to checkout
+10:24,6,NO_PICK,c,13,Hats & Handbags
+10:24,7,MOVING,d,3,heading to checkout
+10:24,8,ARRIVED_SECTION,h,3,Jeans
+10:24,9,NO_PICK,d,3,Stockings
+10:24,10,NO_PICK,d,13,Hats & Handbags
+10:24,11,BROWSING,h,13,Skirts & Dresses
+10:24,12,MOVING,f,8,heading to Underwear
+10:24,13,MOVING,g,6,heading to Stockings
+10:25,1,IN_FITTING,a,12,4/8 min
+10:25,2,MOVING,d,9,heading to exit
+10:25,3,IN_FITTING,a,12,2/8 min
+10:25,4,IN_FITTING,a,13,2/7 min
+10:25,5,MOVING,b,7,heading to checkout
+10:25,6,ARRIVED_SECTION,c,13,Tops
+10:25,7,MOVING,c,3,heading to checkout
+10:25,8,BROWSING,h,3,Jeans
+10:25,9,MOVING,f,3,heading to Skirts & Dresses
+10:25,10,MOVING,b,12,heading to Stockings
+10:25,11,BROWSING,h,13,Skirts & Dresses
+10:25,12,MOVING,e,8,heading to Underwear
+10:25,13,MOVING,f,4,heading to Stockings
+10:26,1,IN_FITTING,a,12,5/8 min
+10:26,2,MOVING,f,9,heading to exit
+10:26,3,IN_FITTING,a,12,3/8 min
+10:26,4,IN_FITTING,a,13,3/7 min
+10:26,5,MOVING,b,8,heading to checkout
+10:26,6,BROWSING,c,13,Tops
+10:26,7,MOVING,b,3,heading to checkout
+10:26,8,BROWSING,h,3,Jeans
+10:26,9,MOVING,h,3,heading to Skirts & Dresses
+10:26,10,MOVING,b,9,heading to Stockings
+10:26,11,BROWSING,h,13,Skirts & Dresses
+10:26,12,MOVING,d,8,heading to Underwear
+10:26,13,ARRIVED_SECTION,d,3,Stockings
+10:27,14,ENTERED,h,8,"speed=3 fitting_room=False plan=[Underwear, Hats & Handbags, Jeans]"
+10:27,1,IN_FITTING,a,12,6/8 min
+10:27,2,MOVING,h,9,heading to exit
+10:27,3,IN_FITTING,a,12,4/8 min
+10:27,4,IN_FITTING,a,13,4/7 min
+10:27,5,MOVING,b,9,heading to checkout
+10:27,5,JOINED_QUEUE,b,9,position #1
+10:27,6,BROWSING,c,13,Tops
+10:27,7,MOVING,b,4,heading to checkout
+10:27,8,BROWSING,h,3,Jeans
+10:27,9,MOVING,h,5,heading to Skirts & Dresses
+10:27,10,MOVING,b,6,heading to Stockings
+10:27,11,BROWSING,h,13,Skirts & Dresses
+10:27,12,MOVING,d,7,heading to Underwear
+10:27,13,BROWSING,d,3,Stockings
+10:27,14,MOVING,e,8,heading to Underwear
+10:28,5,CHECKOUT_CALLED,b,9,started being served
+10:28,1,IN_FITTING,a,12,7/8 min
+10:28,2,MOVING,h,8,heading to exit
+10:28,2,EXITED,h,8,
+10:28,3,IN_FITTING,a,12,5/8 min
+10:28,4,IN_FITTING,a,13,5/7 min
+10:28,5,AT_CHECKOUT,b,9,1/4 min
+10:28,6,BROWSING,c,13,Tops
+10:28,7,MOVING,b,5,heading to checkout
+10:28,8,BROWSING,h,3,Jeans
+10:28,9,MOVING,h,7,heading to Skirts & Dresses
+10:28,10,MOVING,c,4,heading to Stockings
+10:28,11,BROWSING,h,13,Skirts & Dresses
+10:28,12,MOVING,d,6,heading to Underwear
+10:28,13,BROWSING,d,3,Stockings
+10:28,14,MOVING,d,6,heading to Underwear
+10:29,1,LEFT_FITTING,a,12,returned=0 keeping=2
+10:29,1,HEADING,a,12,checkout
+10:29,3,IN_FITTING,a,12,6/8 min
+10:29,4,IN_FITTING,a,13,6/7 min
+10:29,5,AT_CHECKOUT,b,9,2/4 min
+10:29,6,PICKED_ITEM,c,13,Tops
+10:29,6,HEADING,c,13,checkout
+10:29,7,MOVING,b,6,heading to checkout
+10:29,8,BROWSING,h,3,Jeans
+10:29,9,MOVING,h,9,heading to Skirts & Dresses
+10:29,10,ARRIVED_SECTION,c,3,Stockings
+10:29,11,PICKED_ITEM,h,13,Skirts & Dresses
+10:29,12,MOVING,c,6,heading to Underwear
+10:29,13,BROWSING,d,3,Stockings
+10:29,14,MOVING,b,5,heading to Underwear
+10:30,1,MOVING,b,11,heading to checkout
+10:30,3,IN_FITTING,a,12,7/8 min
+10:30,4,LEFT_FITTING,a,13,returned=0 keeping=1
+10:30,4,HEADING,a,13,checkout
+10:30,5,AT_CHECKOUT,b,9,3/4 min
+10:30,6,MOVING,b,11,heading to checkout
+10:30,7,MOVING,b,7,heading to checkout
+10:30,8,PICKED_ITEM,h,3,Jeans
+10:30,8,HEADING,h,3,checkout
+10:30,9,MOVING,h,11,heading to Skirts & Dresses
+10:30,10,BROWSING,c,3,Stockings
+10:30,11,MOVING,e,13,heading to Hats & Handbags
+10:30,12,MOVING,b,6,heading to Underwear
+10:30,13,BROWSING,d,3,Stockings
+10:30,14,ARRIVED_SECTION,b,3,Underwear
+10:31,1,MOVING,b,9,heading to checkout
+10:31,1,JOINED_QUEUE,b,9,position #2
+10:31,3,LEFT_FITTING,a,12,returned=0 keeping=1
+10:31,3,HEADING,a,12,checkout
+10:31,4,MOVING,b,12,heading to checkout
+10:31,5,PURCHASED,b,9,1 item(s): Pants
+10:31,6,MOVING,b,9,heading to checkout
+10:31,6,JOINED_QUEUE,b,9,position #2
+10:31,7,MOVING,b,8,heading to checkout
+10:31,8,MOVING,e,3,heading to checkout
+10:31,9,ARRIVED_SECTION,h,13,Skirts & Dresses
+10:31,10,BROWSING,c,3,Stockings
+10:31,11,ARRIVED_SECTION,d,13,Hats & Handbags
+10:31,12,MOVING,b,5,heading to Underwear
+10:31,13,PICKED_ITEM,d,3,Stockings
+10:31,13,HEADING,d,3,checkout
+10:31,14,BROWSING,b,3,Underwear
+10:32,15,ENTERED,h,8,speed=3 fitting_room=False plan=[Stockings]
+10:32,1,CHECKOUT_CALLED,b,9,started being served
+10:32,1,AT_CHECKOUT,b,9,1/5 min
+10:32,3,MOVING,b,10,heading to checkout
+10:32,4,MOVING,b,10,heading to checkout
+10:32,5,MOVING,c,9,heading to exit
+10:32,6,IN_QUEUE,b,9,position #2
+10:32,7,MOVING,b,9,heading to checkout
+10:32,7,JOINED_QUEUE,b,9,position #3
+10:32,8,MOVING,b,3,heading to checkout
+10:32,9,BROWSING,h,13,Skirts & Dresses
+10:32,10,NO_PICK,c,3,Stockings
+10:32,11,BROWSING,d,13,Hats & Handbags
+10:32,12,MOVING,b,4,heading to Underwear
+10:32,13,MOVING,b,4,heading to checkout
+10:32,14,BROWSING,b,3,Underwear
+10:32,15,MOVING,g,6,heading to Stockings
+10:33,1,AT_CHECKOUT,b,9,2/5 min
+10:33,3,MOVING,b,9,heading to checkout
+10:33,3,JOINED_QUEUE,b,9,position #4
+10:33,4,MOVING,b,9,heading to checkout
+10:33,4,JOINED_QUEUE,b,9,position #5
+10:33,5,MOVING,d,9,heading to exit
+10:33,6,IN_QUEUE,b,9,position #2
+10:33,7,IN_QUEUE,b,9,position #3
+10:33,8,MOVING,b,6,heading to checkout
+10:33,9,BROWSING,h,13,Skirts & Dresses
+10:33,10,ARRIVED_SECTION,c,4,Pants
+10:33,11,BROWSING,d,13,Hats & Handbags
+10:33,12,ARRIVED_SECTION,b,3,Underwear
+10:33,13,MOVING,b,7,heading to checkout
+10:33,14,BROWSING,b,3,Underwear
+10:33,15,MOVING,f,4,heading to Stockings
+10:34,16,ENTERED,h,8,"speed=2 fitting_room=False plan=[Skirts & Dresses, Underwear]"
+10:34,1,AT_CHECKOUT,b,9,3/5 min
+10:34,3,IN_QUEUE,b,9,position #4
+10:34,4,IN_QUEUE,b,9,position #5
+10:34,5,MOVING,e,9,heading to exit
+10:34,6,IN_QUEUE,b,9,position #2
+10:34,7,IN_QUEUE,b,9,position #3
+10:34,8,MOVING,b,9,heading to checkout
+10:34,8,JOINED_QUEUE,b,9,position #6
+10:34,9,BROWSING,h,13,Skirts & Dresses
+10:34,10,BROWSING,c,4,Pants
+10:34,11,BROWSING,d,13,Hats & Handbags
+10:34,12,BROWSING,b,3,Underwear
+10:34,13,MOVING,b,9,heading to checkout
+10:34,13,JOINED_QUEUE,b,9,position #7
+10:34,14,NO_PICK,b,3,Underwear
+10:34,15,ARRIVED_SECTION,d,3,Stockings
+10:34,16,MOVING,h,10,heading to Skirts & Dresses
+10:35,1,AT_CHECKOUT,b,9,4/5 min
+10:35,3,IN_QUEUE,b,9,position #4
+10:35,4,IN_QUEUE,b,9,position #5
+10:35,5,MOVING,f,9,heading to exit
+10:35,6,IN_QUEUE,b,9,position #2
+10:35,7,IN_QUEUE,b,9,position #3
+10:35,8,IN_QUEUE,b,9,position #6
+10:35,9,NO_PICK,h,13,Skirts & Dresses
+10:35,9,HEADING,h,13,exit (nothing to buy)
+10:35,10,BROWSING,c,4,Pants
+10:35,11,NO_PICK,d,13,Hats & Handbags
+10:35,12,BROWSING,b,3,Underwear
+10:35,13,IN_QUEUE,b,9,position #7
+10:35,14,MOVING,b,6,heading to Hats & Handbags
+10:35,15,BROWSING,d,3,Stockings
+10:35,16,MOVING,h,12,heading to Skirts & Dresses
+10:36,1,PURCHASED,b,9,"2 item(s): Stockings, Tops"
+10:36,3,IN_QUEUE,b,9,position #3
+10:36,4,IN_QUEUE,b,9,position #4
+10:36,5,MOVING,g,9,heading to exit
+10:36,6,IN_QUEUE,b,9,position #1
+10:36,7,IN_QUEUE,b,9,position #2
+10:36,8,IN_QUEUE,b,9,position #5
+10:36,9,MOVING,h,11,heading to exit
+10:36,10,BROWSING,c,4,Pants
+10:36,11,MOVING,b,12,heading to Stockings
+10:36,12,NO_PICK,b,3,Underwear
+10:36,13,IN_QUEUE,b,9,position #6
+10:36,14,MOVING,b,9,heading to Hats & Handbags
+10:36,15,BROWSING,d,3,Stockings
+10:36,16,ARRIVED_SECTION,h,13,Skirts & Dresses
+10:37,6,CHECKOUT_CALLED,b,9,started being served
+10:37,1,MOVING,d,9,heading to exit
+10:37,3,IN_QUEUE,b,9,position #3
+10:37,4,IN_QUEUE,b,9,position #4
+10:37,5,MOVING,h,9,heading to exit
+10:37,6,AT_CHECKOUT,b,9,1/4 min
+10:37,7,IN_QUEUE,b,9,position #2
+10:37,8,IN_QUEUE,b,9,position #5
+10:37,9,MOVING,h,9,heading to exit
+10:37,10,BROWSING,c,4,Pants
+10:37,11,MOVING,b,9,heading to Stockings
+10:37,12,MOVING,b,4,heading to Tops
+10:37,13,IN_QUEUE,b,9,position #6
+10:37,14,MOVING,b,12,heading to Hats & Handbags
+10:37,15,BROWSING,d,3,Stockings
+10:37,16,BROWSING,h,13,Skirts & Dresses
+10:38,1,MOVING,f,9,heading to exit
+10:38,3,IN_QUEUE,b,9,position #3
+10:38,4,IN_QUEUE,b,9,position #4
+10:38,5,MOVING,h,8,heading to exit
+10:38,5,EXITED,h,8,
+10:38,6,AT_CHECKOUT,b,9,2/4 min
+10:38,7,IN_QUEUE,b,9,position #2
+10:38,8,IN_QUEUE,b,9,position #5
+10:38,9,MOVING,h,8,heading to exit
+10:38,9,EXITED,h,8,
+10:38,10,BROWSING,c,4,Pants
+10:38,11,MOVING,b,6,heading to Stockings
+10:38,12,MOVING,b,5,heading to Tops
+10:38,13,IN_QUEUE,b,9,position #6
+10:38,14,ARRIVED_SECTION,c,13,Hats & Handbags
+10:38,15,BROWSING,d,3,Stockings
+10:38,16,BROWSING,h,13,Skirts & Dresses
+10:39,1,MOVING,h,9,heading to exit
+10:39,3,IN_QUEUE,b,9,position #3
+10:39,4,IN_QUEUE,b,9,position #4
+10:39,6,AT_CHECKOUT,b,9,3/4 min
+10:39,7,IN_QUEUE,b,9,position #2
+10:39,8,IN_QUEUE,b,9,position #5
+10:39,10,PICKED_ITEM,c,4,Pants
+10:39,10,HEADING,c,4,checkout
+10:39,11,MOVING,c,4,heading to Stockings
+10:39,12,MOVING,b,6,heading to Tops
+10:39,13,IN_QUEUE,b,9,position #6
+10:39,14,BROWSING,c,13,Hats & Handbags
+10:39,15,PICKED_ITEM,d,3,Stockings
+10:39,15,HEADING,d,3,checkout
+10:39,16,BROWSING,h,13,Skirts & Dresses
+10:40,17,ENTERED,h,8,"speed=3 fitting_room=True plan=[Tops, Jeans]"
+10:40,1,MOVING,h,8,heading to exit
+10:40,1,EXITED,h,8,
+10:40,3,IN_QUEUE,b,9,position #3
+10:40,4,IN_QUEUE,b,9,position #4
+10:40,6,PURCHASED,b,9,"2 item(s): Underwear, Tops"
+10:40,7,IN_QUEUE,b,9,position #1
+10:40,8,IN_QUEUE,b,9,position #4
+10:40,10,MOVING,b,6,heading to checkout
+10:40,11,ARRIVED_SECTION,c,3,Stockings
+10:40,12,MOVING,b,7,heading to Tops
+10:40,13,IN_QUEUE,b,9,position #5
+10:40,14,BROWSING,c,13,Hats & Handbags
+10:40,15,MOVING,b,4,heading to checkout
+10:40,16,BROWSING,h,13,Skirts & Dresses
+10:40,17,ARRIVED_SECTION,g,10,Tops
+10:41,18,ENTERED,h,8,speed=1 fitting_room=False plan=[Underwear]
+10:41,7,CHECKOUT_CALLED,b,9,started being served
+10:41,3,IN_QUEUE,b,9,position #2
+10:41,4,IN_QUEUE,b,9,position #3
+10:41,6,MOVING,e,9,heading to exit
+10:41,7,AT_CHECKOUT,b,9,1/3 min
+10:41,8,IN_QUEUE,b,9,position #4
+10:41,10,MOVING,b,9,heading to checkout
+10:41,10,JOINED_QUEUE,b,9,position #6
+10:41,11,BROWSING,c,3,Stockings
+10:41,12,MOVING,b,8,heading to Tops
+10:41,13,IN_QUEUE,b,9,position #5
+10:41,14,BROWSING,c,13,Hats & Handbags
+10:41,15,MOVING,b,7,heading to checkout
+10:41,16,PICKED_ITEM,h,13,Skirts & Dresses
+10:41,17,BROWSING,g,10,Tops
+10:41,18,MOVING,g,8,heading to Underwear
+10:42,3,IN_QUEUE,b,9,position #2
+10:42,4,IN_QUEUE,b,9,position #3
+10:42,6,MOVING,h,9,heading to exit
+10:42,7,AT_CHECKOUT,b,9,2/3 min
+10:42,8,IN_QUEUE,b,9,position #4
+10:42,10,IN_QUEUE,b,9,position #6
+10:42,11,PICKED_ITEM,c,3,Stockings
+10:42,12,MOVING,b,9,heading to Tops
+10:42,13,IN_QUEUE,b,9,position #5
+10:42,14,BROWSING,c,13,Hats & Handbags
+10:42,15,MOVING,b,9,heading to checkout
+10:42,15,JOINED_QUEUE,b,9,position #7
+10:42,16,MOVING,f,13,heading to Underwear
+10:42,17,BROWSING,g,10,Tops
+10:42,18,MOVING,f,8,heading to Underwear
+10:43,3,IN_QUEUE,b,9,position #2
+10:43,4,IN_QUEUE,b,9,position #3
+10:43,6,MOVING,h,8,heading to exit
+10:43,6,EXITED,h,8,
+10:43,7,PURCHASED,b,9,1 item(s): Jeans
+10:43,8,IN_QUEUE,b,9,position #3
+10:43,10,IN_QUEUE,b,9,position #5
+10:43,11,ARRIVED_SECTION,c,4,Pants
+10:43,12,MOVING,c,9,heading to Tops
+10:43,13,IN_QUEUE,b,9,position #4
+10:43,14,BROWSING,c,13,Hats & Handbags
+10:43,15,IN_QUEUE,b,9,position #6
+10:43,16,MOVING,d,13,heading to Underwear
+10:43,17,PICKED_ITEM,g,10,Tops
+10:43,18,MOVING,e,8,heading to Underwear
+10:44,19,ENTERED,h,8,"speed=2 fitting_room=False plan=[Tops, Jeans]"
+10:44,3,CHECKOUT_CALLED,b,9,started being served
+10:44,3,AT_CHECKOUT,b,9,1/5 min
+10:44,4,IN_QUEUE,b,9,position #2
+10:44,7,MOVING,c,9,heading to exit
+10:44,8,IN_QUEUE,b,9,position #3
+10:44,10,IN_QUEUE,b,9,position #5
+10:44,11,BROWSING,c,4,Pants
+10:44,12,ARRIVED_SECTION,c,10,Tops
+10:44,13,IN_QUEUE,b,9,position #4
+10:44,14,PICKED_ITEM,c,13,Hats & Handbags
+10:44,15,IN_QUEUE,b,9,position #6
+10:44,16,MOVING,b,13,heading to Underwear
+10:44,17,MOVING,g,7,heading to Jeans
+10:44,18,MOVING,d,8,heading to Underwear
+10:44,19,MOVING,g,9,heading to Tops
+10:45,3,AT_CHECKOUT,b,9,2/5 min
+10:45,4,IN_QUEUE,b,9,position #2
+10:45,7,MOVING,d,9,heading to exit
+10:45,8,IN_QUEUE,b,9,position #3
+10:45,10,IN_QUEUE,b,9,position #5
+10:45,11,BROWSING,c,4,Pants
+10:45,12,BROWSING,c,10,Tops
+10:45,13,IN_QUEUE,b,9,position #4
+10:45,14,MOVING,e,12,heading to Jeans
+10:45,15,IN_QUEUE,b,9,position #6
+10:45,16,MOVING,b,11,heading to Underwear
+10:45,17,MOVING,g,4,heading to Jeans
+10:45,18,MOVING,d,7,heading to Underwear
+10:45,19,ARRIVED_SECTION,g,10,Tops
+10:46,3,AT_CHECKOUT,b,9,3/5 min
+10:46,4,IN_QUEUE,b,9,position #2
+10:46,7,MOVING,e,9,heading to exit
+10:46,8,IN_QUEUE,b,9,position #3
+10:46,10,IN_QUEUE,b,9,position #5
+10:46,11,BROWSING,c,4,Pants
+10:46,12,BROWSING,c,10,Tops
+10:46,13,IN_QUEUE,b,9,position #4
+10:46,14,MOVING,f,10,heading to Jeans
+10:46,15,IN_QUEUE,b,9,position #6
+10:46,16,MOVING,b,9,heading to Underwear
+10:46,17,ARRIVED_SECTION,g,3,Jeans
+10:46,18,MOVING,d,6,heading to Underwear
+10:46,19,BROWSING,g,10,Tops
+10:47,20,ENTERED,h,8,speed=3 fitting_room=True plan=[Hats & Handbags]
+10:47,3,AT_CHECKOUT,b,9,4/5 min
+10:47,4,IN_QUEUE,b,9,position #2
+10:47,7,MOVING,f,9,heading to exit
+10:47,8,IN_QUEUE,b,9,position #3
+10:47,10,IN_QUEUE,b,9,position #5
+10:47,11,BROWSING,c,4,Pants
+10:47,12,BROWSING,c,10,Tops
+10:47,13,IN_QUEUE,b,9,position #4
+10:47,14,MOVING,g,8,heading to Jeans
+10:47,15,IN_QUEUE,b,9,position #6
+10:47,16,MOVING,b,7,heading to Underwear
+10:47,17,BROWSING,g,3,Jeans
+10:47,18,MOVING,c,6,heading to Underwear
+10:47,19,PICKED_ITEM,g,10,Tops
+10:47,20,MOVING,e,8,heading to Hats & Handbags
+10:48,3,PURCHASED,b,9,1 item(s): Stockings
+10:48,4,IN_QUEUE,b,9,position #1
+10:48,7,MOVING,g,9,heading to exit
+10:48,8,IN_QUEUE,b,9,position #2
+10:48,10,IN_QUEUE,b,9,position #4
+10:48,11,BROWSING,c,4,Pants
+10:48,12,PICKED_ITEM,c,10,Tops
+10:48,13,IN_QUEUE,b,9,position #3
+10:48,14,MOVING,g,5,heading to Jeans
+10:48,15,IN_QUEUE,b,9,position #5
+10:48,16,MOVING,b,5,heading to Underwear
+10:48,17,PICKED_ITEM,g,3,Jeans
+10:48,17,HEADING,g,3,fitting room
+10:48,18,MOVING,b,6,heading to Underwear
+10:48,19,MOVING,g,8,heading to Jeans
+10:48,20,MOVING,e,11,heading to Hats & Handbags
+10:49,4,CHECKOUT_CALLED,b,9,started being served
+10:49,3,MOVING,e,9,heading to exit
+10:49,4,AT_CHECKOUT,b,9,1/2 min
+10:49,7,MOVING,h,9,heading to exit
+10:49,8,IN_QUEUE,b,9,position #2
+10:49,10,IN_QUEUE,b,9,position #4
+10:49,11,PICKED_ITEM,c,4,Pants
+10:49,11,HEADING,c,4,fitting room
+10:49,12,MOVING,d,10,heading to Pants
+10:49,13,IN_QUEUE,b,9,position #3
+10:49,14,ARRIVED_SECTION,g,3,Jeans
+10:49,15,IN_QUEUE,b,9,position #5
+10:49,16,ARRIVED_SECTION,b,3,Underwear
+10:49,17,MOVING,d,3,heading to fitting room
+10:49,18,MOVING,b,5,heading to Underwear
+10:49,19,MOVING,g,6,heading to Jeans
+10:49,20,ARRIVED_SECTION,d,13,Hats & Handbags
+10:50,3,MOVING,h,9,heading to exit
+10:50,4,PURCHASED,b,9,1 item(s): Hats & Handbags
+10:50,7,MOVING,h,8,heading to exit
+10:50,7,EXITED,h,8,
+10:50,8,IN_QUEUE,b,9,position #1
+10:50,10,IN_QUEUE,b,9,position #3
+10:50,11,MOVING,a,5,heading to fitting room
+10:50,12,MOVING,d,9,heading to Pants
+10:50,13,IN_QUEUE,b,9,position #2
+10:50,14,BROWSING,g,3,Jeans
+10:50,15,IN_QUEUE,b,9,position #4
+10:50,16,BROWSING,b,3,Underwear
+10:50,17,MOVING,a,3,heading to fitting room
+10:50,18,MOVING,b,4,heading to Underwear
+10:50,19,MOVING,g,4,heading to Jeans
+10:50,20,BROWSING,d,13,Hats & Handbags
+10:51,8,CHECKOUT_CALLED,b,9,started being served
+10:51,3,MOVING,h,8,heading to exit
+10:51,3,EXITED,h,8,
+10:51,4,MOVING,d,9,heading to exit
+10:51,8,AT_CHECKOUT,b,9,1/2 min
+10:51,10,IN_QUEUE,b,9,position #3
+10:51,11,MOVING,a,8,heading to fitting room
+10:51,12,MOVING,d,8,heading to Pants
+10:51,13,IN_QUEUE,b,9,position #2
+10:51,14,BROWSING,g,3,Jeans
+10:51,15,IN_QUEUE,b,9,position #4
+10:51,16,NO_PICK,b,3,Underwear
+10:51,16,HEADING,b,3,checkout
+10:51,17,MOVING,a,6,heading to fitting room
+10:51,18,ARRIVED_SECTION,b,3,Underwear
+10:51,19,ARRIVED_SECTION,g,3,Jeans
+10:51,20,PICKED_ITEM,d,13,Hats & Handbags
+10:51,20,HEADING,d,13,fitting room
+10:52,4,MOVING,f,9,heading to exit
+10:52,8,PURCHASED,b,9,"2 item(s): Skirts & Dresses, Jeans"
+10:52,10,IN_QUEUE,b,9,position #2
+10:52,11,MOVING,a,11,heading to fitting room
+10:52,12,MOVING,d,7,heading to Pants
+10:52,13,IN_QUEUE,b,9,position #1
+10:52,14,BROWSING,g,3,Jeans
+10:52,15,IN_QUEUE,b,9,position #3
+10:52,16,MOVING,b,5,heading to checkout
+10:52,17,MOVING,a,9,heading to fitting room
+10:52,18,BROWSING,b,3,Underwear
+10:52,19,BROWSING,g,3,Jeans
+10:52,20,MOVING,a,13,heading to fitting room
+10:52,20,ENTERED_FITTING,a,13,
+10:53,13,CHECKOUT_CALLED,b,9,started being served
+10:53,4,MOVING,h,9,heading to exit
+10:53,8,MOVING,e,9,heading to exit
+10:53,10,IN_QUEUE,b,9,position #2
+10:53,11,MOVING,a,12,heading to fitting room
+10:53,11,ENTERED_FITTING,a,12,
+10:53,12,ARRIVED_SECTION,d,6,Pants
+10:53,13,AT_CHECKOUT,b,9,1/2 min
+10:53,14,BROWSING,g,3,Jeans
+10:53,15,IN_QUEUE,b,9,position #3
+10:53,16,MOVING,b,7,heading to checkout
+10:53,17,MOVING,a,12,heading to fitting room
+10:53,17,ENTERED_FITTING,a,12,
+10:53,18,BROWSING,b,3,Underwear
+10:53,19,BROWSING,g,3,Jeans
+10:53,20,IN_FITTING,a,13,1/10 min
+10:54,4,MOVING,h,8,heading to exit
+10:54,4,EXITED,h,8,
+10:54,8,MOVING,h,9,heading to exit
+10:54,10,IN_QUEUE,b,9,position #2
+10:54,11,IN_FITTING,a,12,1/5 min
+10:54,12,BROWSING,d,6,Pants
+10:54,13,PURCHASED,b,9,1 item(s): Stockings
+10:54,14,BROWSING,g,3,Jeans
+10:54,15,IN_QUEUE,b,9,position #2
+10:54,16,MOVING,b,9,heading to checkout
+10:54,16,JOINED_QUEUE,b,9,position #3
+10:54,17,IN_FITTING,a,12,1/4 min
+10:54,18,PICKED_ITEM,b,3,Underwear
+10:54,18,HEADING,b,3,checkout
+10:54,19,NO_PICK,g,3,Jeans
+10:54,19,HEADING,g,3,checkout
+10:54,20,IN_FITTING,a,13,2/10 min
+10:55,10,CHECKOUT_CALLED,b,9,started being served
+10:55,8,MOVING,h,8,heading to exit
+10:55,8,EXITED,h,8,
+10:55,10,AT_CHECKOUT,b,9,1/5 min
+10:55,11,IN_FITTING,a,12,2/5 min
+10:55,12,BROWSING,d,6,Pants
+10:55,13,MOVING,e,9,heading to exit
+10:55,14,PICKED_ITEM,g,3,Jeans
+10:55,14,HEADING,g,3,checkout
+10:55,15,IN_QUEUE,b,9,position #2
+10:55,16,IN_QUEUE,b,9,position #3
+10:55,17,IN_FITTING,a,12,2/4 min
+10:55,18,MOVING,b,4,heading to checkout
+10:55,19,MOVING,e,3,heading to checkout
+10:55,20,IN_FITTING,a,13,3/10 min
+10:56,10,AT_CHECKOUT,b,9,2/5 min
+10:56,11,IN_FITTING,a,12,3/5 min
+10:56,12,BROWSING,d,6,Pants
+10:56,13,MOVING,h,9,heading to exit
+10:56,14,MOVING,d,3,heading to checkout
+10:56,15,IN_QUEUE,b,9,position #2
+10:56,16,IN_QUEUE,b,9,position #3
+10:56,17,IN_FITTING,a,12,3/4 min
+10:56,18,MOVING,b,5,heading to checkout
+10:56,19,MOVING,c,3,heading to checkout
+10:56,20,IN_FITTING,a,13,4/10 min
+10:57,10,AT_CHECKOUT,b,9,3/5 min
+10:57,11,IN_FITTING,a,12,4/5 min
+10:57,12,BROWSING,d,6,Pants
+10:57,13,MOVING,h,8,heading to exit
+10:57,13,EXITED,h,8,
+10:57,14,MOVING,b,4,heading to checkout
+10:57,15,IN_QUEUE,b,9,position #2
+10:57,16,IN_QUEUE,b,9,position #3
+10:57,17,LEFT_FITTING,a,12,returned=0 keeping=2
+10:57,17,HEADING,a,12,checkout
+10:57,18,MOVING,b,6,heading to checkout
+10:57,19,MOVING,b,4,heading to checkout
+10:57,20,IN_FITTING,a,13,5/10 min
+10:58,21,ENTERED,h,8,speed=1 fitting_room=False plan=[Stockings]
+10:58,10,AT_CHECKOUT,b,9,4/5 min
+10:58,11,LEFT_FITTING,a,12,returned=0 keeping=3
+10:58,11,HEADING,a,12,checkout
+10:58,12,NO_PICK,d,6,Pants
+10:58,14,MOVING,b,7,heading to checkout
+10:58,15,IN_QUEUE,b,9,position #2
+10:58,16,IN_QUEUE,b,9,position #3
+10:58,17,MOVING,b,10,heading to checkout
+10:58,18,MOVING,b,7,heading to checkout
+10:58,19,MOVING,b,6,heading to checkout
+10:58,20,IN_FITTING,a,13,6/10 min
+10:58,21,MOVING,g,8,heading to Stockings
+10:59,10,PURCHASED,b,9,1 item(s): Pants
+10:59,11,MOVING,b,10,heading to checkout
+10:59,12,MOVING,e,6,heading to Jeans
+10:59,14,MOVING,b,9,heading to checkout
+10:59,14,JOINED_QUEUE,b,9,position #3
+10:59,15,IN_QUEUE,b,9,position #1
+10:59,16,IN_QUEUE,b,9,position #2
+10:59,17,MOVING,b,9,heading to checkout
+10:59,17,JOINED_QUEUE,b,9,position #4
+10:59,18,MOVING,b,8,heading to checkout
+10:59,19,MOVING,b,8,heading to checkout
+10:59,20,IN_FITTING,a,13,7/10 min
+10:59,21,MOVING,g,7,heading to Stockings
