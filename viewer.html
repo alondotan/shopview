@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Store Simulation Viewer</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,7 +13,7 @@ body {
     color: #e0e0e0;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     gap: 8px;
     padding: 10px;
@@ -281,6 +282,7 @@ canvas { border-radius: 4px; display: block; }
 .chart-wrap canvas { max-height: 280px; }
 
 /* ── Markdown tables in chat ── */
+
 .chat-bubble table {
     border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px;
 }
@@ -297,6 +299,45 @@ canvas { border-radius: 4px; display: block; }
 .chat-bubble td:not(:first-child), .chat-bubble th:not(:first-child) { text-align: right; }
 .chat-bubble ul, .chat-bubble ol { padding-left: 18px; margin: 4px 0; }
 .chat-bubble li { margin: 2px 0; }
+
+/* ══════════════════════════════════
+   MOBILE  (≤ 767 px)
+══════════════════════════════════ */
+@media (max-width: 767px) {
+    body { padding: 6px; gap: 6px; }
+
+    /* Controls */
+    #controls { flex-wrap: wrap; padding: 6px 8px; gap: 5px 8px; }
+    #controls button { font-size: 13px; padding: 7px 13px; }
+    #timeline { order: 10; flex-basis: 100%; }
+    #ts-display { font-size: 16px; min-width: 40px; }
+    #frame-info { display: none; }
+    #fileLabel  { display: none; }
+    select { font-size: 13px; }
+
+    /* Tab bar */
+    .tab-btn { padding: 7px 10px; font-size: 12px; }
+
+    /* All tab panels may scroll */
+    .tab-panel { overflow-y: auto; }
+
+    /* Animation tab */
+    #tab-animation { flex-direction: column; }
+    #canvas-wrap   { width: auto !important; overflow: visible; }
+    #legend        { display: none; }
+    #right         { flex: none; min-height: 0; }
+    #event-log     { max-height: 220px; }
+
+    /* Analytics tab */
+    #tab-analytics   { flex-direction: column; overflow-y: auto; }
+    #analytics-left  { width: 100%; align-items: flex-start; }
+    #analytics-right { overflow-y: visible; padding-bottom: 12px; }
+    #kpis .kpi       { min-width: 80px; }
+
+    /* Chat tab */
+    #tab-chat   { overflow: hidden; }
+    #chat-panel { height: 100%; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
@@ -1413,6 +1454,27 @@ dz.addEventListener('drop', e => {
 
 buildLegend();
 renderStatic(ctx);
+
+// Scale both canvases to fit mobile viewport
+function applyCanvasScale() {
+    const naturalW = canvas.width;
+    const naturalH = canvas.height;
+    const scale = window.innerWidth < 768
+        ? Math.min(1, (window.innerWidth - 12) / naturalW)
+        : 1;
+    [canvas, heatCanvas].forEach(el => {
+        if (scale < 1) {
+            el.style.transform       = `scale(${scale})`;
+            el.style.transformOrigin = 'top left';
+            el.style.marginRight     = Math.round(naturalW * (scale - 1)) + 'px';
+            el.style.marginBottom    = Math.round(naturalH * (scale - 1)) + 'px';
+        } else {
+            el.style.transform = el.style.marginRight = el.style.marginBottom = '';
+        }
+    });
+}
+applyCanvasScale();
+window.addEventListener('resize', applyCanvasScale);
 
 // Auto-load video log from server
 fetch('/api/video-log')
