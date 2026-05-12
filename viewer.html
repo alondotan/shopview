@@ -70,6 +70,10 @@ select {
 }
 .tab-panel.active { display: flex; }
 
+/* ── Animation tab layout ── */
+#tab-animation { flex-direction: column; gap: 6px; }
+#animation-main { display: flex; flex: 1; min-height: 0; gap: 10px; }
+
 /* ── Canvas wrap (animation) ── */
 #canvas-wrap {
     display: flex; flex-direction: column; gap: 8px; align-items: flex-start; flex-shrink: 0;
@@ -335,11 +339,11 @@ canvas { border-radius: 4px; display: block; }
     .tab-panel { overflow-y: auto; }
 
     /* Animation tab */
-    #tab-animation { flex-direction: column; }
-    #canvas-wrap   { width: auto !important; overflow: visible; }
-    #legend        { display: none; }
-    #right         { flex: none; min-height: 0; }
-    #event-log     { max-height: 220px; }
+    #animation-main { flex-direction: column; }
+    #canvas-wrap    { width: auto !important; overflow: visible; }
+    #legend         { display: none; }
+    #right          { flex: none; min-height: 0; }
+    #event-log      { max-height: 220px; }
 
     /* Analytics tab */
     #analytics-heat-panel  { align-items: center; }
@@ -364,40 +368,6 @@ canvas { border-radius: 4px; display: block; }
 </head>
 <body>
 
-<!-- Controls (always visible) -->
-<div id="controls">
-    <button id="btnPlay"  disabled>▶ Play</button>
-    <button id="btnPause" disabled>⏸</button>
-    <button id="btnReset" disabled>⏮</button>
-    <input  id="timeline" type="range" min="0" max="0" value="0" disabled>
-    <span   id="ts-display">--:--</span>
-    <span   id="day-display" style="font-family:monospace;font-size:13px;font-weight:bold;color:#f9a825;display:none"></span>
-    <span   id="frame-info"></span>
-    <label style="font-size:12px;color:#777">Speed
-        <select id="speedSel">
-            <option value="2000">½×</option>
-            <option value="1000" selected>1×</option>
-            <option value="500">2×</option>
-            <option value="200">5×</option>
-            <option value="100">10×</option>
-        </select>
-    </label>
-    <label id="day-ctrl" style="font-size:12px;color:#777;display:none">Day
-        <select id="daySel">
-            <option value="All">All days</option>
-        </select>
-    </label>
-    <label id="shopper-ctrl" style="font-size:12px;color:#777;display:none">Shopper
-        <select id="shopperSel">
-            <option value="all">All shoppers</option>
-        </select>
-    </label>
-    <label style="font-size:12px;color:#777;margin-left:8px">
-        <input type="file" id="fileIn" accept=".csv" style="display:none">
-        <span id="fileLabel" style="cursor:pointer;color:#5c8ee8;text-decoration:underline">Load CSV</span>
-    </label>
-</div>
-
 <!-- Tab bar -->
 <div id="tab-bar">
     <button class="tab-btn active" onclick="switchTab('animation')">▶ Animation</button>
@@ -408,20 +378,54 @@ canvas { border-radius: 4px; display: block; }
 
 <!-- Animation tab -->
 <div id="tab-animation" class="tab-panel active">
-    <div id="canvas-wrap">
-        <canvas id="c"></canvas>
-        <div id="legend"></div>
-        <div id="in-store"></div>
+    <div id="controls">
+        <button id="btnPlay"  disabled>▶ Play</button>
+        <button id="btnPause" disabled>⏸</button>
+        <button id="btnReset" disabled>⏮</button>
+        <input  id="timeline" type="range" min="0" max="0" value="0" disabled>
+        <span   id="ts-display">--:--</span>
+        <span   id="day-display" style="font-family:monospace;font-size:13px;font-weight:bold;color:#f9a825;display:none"></span>
+        <span   id="frame-info"></span>
+        <label style="font-size:12px;color:#777">Speed
+            <select id="speedSel">
+                <option value="2000">½×</option>
+                <option value="1000" selected>1×</option>
+                <option value="500">2×</option>
+                <option value="200">5×</option>
+                <option value="100">10×</option>
+            </select>
+        </label>
+        <label id="day-ctrl" style="font-size:12px;color:#777;display:none">Day
+            <select id="daySel">
+                <option value="All">All days</option>
+            </select>
+        </label>
+        <label id="shopper-ctrl" style="font-size:12px;color:#777;display:none">Shopper
+            <select id="shopperSel">
+                <option value="all">All shoppers</option>
+            </select>
+        </label>
+        <label style="font-size:12px;color:#777;margin-left:8px">
+            <input type="file" id="fileIn" accept=".csv" style="display:none">
+            <span id="fileLabel" style="cursor:pointer;color:#5c8ee8;text-decoration:underline">Load CSV</span>
+        </label>
     </div>
-    <div id="right">
-        <div id="drop-zone">
-            <div>📹 Load <code>*_video.csv</code></div>
-            <label>Choose file <input type="file" id="fileIn2" accept=".csv"></label>
-            <div style="font-size:12px">or drag &amp; drop here</div>
+    <div id="animation-main">
+        <div id="canvas-wrap">
+            <canvas id="c"></canvas>
+            <div id="legend"></div>
+            <div id="in-store"></div>
         </div>
-        <div id="event-log">
-            <h3>📋 Event Log</h3>
-            <div id="log-entries"></div>
+        <div id="right">
+            <div id="drop-zone">
+                <div>📹 Load <code>*_video.csv</code></div>
+                <label>Choose file <input type="file" id="fileIn2" accept=".csv"></label>
+                <div style="font-size:12px">or drag &amp; drop here</div>
+            </div>
+            <div id="event-log">
+                <h3>📋 Event Log</h3>
+                <div id="log-entries"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -1411,11 +1415,9 @@ const pathCanvas = document.getElementById('pathCanvas');
 let pCtx = null;
 
 function initPathCanvas() {
-    if (!pathCanvas.width) {
-        pathCanvas.width  = COLS * CELL + PAD;
-        pathCanvas.height = ROWS * CELL + PAD;
-    }
-    if (!pCtx) pCtx = pathCanvas.getContext('2d');
+    pathCanvas.width  = COLS * CELL + PAD;
+    pathCanvas.height = ROWS * CELL + PAD;
+    pCtx = pathCanvas.getContext('2d');
 }
 
 function computePaths() {
