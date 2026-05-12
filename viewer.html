@@ -433,10 +433,10 @@ canvas { border-radius: 4px; display: block; }
 <!-- Analytics tab -->
 <div id="tab-analytics" class="tab-panel">
     <div id="analytics-subtab-bar">
-        <button class="ana-sub active" data-sub="heat" onclick="switchAnalyticsSub('heat')">🔥 מפת חום</button>
-        <button class="ana-sub" data-sub="stats" onclick="switchAnalyticsSub('stats')">📊 נתונים</button>
+        <button class="ana-sub" data-sub="heat" onclick="switchAnalyticsSub('heat')">🔥 מפת חום</button>
+        <button class="ana-sub active" data-sub="stats" onclick="switchAnalyticsSub('stats')">📊 נתונים</button>
     </div>
-    <div id="analytics-heat-panel">
+    <div id="analytics-heat-panel" style="display:none">
         <div style="font-size:13px;color:#6ab0ff;font-weight:bold">Heat Map — minutes spent per cell</div>
         <canvas id="heatCanvas"></canvas>
         <div id="heat-scale">
@@ -445,7 +445,7 @@ canvas { border-radius: 4px; display: block; }
             <span>high</span>
         </div>
     </div>
-    <div id="analytics-stats-panel" style="display:none">
+    <div id="analytics-stats-panel">
         <!-- Filter bar -->
         <div id="filter-bar">
             <span>FILTER</span>
