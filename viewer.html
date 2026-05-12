@@ -323,7 +323,7 @@ canvas { border-radius: 4px; display: block; }
 @media (max-width: 767px) {
     body { padding: 6px; gap: 6px; }
 
-    /* Controls */
+    /* Controls (inside animation tab) */
     #controls { flex-wrap: wrap; padding: 6px 8px; gap: 5px 8px; }
     #controls button { font-size: 13px; padding: 7px 13px; }
     #timeline { order: 10; flex-basis: 100%; }
@@ -332,8 +332,9 @@ canvas { border-radius: 4px; display: block; }
     #fileLabel  { display: none; }
     select { font-size: 13px; }
 
-    /* Tab bar */
-    .tab-btn { padding: 7px 10px; font-size: 12px; }
+    /* Tab bar — scroll horizontally if needed, never wrap */
+    #tab-bar { overflow-x: auto; padding-bottom: 2px; flex-shrink: 0; }
+    .tab-btn { padding: 6px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
 
     /* All tab panels may scroll */
     .tab-panel { overflow-y: auto; }
@@ -347,21 +348,36 @@ canvas { border-radius: 4px; display: block; }
 
     /* Analytics tab */
     #analytics-heat-panel  { align-items: center; }
-    #analytics-stats-panel { padding-bottom: 16px; }
+    #analytics-stats-panel { padding: 10px; padding-bottom: 16px; }
     #kpis .kpi             { min-width: 80px; }
+    .beh-item              { min-width: 110px; }
+
+    /* Filter bar — allow day buttons to wrap */
+    #filter-bar   { gap: 10px; padding: 8px 10px; }
+    .filter-btns  { flex-wrap: wrap; }
+    .filter-group { align-items: flex-start; }
+
+    /* Day comparison table — horizontal scroll */
+    #day-comparison-section            { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #day-comparison-section .day-cmp-table { min-width: 340px; }
+
+    /* Demographics — narrow labels, hide secondary time column */
+    .demo-label { width: 85px; }
+    .demo-row .demo-time:last-child { display: none; }
+
+    /* Funnel — narrower label */
+    .funnel-label { width: 120px; font-size: 11px; }
+
+    /* Section bars — narrower name */
+    .sec-name { width: 100px; }
 
     /* Chat tab */
     #tab-chat { overflow: hidden; }
 
     /* Paths tab */
-    #paths-left  { display:flex; flex-direction:column; gap:8px; flex-shrink:0; align-items:flex-start; }
-    #paths-right { flex:1; min-width:0; overflow-y:auto; display:flex; flex-direction:column; gap:14px; padding-right:4px; }
-    #tab-paths   { overflow-y:auto; }
-    @media(max-width:768px) {
-        #tab-paths   { flex-direction:column; }
-        #paths-left  { width:100%; }
-        #paths-right { overflow-y:visible; }
-    }
+    #tab-paths  { flex-direction: column; overflow-y: auto; }
+    #paths-left { width: 100%; align-items: flex-start; }
+    #paths-right { overflow-y: visible; }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
