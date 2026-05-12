@@ -24,6 +24,10 @@ SUMMARY_FILE = next(
     (HERE / f for f in ("week_summary_new.csv", "week_summary.csv") if (HERE / f).exists()),
     HERE / "week_summary.csv",
 )
+VIDEO_FILE = next(
+    (HERE / f for f in ("week3_log_video.csv", "week2_log_video.csv", "week_log_video.csv", "day_log_video.csv") if (HERE / f).exists()),
+    None,
+)
 MODEL = "claude-sonnet-4-6"
 
 FIELD_DOCS = """
@@ -102,6 +106,13 @@ def _sse(obj: dict) -> str:
 @app.route("/")
 def index():
     return send_file(HERE / "viewer.html")
+
+
+@app.route("/api/video-log")
+def video_log():
+    if not VIDEO_FILE or not VIDEO_FILE.exists():
+        return {"error": "No video log file found"}, 404
+    return send_file(VIDEO_FILE, mimetype="text/csv")
 
 
 @app.route("/api/summary-info")

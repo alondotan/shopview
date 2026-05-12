@@ -1414,6 +1414,12 @@ dz.addEventListener('drop', e => {
 buildLegend();
 renderStatic(ctx);
 
+// Auto-load video log from server
+fetch('/api/video-log')
+    .then(r => { if (!r.ok) throw new Error('no file'); return r.text(); })
+    .then(text => loadCSVText(text))
+    .catch(() => {}); // fallback: manual load via drop-zone
+
 // ══════════════════════════════════════════════════
 //  CHAT
 // ══════════════════════════════════════════════════
