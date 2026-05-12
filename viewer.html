@@ -52,8 +52,8 @@ select {
 }
 .tab-btn {
     background: #1c1c30; color: #777; border: 1px solid #2a2a4a;
-    border-radius: 7px 7px 0 0; padding: 6px 18px; cursor: pointer;
-    font-size: 13px; transition: all .15s;
+    border-radius: 7px 7px 0 0; padding: 8px 18px; cursor: pointer;
+    font-size: 15px; transition: all .15s;
 }
 .tab-btn:hover { color: #ccc; background: #22223a; }
 .tab-btn.active { background: #1c1c30; color: #6ab0ff; border-bottom-color: #1c1c30; }
@@ -110,21 +110,34 @@ canvas { border-radius: 4px; display: block; }
 /* ══════════════════════════════════
    ANALYTICS TAB
 ══════════════════════════════════ */
-#analytics-left {
-    display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: flex-start;
+#tab-analytics { flex-direction: column; gap: 0; padding: 0; }
+
+#analytics-subtab-bar {
+    display: flex; gap: 6px; padding: 8px 10px 0; flex-shrink: 0;
+}
+.ana-sub {
+    background: #16162a; color: #777; border: 1px solid #2a2a4a;
+    border-radius: 7px 7px 0 0; padding: 8px 22px; cursor: pointer;
+    font-size: 15px; transition: all .15s;
+}
+.ana-sub:hover:not(.active) { color: #ccc; background: #1e1e38; }
+.ana-sub.active { background: #1c1c30; color: #6ab0ff; border-bottom-color: #1c1c30; }
+
+#analytics-heat-panel {
+    flex: 1; display: flex; flex-direction: column; align-items: flex-start;
+    gap: 10px; padding: 14px; overflow-y: auto; min-height: 0;
+}
+#analytics-stats-panel {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+    gap: 14px; padding: 14px; min-height: 0;
 }
 #heat-scale {
-    display: flex; align-items: center; gap: 8px; font-size: 11px; color: #777;
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: #777;
     width: 100%;
 }
 #heat-gradient {
     flex: 1; height: 12px; border-radius: 6px;
     background: linear-gradient(to right, #1a237e, #1565c0, #00897b, #f9a825, #e53935);
-}
-
-#analytics-right {
-    flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
-    padding-right: 4px;
 }
 
 /* ── KPI cards ── */
@@ -133,15 +146,15 @@ canvas { border-radius: 4px; display: block; }
     background: #16162a; border: 1px solid #2a2a4a; border-radius: 8px;
     padding: 10px 14px; min-width: 110px; flex: 1;
 }
-.kpi-val { font-size: 22px; font-weight: bold; color: #6ab0ff; font-family: monospace; }
+.kpi-val { font-size: 28px; font-weight: bold; color: #6ab0ff; font-family: monospace; }
 .kpi-val.red { color: #ef9a9a; }
 .kpi-val.green { color: #a5d6a7; }
 .kpi-val.amber { color: #ffcc80; }
-.kpi-label { font-size: 11px; color: #777; margin-top: 2px; }
+.kpi-label { font-size: 13px; color: #777; margin-top: 2px; }
 
 /* ── Section bars ── */
 .analytics-section { background: #16162a; border-radius: 8px; padding: 12px 14px; }
-.analytics-section h4 { font-size: 13px; color: #6ab0ff; margin-bottom: 10px; }
+.analytics-section h4 { font-size: 15px; color: #6ab0ff; margin-bottom: 10px; }
 
 .sec-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 .sec-name { width: 130px; font-size: 12px; color: #bbb; flex-shrink: 0; text-align: right; }
@@ -248,7 +261,7 @@ canvas { border-radius: 4px; display: block; }
 .chat-msg.user  { align-self: flex-end; align-items: flex-end; }
 .chat-msg.asst  { align-self: flex-start; align-items: flex-start; }
 .chat-bubble {
-    padding: 9px 13px; border-radius: 14px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+    padding: 11px 15px; border-radius: 14px; font-size: 15px; line-height: 1.6; white-space: pre-wrap; word-break: break-word;
 }
 .chat-msg.user .chat-bubble { background: #2a4a8a; color: #ddeeff; border-bottom-right-radius: 4px; }
 .chat-msg.asst .chat-bubble { background: #1e1e35; color: #ddd;    border-bottom-left-radius: 4px; }
@@ -260,13 +273,13 @@ canvas { border-radius: 4px; display: block; }
 }
 #chat-input {
     flex: 1; background: #16162a; border: 1px solid #3a3a5a; border-radius: 8px;
-    color: #ddd; font-size: 13px; padding: 8px 12px; resize: none; outline: none;
-    font-family: 'Segoe UI', sans-serif; min-height: 38px; max-height: 120px;
+    color: #ddd; font-size: 15px; padding: 10px 14px; resize: none; outline: none;
+    font-family: 'Segoe UI', sans-serif; min-height: 44px; max-height: 130px;
 }
 #chat-input:focus { border-color: #5c8ee8; }
 #chat-send {
     background: #2a4a8a; color: #aacfff; border: 1px solid #3a5fad; border-radius: 8px;
-    padding: 8px 16px; cursor: pointer; font-size: 13px; transition: background .15s; flex-shrink: 0;
+    padding: 10px 18px; cursor: pointer; font-size: 15px; transition: background .15s; flex-shrink: 0;
 }
 #chat-send:hover:not(:disabled) { background: #3a5fad; }
 #chat-send:disabled { opacity: .4; cursor: default; }
@@ -329,14 +342,22 @@ canvas { border-radius: 4px; display: block; }
     #event-log     { max-height: 220px; }
 
     /* Analytics tab */
-    #tab-analytics   { flex-direction: column; overflow-y: auto; }
-    #analytics-left  { width: 100%; align-items: flex-start; }
-    #analytics-right { overflow-y: visible; padding-bottom: 12px; }
-    #kpis .kpi       { min-width: 80px; }
+    #analytics-heat-panel  { align-items: center; }
+    #analytics-stats-panel { padding-bottom: 16px; }
+    #kpis .kpi             { min-width: 80px; }
 
     /* Chat tab */
-    #tab-chat   { overflow: hidden; }
-    #chat-panel { height: 100%; }
+    #tab-chat { overflow: hidden; }
+
+    /* Paths tab */
+    #paths-left  { display:flex; flex-direction:column; gap:8px; flex-shrink:0; align-items:flex-start; }
+    #paths-right { flex:1; min-width:0; overflow-y:auto; display:flex; flex-direction:column; gap:14px; padding-right:4px; }
+    #tab-paths   { overflow-y:auto; }
+    @media(max-width:768px) {
+        #tab-paths   { flex-direction:column; }
+        #paths-left  { width:100%; }
+        #paths-right { overflow-y:visible; }
+    }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
@@ -381,6 +402,7 @@ canvas { border-radius: 4px; display: block; }
 <div id="tab-bar">
     <button class="tab-btn active" onclick="switchTab('animation')">▶ Animation</button>
     <button class="tab-btn"        onclick="switchTab('analytics')">📊 Analytics</button>
+    <button class="tab-btn"        onclick="switchTab('paths')">🚶 Paths</button>
     <button class="tab-btn"        onclick="switchTab('chat')">💬 Chat</button>
 </div>
 
@@ -406,8 +428,12 @@ canvas { border-radius: 4px; display: block; }
 
 <!-- Analytics tab -->
 <div id="tab-analytics" class="tab-panel">
-    <div id="analytics-left">
-        <div style="font-size:12px;color:#6ab0ff;margin-bottom:4px;font-weight:bold">Heat Map — minutes spent per cell</div>
+    <div id="analytics-subtab-bar">
+        <button class="ana-sub active" data-sub="heat" onclick="switchAnalyticsSub('heat')">🔥 מפת חום</button>
+        <button class="ana-sub" data-sub="stats" onclick="switchAnalyticsSub('stats')">📊 נתונים</button>
+    </div>
+    <div id="analytics-heat-panel">
+        <div style="font-size:13px;color:#6ab0ff;font-weight:bold">Heat Map — minutes spent per cell</div>
         <canvas id="heatCanvas"></canvas>
         <div id="heat-scale">
             <span>low</span>
@@ -415,7 +441,7 @@ canvas { border-radius: 4px; display: block; }
             <span>high</span>
         </div>
     </div>
-    <div id="analytics-right">
+    <div id="analytics-stats-panel" style="display:none">
         <!-- Filter bar -->
         <div id="filter-bar">
             <span>FILTER</span>
@@ -471,6 +497,29 @@ canvas { border-radius: 4px; display: block; }
         <div class="analytics-section">
             <h4>Hourly Traffic</h4>
             <div id="hourly-traffic"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Paths tab -->
+<div id="tab-paths" class="tab-panel">
+    <div id="paths-left">
+        <div style="font-size:12px;color:#6ab0ff;margin-bottom:4px;font-weight:bold">Traffic Flow — shopper movement corridors</div>
+        <canvas id="pathCanvas"></canvas>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#777;margin-top:4px">
+            <span>sparse</span>
+            <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(to right,#1565c0,#00acc1,#43a047,#f9a825,#e53935)"></div>
+            <span>dense</span>
+        </div>
+    </div>
+    <div id="paths-right">
+        <div class="analytics-section">
+            <h4>Section Journey Map</h4>
+            <canvas id="flowCanvas" width="420" height="310" style="width:100%;max-width:420px"></canvas>
+        </div>
+        <div class="analytics-section">
+            <h4>Top Routes</h4>
+            <div id="top-routes-list" style="font-size:12px"></div>
         </div>
     </div>
 </div>
@@ -542,6 +591,7 @@ const CELL = 50, PAD = 26;
 canvas.width  = heatCanvas.width  = COLS * CELL + PAD;
 canvas.height = heatCanvas.height = ROWS * CELL + PAD;
 document.getElementById('canvas-wrap').style.width = canvas.width + 'px';
+// pathCanvas is initialized lazily in initPathCanvas() when the Paths tab first opens
 
 // ══════════════════════════════════════════════════
 //  STATE
@@ -1355,16 +1405,307 @@ function renderAnalytics() {
 }
 
 // ══════════════════════════════════════════════════
+//  PATH ANALYSIS
+// ══════════════════════════════════════════════════
+const pathCanvas = document.getElementById('pathCanvas');
+let pCtx = null;
+
+function initPathCanvas() {
+    if (!pathCanvas.width) {
+        pathCanvas.width  = COLS * CELL + PAD;
+        pathCanvas.height = ROWS * CELL + PAD;
+    }
+    if (!pCtx) pCtx = pathCanvas.getContext('2d');
+}
+
+function computePaths() {
+    const trails = {};
+    for (const row of allRows) {
+        const key = (row.day || '') + '_' + row.shopper_id;
+        if (!trails[key]) trails[key] = [];
+        trails[key].push(row);
+    }
+    for (const k of Object.keys(trails))
+        trails[k].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+    // Edge frequencies using linear interpolation for multi-cell moves (speed > 1)
+    const edgeCounts = new Map();
+    for (const trail of Object.values(trails)) {
+        const moves = trail.filter(r => r.action === 'MOVING');
+        for (let i = 1; i < moves.length; i++) {
+            const { ri: r1, ci: c1 } = csvToIdx(moves[i - 1].row, moves[i - 1].col);
+            const { ri: r2, ci: c2 } = csvToIdx(moves[i].row,     moves[i].col);
+            const steps = Math.max(Math.abs(r2 - r1), Math.abs(c2 - c1));
+            if (steps === 0) continue;
+            for (let s = 0; s < steps; s++) {
+                const fr = Math.round(r1 + (r2 - r1) *  s      / steps);
+                const fc = Math.round(c1 + (c2 - c1) *  s      / steps);
+                const tr = Math.round(r1 + (r2 - r1) * (s + 1) / steps);
+                const tc = Math.round(c1 + (c2 - c1) * (s + 1) / steps);
+                if (fr === tr && fc === tc) continue;
+                const ek = `${fr},${fc},${tr},${tc}`;
+                edgeCounts.set(ek, (edgeCounts.get(ek) || 0) + 1);
+            }
+        }
+    }
+
+    const sectionFlow = new Map();
+    const routeCounts = new Map();
+    for (const trail of Object.values(trails)) {
+        const stops = [];
+        for (const row of trail) {
+            let name = null;
+            if      (row.action === 'ENTERED')              name = 'Entrance';
+            else if (row.action === 'ARRIVED_SECTION')      name = row.details.trim();
+            else if (row.action === 'ARRIVED_FITTING_AREA') name = 'Fitting Room';
+            else if (row.action === 'JOINED_QUEUE')         name = 'Checkout';
+            else if (row.action === 'EXITED')               name = 'Exit';
+            if (name) stops.push(name);
+        }
+        for (let i = 1; i < stops.length; i++) {
+            if (stops[i] !== stops[i - 1]) {
+                const tk = stops[i - 1] + '→' + stops[i];
+                sectionFlow.set(tk, (sectionFlow.get(tk) || 0) + 1);
+            }
+        }
+        const sects = stops.filter(s => !['Entrance', 'Exit', 'Fitting Room', 'Checkout'].includes(s));
+        if (sects.length) {
+            const rk = sects.join(' → ');
+            routeCounts.set(rk, (routeCounts.get(rk) || 0) + 1);
+        }
+    }
+    return { edgeCounts, sectionFlow, routeCounts };
+}
+
+function renderPathGrid(edgeCounts) {
+    initPathCanvas();
+    renderStatic(pCtx);
+    if (!edgeCounts.size) return;
+
+    const maxCount = Math.max(...edgeCounts.values());
+    const sorted   = [...edgeCounts.entries()].sort((a, b) => a[1] - b[1]);
+
+    for (const [key, count] of sorted) {
+        const [r1, c1, r2, c2] = key.split(',').map(Number);
+        if (r1 < 0 || r1 >= ROWS || r2 < 0 || r2 >= ROWS ||
+            c1 < 0 || c1 >= COLS || c2 < 0 || c2 >= COLS) continue;
+
+        const t     = count / maxCount;
+        const { x: x1, y: y1 } = idxToXY(r1, c1);
+        const { x: x2, y: y2 } = idxToXY(r2, c2);
+        const hue   = Math.round((1 - t) * 220);
+        const alpha = 0.15 + 0.75 * Math.sqrt(t);
+        const lw    = 1.5 + 4.5 * Math.sqrt(t);
+        const aLen  = 4 + 4 * Math.sqrt(t);
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const offX  = Math.cos(angle) * 7, offY = Math.sin(angle) * 7;
+
+        pCtx.save();
+        pCtx.globalAlpha = alpha;
+        pCtx.strokeStyle = `hsl(${hue},90%,55%)`;
+        pCtx.fillStyle   = `hsl(${hue},90%,55%)`;
+        pCtx.lineWidth   = lw;
+        pCtx.lineCap     = 'round';
+        pCtx.beginPath();
+        pCtx.moveTo(x1 + offX, y1 + offY);
+        pCtx.lineTo(x2 - offX, y2 - offY);
+        pCtx.stroke();
+
+        const ax = x2 - offX, ay = y2 - offY;
+        pCtx.beginPath();
+        pCtx.moveTo(ax, ay);
+        pCtx.lineTo(ax - aLen * Math.cos(angle - 0.45), ay - aLen * Math.sin(angle - 0.45));
+        pCtx.lineTo(ax - aLen * Math.cos(angle + 0.45), ay - aLen * Math.sin(angle + 0.45));
+        pCtx.closePath();
+        pCtx.fill();
+        pCtx.restore();
+    }
+}
+
+function renderSectionFlow(sectionFlow) {
+    const canvas = document.getElementById('flowCanvas');
+    const W = canvas.width, H = canvas.height;
+    const ctx2 = canvas.getContext('2d');
+    ctx2.clearRect(0, 0, W, H);
+
+    const NODES = {
+        'Entrance':          [0.46, 0.93],
+        'Tops':              [0.18, 0.52],
+        'Hats & Handbags':   [0.03, 0.32],
+        'Skirts & Dresses':  [0.03, 0.73],
+        'Pants':             [0.68, 0.52],
+        'Underwear':         [0.91, 0.17],
+        'Stockings':         [0.91, 0.38],
+        'Jeans':             [0.91, 0.80],
+        'Fitting Room':      [0.12, 0.06],
+        'Checkout':          [0.46, 0.22],
+        'Exit':              [0.56, 0.93],
+    };
+    const NR = 16;
+    const P  = 10;
+    const nW = W - 2 * P, nH = H - 2 * P;
+    const nodePos = name => {
+        const [px, py] = NODES[name] || [0.5, 0.5];
+        return { x: P + px * nW, y: P + py * nH };
+    };
+
+    if (!sectionFlow.size) {
+        ctx2.fillStyle = '#555';
+        ctx2.font = '13px Segoe UI';
+        ctx2.textAlign = 'center';
+        ctx2.textBaseline = 'middle';
+        ctx2.fillText('No data — load a CSV log first', W / 2, H / 2);
+        return;
+    }
+
+    const maxFlow = Math.max(...sectionFlow.values(), 1);
+    const edgeSorted = [...sectionFlow.entries()].sort((a, b) => a[1] - b[1]);
+
+    for (const [key, count] of edgeSorted) {
+        const sep  = key.indexOf('→');
+        const from = key.slice(0, sep), to = key.slice(sep + 1);
+        if (!NODES[from] || !NODES[to]) continue;
+        const { x: x1, y: y1 } = nodePos(from);
+        const { x: x2, y: y2 } = nodePos(to);
+        const t   = count / maxFlow;
+        const lw  = 1 + 8 * Math.sqrt(t);
+        const hue = Math.round((1 - t) * 200 + 10);
+        const mx  = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        const dx  = x2 - x1,       dy = y2 - y1;
+        const cpx = mx - dy * 0.18, cpy = my + dx * 0.18;
+
+        ctx2.save();
+        ctx2.globalAlpha = 0.12 + 0.65 * t;
+        ctx2.strokeStyle = `hsl(${hue},80%,58%)`;
+        ctx2.lineWidth   = lw;
+        ctx2.lineCap     = 'round';
+        ctx2.beginPath();
+        ctx2.moveTo(x1, y1);
+        ctx2.quadraticCurveTo(cpx, cpy, x2, y2);
+        ctx2.stroke();
+
+        const aAngle = Math.atan2(y2 - cpy, x2 - cpx);
+        const aLen   = 5 + 4 * Math.sqrt(t);
+        ctx2.fillStyle = `hsl(${hue},80%,58%)`;
+        ctx2.beginPath();
+        ctx2.moveTo(x2, y2);
+        ctx2.lineTo(x2 - aLen * Math.cos(aAngle - 0.4), y2 - aLen * Math.sin(aAngle - 0.4));
+        ctx2.lineTo(x2 - aLen * Math.cos(aAngle + 0.4), y2 - aLen * Math.sin(aAngle + 0.4));
+        ctx2.closePath();
+        ctx2.fill();
+        ctx2.restore();
+    }
+
+    const SPECIAL     = new Set(['Entrance', 'Exit', 'Checkout', 'Fitting Room']);
+    const NODE_FILL   = {
+        'Tops':             '#1565c0', 'Hats & Handbags': '#6a1b9a',
+        'Skirts & Dresses': '#880e4f', 'Pants':           '#00695c',
+        'Underwear':        '#e65100', 'Stockings':       '#558b2f',
+        'Jeans':            '#1a237e', 'Fitting Room':    '#4a148c',
+        'Checkout':         '#bf360c', 'Entrance':        '#1b5e20', 'Exit': '#2e7d32',
+    };
+    const SHORT_LABEL = {
+        'Hats & Handbags':  'Hats+', 'Skirts & Dresses': 'Skirts',
+        'Fitting Room':     'Fitting', 'Entrance': 'Enter', 'Exit': 'Exit',
+    };
+
+    for (const name of Object.keys(NODES)) {
+        const { x, y } = nodePos(name);
+        ctx2.save();
+        ctx2.fillStyle   = NODE_FILL[name] || '#2a2a4a';
+        ctx2.strokeStyle = SPECIAL.has(name) ? '#5c8ee8' : '#6ab0ff';
+        ctx2.lineWidth   = 1.8;
+        ctx2.globalAlpha = 0.92;
+        ctx2.beginPath();
+        ctx2.arc(x, y, NR, 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.stroke();
+        ctx2.restore();
+
+        ctx2.save();
+        ctx2.fillStyle    = '#e8e8ff';
+        ctx2.font         = 'bold 8.5px Segoe UI';
+        ctx2.textAlign    = 'center';
+        ctx2.textBaseline = 'middle';
+        const label = SHORT_LABEL[name] || name;
+        const words = label.split(' ');
+        if (words.length > 1) {
+            ctx2.fillText(words[0], x, y - 5);
+            ctx2.fillText(words.slice(1).join(' '), x, y + 5);
+        } else {
+            ctx2.fillText(label, x, y);
+        }
+        ctx2.restore();
+    }
+}
+
+const SECTION_BADGE_COLORS = {
+    'Tops':             '#1565c0', 'Hats & Handbags': '#6a1b9a',
+    'Skirts & Dresses': '#880e4f', 'Pants':           '#00695c',
+    'Underwear':        '#c84e00', 'Stockings':       '#4a7a20',
+    'Jeans':            '#1a237e',
+};
+
+function renderTopRoutes(routeCounts) {
+    const el     = document.getElementById('top-routes-list');
+    const sorted = [...routeCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+    const total  = [...routeCounts.values()].reduce((s, v) => s + v, 0);
+
+    if (!sorted.length) {
+        el.innerHTML = '<div style="color:#555;padding:8px">No route data — load a CSV log</div>';
+        return;
+    }
+
+    el.innerHTML = sorted.map(([route, count], i) => {
+        const pct  = total ? Math.round(count / total * 100) : 0;
+        const barW = Math.round(Math.min(pct * 1.6, 100));
+        const tags = route.split(' → ').map(s => {
+            const bg = SECTION_BADGE_COLORS[s] || '#2a2a4a';
+            return `<span style="background:${bg};padding:1px 6px;border-radius:3px;white-space:nowrap;font-size:11px">${s}</span>`;
+        }).join(`<span style="color:#555;margin:0 1px">›</span>`);
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1e1e30">
+            <span style="color:#555;font-size:11px;min-width:16px">${i + 1}</span>
+            <div style="flex:1;display:flex;flex-wrap:wrap;gap:3px;align-items:center">${tags}</div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;min-width:56px">
+                <span style="color:#6ab0ff;font-size:11px">${count}×</span>
+                <div style="background:#1e1e30;border-radius:2px;height:4px;width:${barW}px">
+                    <div style="background:#5c8ee8;height:4px;border-radius:2px;width:100%"></div>
+                </div>
+                <span style="color:#666;font-size:10px">${pct}%</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderPaths() {
+    if (!allRows.length) return;
+    const { edgeCounts, sectionFlow, routeCounts } = computePaths();
+    renderPathGrid(edgeCounts);
+    renderSectionFlow(sectionFlow);
+    renderTopRoutes(routeCounts);
+}
+
+// ══════════════════════════════════════════════════
 //  TAB SWITCHING
 // ══════════════════════════════════════════════════
 function switchTab(tab) {
-    ['animation', 'analytics', 'chat'].forEach(t =>
+    ['animation', 'analytics', 'paths', 'chat'].forEach(t =>
         document.getElementById('tab-' + t).classList.toggle('active', t === tab)
     );
     document.querySelectorAll('.tab-btn').forEach((b, i) => {
-        b.classList.toggle('active', ['animation','analytics','chat'][i] === tab);
+        b.classList.toggle('active', ['animation', 'analytics', 'paths', 'chat'][i] === tab);
     });
     if (tab === 'analytics') renderAnalytics();
+    if (tab === 'paths')     renderPaths();
+}
+
+function switchAnalyticsSub(which) {
+    document.querySelectorAll('.ana-sub').forEach(b =>
+        b.classList.toggle('active', b.dataset.sub === which)
+    );
+    document.getElementById('analytics-heat-panel').style.display  = which === 'heat'  ? '' : 'none';
+    document.getElementById('analytics-stats-panel').style.display = which === 'stats' ? '' : 'none';
+    if (which === 'stats') renderAnalytics();
 }
 
 // ══════════════════════════════════════════════════
@@ -1646,24 +1987,36 @@ document.getElementById('chat-input').addEventListener('input', function () {
 });
 
 // Check if running via server
-fetch('/api/summary-info')
-    .then(r => r.json())
-    .then(info => {
-        if (info.error) {
-            document.getElementById('chat-no-server').innerHTML =
-                `⚠️ ${info.error}`;
-            return;
-        }
-        document.getElementById('chat-no-server').style.display = 'none';
-        document.getElementById('chat-panel').style.display = 'flex';
-        document.getElementById('chat-file-name').textContent = info.file;
-        document.getElementById('chat-row-count').textContent = info.rows;
-    })
-    .catch(() => {
+function checkServer() {
+    document.getElementById('chat-no-server').innerHTML = 'בודק חיבור לשרת…';
+    const timer = setTimeout(() => {
         document.getElementById('chat-no-server').innerHTML =
-            '⚠️ הצ\'אט זמין רק דרך השרת.<br>' +
-            'הרץ: <code>python server.py</code> ופתח <a href="http://localhost:5000" style="color:#6ab0ff">localhost:5000</a>';
-    });
+            '⏳ השרת מתעורר, זה עשוי לקחת ~30 שניות…<br>' +
+            '<button onclick="checkServer()" style="margin-top:12px;background:#2a4a8a;color:#aacfff;border:1px solid #3a5fad;border-radius:8px;padding:8px 18px;cursor:pointer;font-size:15px">נסה שוב</button>';
+    }, 15000);
+
+    fetch('/api/summary-info')
+        .then(r => r.json())
+        .then(info => {
+            clearTimeout(timer);
+            if (info.error) {
+                document.getElementById('chat-no-server').innerHTML =
+                    `⚠️ ${info.error}<br><button onclick="checkServer()" style="margin-top:12px;background:#2a4a8a;color:#aacfff;border:1px solid #3a5fad;border-radius:8px;padding:8px 18px;cursor:pointer;font-size:15px">נסה שוב</button>`;
+                return;
+            }
+            document.getElementById('chat-no-server').style.display = 'none';
+            document.getElementById('chat-panel').style.display = 'flex';
+            document.getElementById('chat-file-name').textContent = info.file;
+            document.getElementById('chat-row-count').textContent = info.rows;
+        })
+        .catch(() => {
+            clearTimeout(timer);
+            document.getElementById('chat-no-server').innerHTML =
+                '⚠️ לא ניתן להתחבר לשרת.<br>' +
+                '<button onclick="checkServer()" style="margin-top:12px;background:#2a4a8a;color:#aacfff;border:1px solid #3a5fad;border-radius:8px;padding:8px 18px;cursor:pointer;font-size:15px">נסה שוב</button>';
+        });
+}
+checkServer();
 </script>
 </body>
 </html>
