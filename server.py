@@ -3,6 +3,7 @@
 from __future__ import annotations
 import json
 import os
+import sys
 from pathlib import Path
 
 from flask import Flask, Response, request, send_file, stream_with_context
@@ -20,6 +21,18 @@ if _env_file.exists():
             os.environ.setdefault(_k.strip(), _v.strip())
 
 app = Flask(__name__)
+
+# Video-analytics (YOLO) endpoints under /api/vision — optional: only mounted when
+# the vision extras (ultralytics, opencv, yt-dlp) are installed.
+sys.path.insert(0, str(HERE / "vision"))
+try:
+    from vision_api import bp as vision_bp
+    app.register_blueprint(vision_bp)
+    VISION_ENABLED = True
+except ImportError as _e:
+    print(f"[vision] disabled ({_e}) — pip install -r vision/requirements.txt")
+    VISION_ENABLED = False
+
 SUMMARY_FILE = next(
     (HERE / f for f in ("week_summary_new.csv", "week_summary.csv") if (HERE / f).exists()),
     HERE / "week_summary.csv",
@@ -105,7 +118,44 @@ def _sse(obj: dict) -> str:
 
 @app.route("/")
 def index():
+    """Tab shell: Simulation | Video | Calibration | Live map | Zones."""
+    return send_file(HERE / "vision" / "shell.html")
+
+
+@app.route("/viewer")
+def viewer():
+    """The simulation viewer itself (shown in the Simulation tab)."""
     return send_file(HERE / "viewer.html")
+
+
+@app.route("/livemap")
+def livemap():
+    """Video and store plan side by side, people placed on the plan."""
+    return send_file(HERE / "vision" / "livemap.html")
+
+
+@app.route("/zones")
+def zones():
+    """Draw zone polygons on the store plan and see them projected into the camera."""
+    return send_file(HERE / "vision" / "zones.html")
+
+
+@app.route("/vision")
+def vision_player():
+    """Video player with live YOLO annotation overlay."""
+    return send_file(HERE / "vision" / "player.html")
+
+
+@app.route("/live")
+def vision_live():
+    """Live-stream demo: camera → visitors, with the annotated frame and event feed."""
+    return send_file(HERE / "vision" / "live.html")
+
+
+@app.route("/calibrate")
+def vision_calibrate():
+    """Click matching points on a camera frame and the store map."""
+    return send_file(HERE / "vision" / "calibrate.html")
 
 
 @app.route("/api/video-log")

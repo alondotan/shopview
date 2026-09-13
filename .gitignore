@@ -3,3 +3,23 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+data/
+*.mp4
+
+# demo data that ships with the deployable image: one sample video, its
+# analysis, the map and the camera calibration (everything else in data/ stays local)
+!data/
+data/*
+!data/videos/
+data/videos/*
+!data/videos/KMJS66jBtVQ.mp4
+!data/tracks/
+data/tracks/*
+!data/tracks/KMJS66jBtVQ_tracks.csv
+!data/tracks/KMJS66jBtVQ_objects.csv
+!data/calibration/
+data/calibration/*
+!data/calibration/KMJS66jBtVQ.json
+!data/map/
+data/map/*
+!data/map/store_map_placeholder.png

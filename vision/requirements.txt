@@ -1,0 +1,7 @@
+# Video-analytics extras (stage 1: person detection + tracking)
+ultralytics>=8.3      # YOLO11 detection + ByteTrack (AGPL-3.0)
+opencv-python>=4.10
+yt-dlp>=2024.8
+lap>=0.5              # linear assignment used by the tracker
+# held-object detection (YOLO-World) embeds its text prompts with CLIP
+git+https://github.com/ultralytics/CLIP.git

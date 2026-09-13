@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live stream</title>
+<style>
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #1c1c30; color: #e0e0e0; font-size: 14px; }
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; padding: 12px; height: 100dvh; }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; height: auto; } }
+.panel { background: #12121f; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #8a8aa5; margin: 0; }
+label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: #a0a0bd; }
+input[type=text], input[type=number], select { background: #1c1c30; color: #e0e0e0; border: 1px solid #2a2a4a; border-radius: 6px; padding: 6px 8px; font: inherit; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.row label { flex: 1 1 120px; }
+button { background: #2c4a8a; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font: inherit; cursor: pointer; }
+button:hover { background: #38609f; }
+button:disabled { opacity: .5; cursor: default; }
+button.stop { background: #7a2c3a; }
+button:focus-visible { outline: 2px solid #5c8ee8; outline-offset: 2px; }
+.frame { flex: 1; min-height: 240px; background: #000; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.frame img { max-width: 100%; max-height: 100%; }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+.stats b { color: #8a8aa5; font-weight: 500; }
+.ok { color: #6fd3a0; } .bad { color: #ff7a8a; } .warn { color: #ffcc66; }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 4px 6px; border-radius: 4px; font-size: 13px; display: flex; gap: 8px; align-items: center; }
+li .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+li small { color: #8a8aa5; margin-left: auto; }
+.log { font-family: Consolas, monospace; font-size: 12px; color: #b8b8d0; max-height: 220px; overflow: auto; white-space: pre-wrap; }
+.log .m { color: #ffcc66; } .log .o { color: #7fc8ff; } .log .e { color: #ff7a8a; }
+.hint { font-size: 12px; color: #6a6a85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="panel">
+        <div class="row">
+            <label style="flex:3 1 260px">Source
+                <input type="text" id="source" placeholder="rtsp://user:pass@camera/stream · 0 (webcam) · video id" list="videos">
+                <datalist id="videos"></datalist></label>
+            <label>Analysed fps <input type="number" id="fps" value="6" min="1" max="30" step="1"></label>
+            <label>Stitch sim <input type="number" id="sim" value="0.6" min="0" max="1" step="0.05"></label>
+            <label>Decide after (s) <input type="number" id="decide" value="2" min="0" max="10" step="0.5"></label>
+            <label>Objects <select id="objects"><option value="1">every ~1 s</option><option value="0">off</option></select></label>
+            <button id="start">Start</button>
+            <button id="stop" class="stop" disabled>Stop</button>
+        </div>
+        <p class="hint">A video id plays at its own speed, as a camera would. People rows are published
+            "decide after" seconds late, once a new id has either been matched to a lost visitor or confirmed new.</p>
+        <div class="frame"><img id="frame" alt="latest annotated frame" hidden></div>
+    </div>
+    <div class="panel">
+        <h2>Pipeline</h2>
+        <div class="stats" id="stats"></div>
+        <h2>Visitors in view</h2>
+        <ul id="visitors"></ul>
+        <h2>Events</h2>
+        <div class="log" id="log"></div>
+    </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const API = '/api/vision/live';
+let es = null, frameTimer = null, lastSeen = new Map(), firstSeen = new Map();
+
+fetch('/api/vision/videos').then(r => r.json()).then(v => {
+    $('videos').innerHTML = v.map(x => `<option value="${x.id}">`).join('');
+    if (!$('source').value && v.length) $('source').value = v[0].id;
+}).catch(() => {});
+
+function colour(i) { return `hsl(${(i * 0.618033988749895 % 1) * 360}deg 75% 60%)`; }
+
+function setStats(s) {
+    const ing = s.ingest || {}, st = s.stitch || {}, ob = s.objects || {};
+    const rows = [
+        ['state', s.state, s.state === 'running' ? 'ok' : s.state === 'error' ? 'bad' : ''],
+        ['source', s.source || '—'],
+        ['connected', ing.connected ? 'yes' : (ing.ended ? 'ended' : 'no'), ing.connected ? 'ok' : 'warn'],
+        ['frames', `${s.frames_processed || 0} processed · ${ing.frames_dropped || 0} dropped`],
+        ['reconnects', ing.reconnects || 0, ing.reconnects ? 'warn' : ''],
+        ['per frame', `${s.frame_ms || 0} ms (budget ${(1000 / (s.target_fps || 6)).toFixed(0)} ms)`,
+            (s.frame_ms || 0) > 1000 / (s.target_fps || 6) ? 'warn' : 'ok'],
+        ['analysed fps', `${s.achieved_fps || 0} of ${s.target_fps || 6} wanted`,
+            (s.achieved_fps || 0) < 0.7 * (s.target_fps || 6) ? 'warn' : 'ok'],
+        ['people now', s.people_now || 0],
+        ['merges', `${st.merges || 0} · pool ${st.pool || 0} · pending ${st.pending || 0}`],
+        ['objects', ob.runs === undefined ? 'off' : `${ob.runs} runs · ${ob.last_ms} ms`],
+        ['error', s.error || '—', s.error ? 'bad' : ''],
+    ];
+    $('stats').innerHTML = rows.map(([k, v, c]) => `<b>${k}</b><span class="${c || ''}">${v}</span>`).join('');
+    const running = s.state === 'running' || s.state === 'loading';
+    $('start').disabled = running; $('stop').disabled = !running;
+}
+
+function log(cls, text) {
+    const el = $('log');
+    el.insertAdjacentHTML('afterbegin', `<div class="${cls}">${text}</div>`);
+    while (el.children.length > 200) el.lastChild.remove();
+}
+
+function renderVisitors(now) {
+    const items = [...lastSeen.entries()].filter(([, t]) => now - t < 3).sort((a, b) => a[0] - b[0]);
+    $('visitors').innerHTML = items.map(([id, t]) =>
+        `<li><span class="dot" style="background:${colour(id)}"></span>#${id}<small>${(t - firstSeen.get(id)).toFixed(0)} s</small></li>`
+    ).join('') || '<li class="hint">nobody</li>';
+}
+
+function onEvent(ev) {
+    if (ev.type === 'people') {
+        for (const r of ev.rows) {
+            if (!firstSeen.has(r.track_id)) firstSeen.set(r.track_id, r.time_s);
+            lastSeen.set(r.track_id, r.time_s);
+        }
+        renderVisitors(ev.t);
+    } else if (ev.type === 'merge') {
+        log('m', `t=${ev.t.toFixed(1)}s  raw ${ev.to} → visitor #${ev.visitor}  (gap ${ev.gap_s}s, ${ev.dist_px}px, sim ${ev.sim})`);
+        // the raw id may already have shown as its own visitor for a moment
+        firstSeen.delete(ev.to); lastSeen.delete(ev.to);
+    } else if (ev.type === 'objects') {
+        log('o', `t=${ev.t.toFixed(1)}s  ` + ev.objects.map(o => `${o.label}${o.person_id !== '' ? ' @#' + o.person_id : ''}`).join(', '));
+    } else if (ev.type === 'status') {
+        setStats(ev);
+        if (ev.state === 'error') log('e', ev.error);
+        if (ev.state === 'stopped' || ev.state === 'error') disconnect();
+    }
+}
+
+function connect() {
+    disconnect();
+    es = new EventSource(API + '/stream');
+    for (const t of ['people', 'merge', 'objects', 'status'])
+        es.addEventListener(t, e => onEvent(JSON.parse(e.data)));
+    es.onerror = () => { /* the browser retries; status polling keeps the panel honest */ };
+    frameTimer = setInterval(() => {
+        const img = $('frame');
+        const probe = new Image();
+        probe.onload = () => { img.src = probe.src; img.hidden = false; };
+        probe.src = API + '/frame.jpg?t=' + Date.now();
+    }, 400);
+}
+function disconnect() {
+    if (es) { es.close(); es = null; }
+    if (frameTimer) { clearInterval(frameTimer); frameTimer = null; }
+}
+
+$('start').addEventListener('click', async () => {
+    const body = {
+        source: $('source').value.trim(), fps: +$('fps').value, stitch_sim: +$('sim').value,
+        decide_after: +$('decide').value, objects: $('objects').value === '1',
+    };
+    const r = await fetch(API + '/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) { log('e', j.error || r.statusText); return; }
+    lastSeen.clear(); firstSeen.clear(); $('log').innerHTML = ''; $('visitors').innerHTML = '';
+    if (j.jsonl) log('', 'events → ' + j.jsonl);
+    setStats(j.status);
+    connect();
+});
+$('stop').addEventListener('click', async () => {
+    const r = await fetch(API + '/stop', { method: 'POST' });
+    setStats(await r.json());
+    disconnect();
+});
+
+// pick up a pipeline that is already running (page reload)
+fetch(API + '/status').then(r => r.json()).then(s => { setStats(s); if (s.state === 'running' || s.state === 'loading') connect(); });
+setInterval(() => fetch(API + '/status').then(r => r.json()).then(setStats).catch(() => {}), 3000);
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+.git
+.env
+__pycache__
+**/__pycache__
+*.pyc
+data/tracks/*_preview.mp4
+data/videos/*
+!data/videos/KMJS66jBtVQ.mp4
+data/live
+data/models
+Dockerfile
+.dockerignore

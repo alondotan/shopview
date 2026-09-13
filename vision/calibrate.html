@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12121f">
+<title>Camera → map calibration</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: dark; }
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #12121f; color: #e0e0e0;
+    display: flex; flex-direction: column; height: 100dvh;
+    overflow: hidden; gap: 8px; padding: 10px;
+}
+h1 { font-size: 15px; font-weight: 600; color: #6ab0ff; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #7a7a9a; }
+.bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #1c1c30; border-radius: 8px; padding: 8px 14px; flex-shrink: 0;
+}
+button, select {
+    background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
+    border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px;
+    transition: background-color .15s;
+}
+button:hover:not(:disabled) { background: #3a3a6a; }
+button:disabled { opacity: .35; cursor: default; }
+button.primary { background: #2f5da8; border-color: #4a7fd0; color: #eaf2ff; }
+button.primary:hover:not(:disabled) { background: #3c72c8; }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
+    outline: 2px solid #5c8ee8; outline-offset: 2px;
+}
+select { padding: 4px 6px; font-size: 12px; }
+label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: center; gap: 6px; }
+a { color: #6ab0ff; }
+
+/* mode switch */
+#mode { display: flex; gap: 0; border: 1px solid #3a3a5a; border-radius: 6px; overflow: hidden; }
+#mode button { border: 0; border-radius: 0; padding: 5px 12px; background: #22223a; color: #8a8aa5; }
+#mode button[aria-pressed="true"] { background: #2f5da8; color: #eaf2ff; }
+
+#main { display: flex; gap: 10px; flex: 1; min-height: 0; }
+.pane {
+    flex: 1; min-width: 0; background: #1c1c30; border-radius: 8px; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.canvas-wrap {
+    position: relative; flex: 1; min-height: 0; background: #0b0b14;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+.inner { position: relative; line-height: 0; max-width: 100%; max-height: 100%; }
+.inner > video, .inner > img { display: block; max-width: 100%; max-height: 100%; background: #fff; }
+.inner > canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+#map-video { position: absolute; top: 0; left: 0; transform-origin: 0 0; pointer-events: none; display: none; }
+.inner > canvas.grabbing { cursor: grabbing; }
+.hint { font-size: 12px; color: #7a7a9a; }
+.hint.active { color: #ffd479; }
+
+#side {
+    width: 310px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
+    padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: monospace; }
+th { text-align: left; color: #7a7a9a; font-weight: 500; padding: 3px 4px; }
+td { padding: 3px 4px; border-top: 1px solid #2a2a4a; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #23233c; }
+tr.sel { background: #2b3f66; }
+tr.bad td:nth-child(4) { color: #ff9a9a; font-weight: 700; }
+td button { padding: 0 6px; font-size: 12px; }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+.stats dt { color: #9a9ab0; }
+.stats dd { font-family: monospace; color: #6ab0ff; text-align: right; font-weight: 600; }
+.stats dd.warn { color: #ffb347; }
+.stats dd.bad  { color: #ff8080; }
+#status { font-size: 12px; color: #9a9ab0; }
+#status.error { color: #ff8080; }
+#status.ok { color: #7ddc9a; }
+#time { font-family: monospace; font-size: 13px; color: #6ab0ff; }
+input[type=range] { accent-color: #5c8ee8; }
+#test-list { font-size: 12px; font-family: monospace; color: #9a9ab0; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1100px) {
+    body { overflow: auto; height: auto; }
+    #main { flex-direction: column; }
+    #side { width: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+    <h1>Camera → map calibration</h1>
+    <label class="inline">Video
+        <select id="video-select" aria-label="Source video"></select>
+    </label>
+    <label class="inline">Map
+        <select id="map-select" aria-label="Store map"></select>
+    </label>
+    <button id="upload-btn">Upload map…</button>
+    <input type="file" id="map-file" accept="image/*" hidden>
+    <div id="mode" role="group" aria-label="Click mode">
+        <button id="mode-add"  aria-pressed="true">Add pairs</button>
+        <button id="mode-test" aria-pressed="false">Test a point</button>
+    </div>
+    <span id="status" role="status"></span>
+    <span style="margin-left:auto"></span>
+</div>
+
+<div id="main">
+    <div class="pane">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h2>1 · Camera frame</h2>
+            <span id="time">0.00 s</span>
+            <input type="range" id="seek" min="0" max="100" step="0.1" value="0"
+                   style="flex:1;min-width:120px" aria-label="Video time">
+        </div>
+        <div class="canvas-wrap">
+            <div class="inner">
+                <video id="video" playsinline preload="auto" muted></video>
+                <canvas id="cam-canvas"></canvas>
+            </div>
+        </div>
+        <p class="hint" id="hint-cam">Click a floor landmark — a corner, a shelf leg, a tile. Drag a marker to fix it.</p>
+    </div>
+
+    <div class="pane">
+        <h2>2 · Store map</h2>
+        <div class="canvas-wrap">
+            <div class="inner">
+                <img id="map-img" alt="Store map">
+                <video id="map-video" playsinline preload="auto" muted aria-hidden="true"></video>
+                <canvas id="map-canvas"></canvas>
+            </div>
+        </div>
+        <p class="hint" id="hint-map">Then click the same spot here.</p>
+    </div>
+
+    <aside id="side">
+        <div>
+            <h2>Fit</h2>
+            <dl class="stats">
+                <dt>Point pairs</dt><dd id="s-pairs">0</dd>
+                <dt>RMS error</dt><dd id="s-rms">–</dd>
+                <dt>Worst point</dt><dd id="s-max">–</dd>
+            </dl>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button id="undo">Undo</button>
+            <button id="clear">Clear</button>
+            <button id="save" class="primary" disabled>Save calibration</button>
+        </div>
+        <div>
+            <h2>Pairs</h2>
+            <table>
+                <thead><tr><th>#</th><th>camera</th><th>map</th><th>err</th><th></th></tr></thead>
+                <tbody id="pair-rows"></tbody>
+            </table>
+            <p class="hint" style="margin-top:4px">Click a row to select · drag a marker to move it · Delete removes it.</p>
+        </div>
+        <div>
+            <h2>Test points</h2>
+            <p class="hint" id="test-hint">Switch to “Test a point”, then click either image — the arrow shows where it lands on the other one.</p>
+            <div id="test-list"></div>
+            <button id="clear-tests" style="margin-top:6px">Clear test points</button>
+        </div>
+        <div>
+            <h2>Overlays</h2>
+            <label class="inline"><input type="checkbox" id="o-grid"> Map grid warped onto the camera</label>
+            <label class="inline" style="display:block;margin:6px 0 2px">
+                Camera warped onto the map <span id="v-birdseye">0</span>%
+                <input type="range" id="o-birdseye" min="0" max="100" step="5" value="0"
+                       style="width:100%" aria-label="Bird's-eye overlay opacity">
+            </label>
+            <label class="inline"><input type="checkbox" id="o-people" checked> Detected people on the map</label>
+            <label class="inline"><input type="checkbox" id="o-trail"> Their trails (4 s)</label>
+            <p class="hint" id="preview-hint">Needs 4+ pairs.</p>
+        </div>
+    </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const video  = document.getElementById('video');
+const mapVid = document.getElementById('map-video');
+const mapImg = document.getElementById('map-img');
+const camCv  = $('cam-canvas'), camCtx = camCv.getContext('2d');
+const mapCv  = $('map-canvas'), mapCtx = mapCv.getContext('2d');
+
+let videoId = null, mapName = null;
+let pairs   = [];        // [{img:[x,y], map:[x,y]}]
+let pending = null;      // camera point waiting for its map point
+let fit     = null;      // {H, errors_px, rms_px, max_px}
+let Hinv    = null;      // map → camera, for the test tool and the grid
+let tests   = [];        // [{from:'cam'|'map', src:[x,y], dst:[x,y]}]
+let mode    = 'add';     // 'add' | 'test'
+let selected = -1;
+let drag    = null;      // {index, side:'img'|'map'}
+let frames  = [], trails = new Map(), sampleDt = 0.25;
+
+const status = (msg, kind) => { $('status').textContent = msg; $('status').className = kind || ''; };
+const colorOf = id => 'hsl(' + ((id * 47) % 360) + ' 85% 62%)';
+
+// ── matrix helpers ────────────────────────────────────────────────────────
+function applyH(H, x, y) {
+    const w = H[2][0] * x + H[2][1] * y + H[2][2];
+    return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w,
+            (H[1][0] * x + H[1][1] * y + H[1][2]) / w];
+}
+
+function invert3(m) {
+    const [a, b, c] = m[0], [d, e, f] = m[1], [g, h, i] = m[2];
+    const A =  (e * i - f * h), B = -(d * i - f * g), C =  (d * h - e * g);
+    const det = a * A + b * B + c * C;
+    if (!det || !isFinite(det)) return null;
+    return [
+        [A / det, -(b * i - c * h) / det,  (b * f - c * e) / det],
+        [B / det,  (a * i - c * g) / det, -(a * f - c * d) / det],
+        [C / det, -(a * h - b * g) / det,  (a * e - b * d) / det],
+    ];
+}
+
+// ── loading ───────────────────────────────────────────────────────────────
+async function loadVideos() {
+    const list = await (await fetch('/api/vision/videos')).json();
+    const sel = $('video-select');
+    sel.innerHTML = '';
+    list.forEach(v => sel.add(new Option(
+        v.id + (v.has_calibration ? ' · calibrated' : v.has_tracks ? ' · tracked' : ' · no tracks'), v.id)));
+    if (!list.length) { status('No videos in data/videos', 'error'); return; }
+    await selectVideo(list[0].id);
+}
+
+async function loadMaps(preferred) {
+    const list = await (await fetch('/api/vision/maps')).json();
+    const sel = $('map-select');
+    sel.innerHTML = '';
+    list.forEach(m => sel.add(new Option(m.name, m.name)));
+    if (!list.length) { status('No store map yet — click "Upload map…"', 'error'); return false; }
+    sel.value = preferred && list.some(m => m.name === preferred) ? preferred : list[0].name;
+    setMap(sel.value);
+    return true;
+}
+
+/** The map pane's copy of the camera frame, warped by H via a CSS matrix3d.
+ *  Opacity 0 keeps it hidden; anything above shows the floor laid over the plan. */
+function renderBirdseye() {
+    const op = +$('o-birdseye').value / 100;
+    if (!op || !fit || !fit.H || !mapImg.naturalWidth || !video.videoWidth) {
+        mapVid.style.display = 'none';
+        return;
+    }
+    if (!mapVid.src || mapVid.src !== video.src) mapVid.src = video.src;
+    if (mapVid.readyState >= 1 && Math.abs(mapVid.currentTime - video.currentTime) > 0.08) {
+        mapVid.currentTime = video.currentTime;
+    }
+    // map pixels → displayed CSS pixels
+    const rect = mapImg.getBoundingClientRect();
+    const k = rect.width / mapImg.naturalWidth;
+    const H = fit.H;
+    const m = [
+        k * H[0][0], k * H[1][0], H[2][0],
+        k * H[0][1], k * H[1][1], H[2][1],
+        k * H[0][2], k * H[1][2], H[2][2],
+    ];
+    mapVid.style.display = 'block';
+    mapVid.style.opacity = op;
+    mapVid.style.width  = video.videoWidth + 'px';
+    mapVid.style.height = video.videoHeight + 'px';
+    mapVid.style.transform =
+        'matrix3d(' + [m[0], m[1], 0, m[2],
+                       m[3], m[4], 0, m[5],
+                       0, 0, 1, 0,
+                       m[6], m[7], 0, m[8]].join(',') + ')';
+}
+
+function setMap(name) {
+    mapName = name;
+    mapImg.src = '/api/vision/maps/' + encodeURIComponent(name);
+}
+
+async function selectVideo(id) {
+    videoId = id;
+    video.src = '/api/vision/video/' + id;
+    pairs = []; pending = null; fit = null; Hinv = null; tests = []; selected = -1;
+    frames = []; trails = new Map();
+
+    try {
+        const res = await fetch('/api/vision/tracks/' + id);
+        if (res.ok) parseTracks(await res.text());
+    } catch (e) { /* preview is optional */ }
+
+    let saved = null;
+    try {
+        const res = await fetch('/api/vision/calibration/' + id);
+        if (res.ok) saved = await res.json();
+    } catch (e) { /* first calibration */ }
+
+    await loadMaps(saved && saved.map);
+    if (saved) {
+        pairs = saved.points || [];
+        setFit(saved);
+        status('Loaded saved calibration (' + pairs.length + ' pairs)', 'ok');
+    }
+    render();
+    if (pairs.length >= 4) recompute();
+}
+
+function parseTracks(csv) {
+    const lines = csv.trim().split('\n');
+    const head = lines[0].trim().split(',');
+    const ix = Object.fromEntries(head.map((h, i) => [h, i]));
+    const byTime = new Map();
+    trails = new Map();
+    for (let i = 1; i < lines.length; i++) {
+        const p = lines[i].split(',');
+        if (p.length < head.length) continue;
+        const t = +p[ix.time_s], id = +p[ix.track_id];
+        const d = { id: id, conf: +p[ix.conf], fx: +p[ix.foot_x], fy: +p[ix.foot_y] };
+        if (!byTime.has(t)) byTime.set(t, []);
+        byTime.get(t).push(d);
+        if (!trails.has(id)) trails.set(id, []);
+        trails.get(id).push({ t: t, x: d.fx, y: d.fy });
+    }
+    frames = [...byTime.entries()].sort((a, b) => a[0] - b[0]).map(e => ({ t: e[0], dets: e[1] }));
+    sampleDt = frames.length > 1 ? frames[1].t - frames[0].t : 0.25;
+}
+
+function frameAt(t) {
+    if (!frames.length) return null;
+    let lo = 0, hi = frames.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
+    }
+    const a = frames[lo], b = frames[Math.min(lo + 1, frames.length - 1)];
+    return Math.abs(b.t - t) < Math.abs(t - a.t) ? b : a;
+}
+
+// ── fitting ───────────────────────────────────────────────────────────────
+function setFit(data) {
+    fit = data;
+    Hinv = data && data.H ? invert3(data.H) : null;
+    reprojectTests();
+}
+
+let recomputeTimer = null;
+function recompute(save) {
+    clearTimeout(recomputeTimer);
+    recomputeTimer = setTimeout(async () => {
+        if (pairs.length < 4) { setFit(null); render(); return; }
+        const body = {
+            points: pairs, map: mapName,
+            map_size: [mapImg.naturalWidth, mapImg.naturalHeight],
+            video_size: [video.videoWidth, video.videoHeight],
+            save: !!save,
+        };
+        const res = await fetch('/api/vision/calibration/' + videoId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) { setFit(null); status(data.error || 'fit failed', 'error'); render(); return; }
+        setFit(data);
+        if (save) status('Saved → ' + data.saved_to, 'ok');
+        render();
+    }, save ? 0 : 150);
+}
+
+function reprojectTests() {
+    for (const t of tests) {
+        if (t.from === 'cam') t.dst = fit && fit.H ? applyH(fit.H, t.src[0], t.src[1]) : null;
+        else                  t.dst = Hinv ? applyH(Hinv, t.src[0], t.src[1]) : null;
+    }
+}
+
+// ── pointer handling ──────────────────────────────────────────────────────
+/** Client position → source-image pixel coordinates. */
+function pixelAt(evt, el, natW, natH) {
+    const r = el.getBoundingClientRect();
+    return [(evt.clientX - r.left) / r.width * natW, (evt.clientY - r.top) / r.height * natH];
+}
+function hitRadius(el, natW) {
+    const r = el.getBoundingClientRect();
+    return 14 * (natW / Math.max(r.width, 1));               // 14 screen px, in image px
+}
+function hitTest(pt, side, el, natW) {
+    const rad = hitRadius(el, natW);
+    let best = -1, bestD = rad;
+    pairs.forEach((p, i) => {
+        const c = p[side];
+        const d = Math.hypot(c[0] - pt[0], c[1] - pt[1]);
+        if (d <= bestD) { bestD = d; best = i; }
+    });
+    return best;
+}
+
+function bindPane(cv, side, natOf) {
+    cv.addEventListener('pointerdown', e => {
+        const nat = natOf();
+        if (!nat[0]) return;
+        const pt = pixelAt(e, cv, nat[0], nat[1]);
+        const hit = hitTest(pt, side, cv, nat[0]);
+
+        if (hit >= 0) {                                   // grab an existing marker
+            drag = { index: hit, side: side };
+            selected = hit;
+            cv.setPointerCapture(e.pointerId);
+            cv.classList.add('grabbing');
+            render();
+            return;
+        }
+
+        if (mode === 'test') {
+            addTest(side === 'img' ? 'cam' : 'map', pt);
+            return;
+        }
+
+        if (side === 'img') {
+            pending = [Math.round(pt[0]), Math.round(pt[1])];
+            render();
+        } else {
+            if (!pending) { status('Click the camera frame first', 'error'); return; }
+            pairs.push({ img: pending, map: [Math.round(pt[0]), Math.round(pt[1])] });
+            pending = null; selected = pairs.length - 1; status('');
+            render(); recompute();
+        }
+    });
+
+    cv.addEventListener('pointermove', e => {
+        if (!drag || drag.side !== side) return;
+        const nat = natOf();
+        const pt = pixelAt(e, cv, nat[0], nat[1]);
+        pairs[drag.index][side] = [Math.round(pt[0]), Math.round(pt[1])];
+        render();
+    });
+
+    const endDrag = e => {
+        if (!drag || drag.side !== side) return;
+        drag = null;
+        cv.classList.remove('grabbing');
+        recompute();
+    };
+    cv.addEventListener('pointerup', endDrag);
+    cv.addEventListener('pointercancel', endDrag);
+}
+
+bindPane(camCv, 'img', () => [video.videoWidth, video.videoHeight]);
+bindPane(mapCv, 'map', () => [mapImg.naturalWidth, mapImg.naturalHeight]);
+
+function addTest(from, pt) {
+    if (!fit || !fit.H) { status('Add 4 pairs first, then test', 'error'); return; }
+    const src = [Math.round(pt[0]), Math.round(pt[1])];
+    const dst = from === 'cam' ? applyH(fit.H, src[0], src[1]) : applyH(Hinv, src[0], src[1]);
+    tests.push({ from: from, src: src, dst: dst });
+    status('');
+    render();
+}
+
+// ── drawing ───────────────────────────────────────────────────────────────
+function marker(ctx, x, y, label, color, scale, opts) {
+    opts = opts || {};
+    ctx.lineWidth = (opts.selected ? 3.5 : 2) * scale;
+    ctx.strokeStyle = opts.selected ? '#ffffff' : color;
+    ctx.fillStyle = opts.hollow ? 'rgba(0,0,0,.35)' : color;
+    ctx.beginPath(); ctx.arc(x, y, 9 * scale, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - 15 * scale, y); ctx.lineTo(x + 15 * scale, y);
+    ctx.moveTo(x, y - 15 * scale); ctx.lineTo(x, y + 15 * scale);
+    ctx.stroke();
+    if (label != null) {
+        ctx.fillStyle = '#101018';
+        ctx.font = '700 ' + Math.round(12 * scale) + "px 'Segoe UI', sans-serif";
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(label), x, y + scale);
+    }
+}
+
+/** Landing spot of a test point: a ring plus a short tail, hard to miss. */
+function testMarker(ctx, x, y, label, scale, isSource) {
+    const color = isSource ? '#00e5ff' : '#ff5cc8';
+    ctx.strokeStyle = color; ctx.lineWidth = 3 * scale;
+    ctx.beginPath(); ctx.arc(x, y, 13 * scale, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 2.5 * scale, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+    if (!isSource) {                                        // little "landed here" flag
+        ctx.beginPath();
+        ctx.moveTo(x, y - 13 * scale); ctx.lineTo(x, y - 30 * scale);
+        ctx.stroke();
+    }
+    ctx.fillStyle = color;
+    ctx.font = '700 ' + Math.round(13 * scale) + "px 'Segoe UI', sans-serif";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(label, x + 16 * scale, y - 12 * scale);
+}
+
+/** Warp the map's border + a grid into camera space — an instant sanity check. */
+function drawWarpedGrid(ctx, scale) {
+    if (!Hinv || !mapImg.naturalWidth) return;
+    const W = mapImg.naturalWidth, H = mapImg.naturalHeight, N = 8;
+    ctx.lineWidth = 1.5 * scale;
+    ctx.strokeStyle = 'rgba(122,220,154,.55)';
+    for (let i = 0; i <= N; i++) {
+        for (const vertical of [true, false]) {
+            ctx.beginPath();
+            for (let j = 0; j <= 40; j++) {
+                const a = (i / N) * (vertical ? W : H), b = (j / 40) * (vertical ? H : W);
+                const [x, y] = applyH(Hinv, vertical ? a : b, vertical ? b : a);
+                j ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+            }
+            ctx.stroke();
+        }
+    }
+    ctx.strokeStyle = 'rgba(122,220,154,.95)';
+    ctx.lineWidth = 3 * scale;
+    ctx.beginPath();
+    [[0, 0], [W, 0], [W, H], [0, H], [0, 0]].forEach((c, k) => {
+        const [x, y] = applyH(Hinv, c[0], c[1]);
+        k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+}
+
+function render() {
+    // ── camera pane ──
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (vw) {
+        if (camCv.width !== vw) { camCv.width = vw; camCv.height = vh; }
+        const sc = vw / 1280;
+        camCtx.clearRect(0, 0, vw, vh);
+        if ($('o-grid').checked) drawWarpedGrid(camCtx, sc);
+        pairs.forEach((p, i) => marker(camCtx, p.img[0], p.img[1], i + 1, '#ffd479', sc,
+                                       { selected: i === selected }));
+        if (pending) marker(camCtx, pending[0], pending[1], null, '#7ddc9a', sc, { hollow: true });
+        tests.forEach((t, i) => {
+            const label = 'T' + (i + 1);
+            if (t.from === 'cam') testMarker(camCtx, t.src[0], t.src[1], label, sc, true);
+            else if (t.dst)      testMarker(camCtx, t.dst[0], t.dst[1], label, sc, false);
+        });
+    }
+
+    // ── map pane ──
+    const mw = mapImg.naturalWidth, mh = mapImg.naturalHeight;
+    if (mw) {
+        if (mapCv.width !== mw) { mapCv.width = mw; mapCv.height = mh; }
+        const sc = Math.max(mw, mh) / 900;
+        mapCtx.clearRect(0, 0, mw, mh);
+
+        if (fit && fit.H && $('o-people').checked) {
+            const f = frameAt(video.currentTime);
+            if (f) for (const d of f.dets) {
+                const [mx, my] = applyH(fit.H, d.fx, d.fy);
+                if ($('o-trail').checked) {
+                    const pts = (trails.get(d.id) || [])
+                        .filter(p => p.t <= f.t && p.t >= f.t - 4)
+                        .map(p => applyH(fit.H, p.x, p.y));
+                    if (pts.length > 1) {
+                        mapCtx.strokeStyle = colorOf(d.id);
+                        mapCtx.globalAlpha = .5; mapCtx.lineWidth = 2.5 * sc;
+                        mapCtx.beginPath();
+                        pts.forEach((p, i) => i ? mapCtx.lineTo(p[0], p[1]) : mapCtx.moveTo(p[0], p[1]));
+                        mapCtx.stroke(); mapCtx.globalAlpha = 1;
+                    }
+                }
+                mapCtx.fillStyle = colorOf(d.id);
+                mapCtx.strokeStyle = '#101018'; mapCtx.lineWidth = 1.5 * sc;
+                mapCtx.beginPath(); mapCtx.arc(mx, my, 9 * sc, 0, Math.PI * 2);
+                mapCtx.fill(); mapCtx.stroke();
+                mapCtx.fillStyle = '#101018';
+                mapCtx.font = '700 ' + Math.round(11 * sc) + "px 'Segoe UI', sans-serif";
+                mapCtx.textAlign = 'center'; mapCtx.textBaseline = 'middle';
+                mapCtx.fillText(String(d.id), mx, my + sc);
+            }
+        }
+
+        pairs.forEach((p, i) => marker(mapCtx, p.map[0], p.map[1], i + 1, '#ffd479', sc,
+                                       { selected: i === selected }));
+        tests.forEach((t, i) => {
+            const label = 'T' + (i + 1);
+            if (t.from === 'map') testMarker(mapCtx, t.src[0], t.src[1], label, sc, true);
+            else if (t.dst)       testMarker(mapCtx, t.dst[0], t.dst[1], label, sc, false);
+        });
+    }
+
+    renderBirdseye();
+    renderSide();
+}
+
+function renderSide() {
+    $('s-pairs').textContent = pairs.length;
+    const rms = fit && fit.rms_px != null ? fit.rms_px : null;
+    const mx  = fit && fit.max_px != null ? fit.max_px : null;
+    $('s-rms').textContent = rms == null ? '–' : rms + ' px';
+    $('s-max').textContent = mx == null ? '–' : mx + ' px';
+    $('s-rms').className = rms == null ? '' : (rms > 25 ? 'bad' : rms > 10 ? 'warn' : '');
+    $('s-max').className = mx == null ? '' : (mx > 25 ? 'bad' : mx > 10 ? 'warn' : '');
+    $('save').disabled = pairs.length < 4 || !fit;
+    $('hint-cam').classList.toggle('active', mode === 'add' && !pending);
+    $('hint-map').classList.toggle('active', mode === 'add' && !!pending);
+    $('preview-hint').textContent = pairs.length < 4
+        ? 'Needs 4+ pairs — ' + (4 - pairs.length) + ' to go.'
+        : (frames.length ? 'Scrub the video and watch the dots move.' : 'No tracks for this video yet.');
+
+    const tbody = $('pair-rows');
+    tbody.innerHTML = '';
+    pairs.forEach((p, i) => {
+        const err = fit && fit.errors_px ? fit.errors_px[i] : null;
+        const tr = document.createElement('tr');
+        tr.className = (i === selected ? 'sel ' : '') + (err != null && err > 25 ? 'bad' : '');
+        tr.addEventListener('click', () => { selected = (selected === i ? -1 : i); render(); });
+        const cell = text => { const td = document.createElement('td'); td.textContent = text; return td; };
+        tr.appendChild(cell(i + 1));
+        tr.appendChild(cell(p.img[0] + ',' + p.img[1]));
+        tr.appendChild(cell(p.map[0] + ',' + p.map[1]));
+        tr.appendChild(cell(err == null ? '–' : err));
+        const td = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.textContent = '×';
+        btn.title = 'Remove pair ' + (i + 1);
+        btn.addEventListener('click', ev => { ev.stopPropagation(); removePair(i); });
+        td.appendChild(btn); tr.appendChild(td);
+        tbody.appendChild(tr);
+    });
+
+    const tl = $('test-list');
+    tl.innerHTML = '';
+    tests.forEach((t, i) => {
+        const div = document.createElement('div');
+        const dst = t.dst ? Math.round(t.dst[0]) + ',' + Math.round(t.dst[1]) : '–';
+        div.textContent = 'T' + (i + 1) + '  ' + (t.from === 'cam' ? 'cam' : 'map')
+            + ' ' + t.src[0] + ',' + t.src[1] + '  →  ' + dst;
+        tl.appendChild(div);
+    });
+    $('test-hint').style.display = tests.length ? 'none' : '';
+}
+
+function removePair(i) {
+    pairs.splice(i, 1);
+    if (selected === i) selected = -1; else if (selected > i) selected--;
+    render(); recompute();
+}
+
+// ── controls ──────────────────────────────────────────────────────────────
+function setMode(m) {
+    mode = m;
+    $('mode-add').setAttribute('aria-pressed', String(m === 'add'));
+    $('mode-test').setAttribute('aria-pressed', String(m === 'test'));
+    $('hint-cam').textContent = m === 'add'
+        ? 'Click a floor landmark — a corner, a shelf leg, a tile. Drag a marker to fix it.'
+        : 'Click anywhere — the same point is drawn on the map.';
+    $('hint-map').textContent = m === 'add'
+        ? 'Then click the same spot here.'
+        : 'Or click here to see where it falls in the camera image.';
+    if (m === 'test') pending = null;
+    render();
+}
+$('mode-add').addEventListener('click', () => setMode('add'));
+$('mode-test').addEventListener('click', () => setMode('test'));
+
+$('undo').addEventListener('click', () => {
+    if (pending) pending = null;
+    else if (pairs.length) removePair(pairs.length - 1);
+    render(); recompute();
+});
+$('clear').addEventListener('click', () => {
+    pairs = []; pending = null; selected = -1; setFit(null); render();
+});
+$('clear-tests').addEventListener('click', () => { tests = []; render(); });
+$('save').addEventListener('click', () => recompute(true));
+$('video-select').addEventListener('change', e => selectVideo(e.target.value));
+$('map-select').addEventListener('change', e => {
+    // map-side coordinates belong to the old image — keeping them silently would
+    // produce a nonsense fit
+    if (pairs.length && !confirm(
+            'Switching maps: the ' + pairs.length + ' point pairs were clicked on "'
+            + mapName + '" and do not apply to the new map.\n\n'
+            + 'OK = clear them, Cancel = keep the current map.')) {
+        e.target.value = mapName;
+        return;
+    }
+    if (pairs.length) { pairs = []; pending = null; selected = -1; setFit(null); }
+    setMap(e.target.value);
+    render();
+});
+for (const id of ['o-people', 'o-trail', 'o-grid']) $(id).addEventListener('change', render);
+$('o-birdseye').addEventListener('input', e => { $('v-birdseye').textContent = e.target.value; render(); });
+// the map-pane copy loads independently — sync it once it is ready
+mapVid.addEventListener('loadeddata', render);
+mapVid.addEventListener('canplay', render);
+
+$('upload-btn').addEventListener('click', () => $('map-file').click());
+$('map-file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/vision/maps', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) { status(data.error || 'upload failed', 'error'); return; }
+    await loadMaps(data.name);
+    status('Map uploaded: ' + data.name, 'ok');
+    render();
+});
+
+video.addEventListener('loadedmetadata', () => { $('seek').max = video.duration || 0; render(); });
+video.addEventListener('seeked', () => {
+    $('time').textContent = video.currentTime.toFixed(2) + ' s';
+    render();
+});
+$('seek').addEventListener('input', e => { video.currentTime = +e.target.value; });
+mapImg.addEventListener('load', render);
+
+document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, button, a')) return;
+    if (e.key === 'ArrowRight') video.currentTime += sampleDt;
+    else if (e.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - sampleDt);
+    else if (e.key === 'Escape') { pending = null; selected = -1; render(); }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && selected >= 0) {
+        e.preventDefault(); removePair(selected);
+    }
+});
+
+loadVideos();
+</script>
+</body>
+</html>

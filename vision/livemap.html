@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12121f">
+<title>Live map — people on the store plan</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: dark; }
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #12121f; color: #e0e0e0;
+    display: flex; flex-direction: column; height: 100dvh;
+    overflow: hidden; gap: 8px; padding: 10px;
+}
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #7a7a9a; }
+.bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #1c1c30; border-radius: 8px; padding: 8px 14px; flex-shrink: 0;
+}
+button, select {
+    background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
+    border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px;
+    transition: background-color .15s;
+}
+button:hover:not(:disabled) { background: #3a3a6a; }
+button:disabled { opacity: .35; cursor: default; }
+button.primary { background: #2f5da8; border-color: #4a7fd0; color: #eaf2ff; }
+button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid #5c8ee8; outline-offset: 2px;
+}
+select { padding: 4px 6px; font-size: 12px; }
+label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: center; gap: 6px; }
+#seek { flex: 1; min-width: 140px; accent-color: #5c8ee8; }
+#time { font-family: monospace; font-size: 14px; color: #6ab0ff; min-width: 108px; }
+
+#main { display: flex; gap: 10px; flex: 1; min-height: 0; }
+.pane {
+    flex: 1; min-width: 0; background: #1c1c30; border-radius: 8px; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.stage {
+    position: relative; flex: 1; min-height: 0; background: #0b0b14; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.inner { position: relative; line-height: 0; max-width: 100%; max-height: 100%; }
+.inner > video, .inner > img { display: block; max-width: 100%; max-height: 100%; background: #000; }
+.inner > canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+#side {
+    width: 260px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
+    padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
+}
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+.stats dt { color: #9a9ab0; }
+.stats dd { font-family: monospace; color: #6ab0ff; text-align: right; font-weight: 600; }
+#people { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-family: monospace; }
+.person { display: flex; align-items: center; gap: 7px; }
+.swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+#status { font-size: 12px; color: #9a9ab0; }
+#status.error { color: #ff8080; }
+#notice {
+    display: none; background: #241c2e; border: 1px solid #5a3a6a; border-radius: 8px;
+    padding: 14px 16px; font-size: 13px; color: #e6d6f0; line-height: 1.5;
+}
+#notice.show { display: block; }
+#notice button { margin-top: 10px; }
+@media (max-width: 1000px) {
+    body { overflow: auto; height: auto; }
+    #main { flex-direction: column; }
+    #side { width: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+    <label class="inline">Video
+        <select id="video-select" aria-label="Source video"></select>
+    </label>
+    <button id="play">Play</button>
+    <input type="range" id="seek" min="0" max="100" step="0.05" value="0" aria-label="Video time">
+    <span id="time">0.00 / 0.00 s</span>
+    <label class="inline">Speed
+        <select id="speed">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+        </select>
+    </label>
+    <span id="status" role="status"></span>
+</div>
+
+<div id="notice" role="status"></div>
+
+<div id="main">
+    <div class="pane">
+        <h2>Camera</h2>
+        <div class="stage">
+            <div class="inner">
+                <video id="video" playsinline preload="auto" muted></video>
+                <canvas id="cam-canvas" aria-hidden="true"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="pane">
+        <h2>Store plan</h2>
+        <div class="stage">
+            <div class="inner">
+                <img id="map-img" alt="Store plan with the people detected in the video">
+                <canvas id="map-canvas" aria-hidden="true"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <aside id="side">
+        <div>
+            <h2>Now</h2>
+            <dl class="stats">
+                <dt>People</dt><dd id="s-now">0</dd>
+                <dt>On the plan</dt><dd id="s-onmap">0</dd>
+                <dt>Sampled at</dt><dd id="s-frame">–</dd>
+            </dl>
+        </div>
+        <div>
+            <h2>Whole video</h2>
+            <dl class="stats">
+                <dt>Track IDs</dt><dd id="s-tracks">0</dd>
+                <dt>Max in frame</dt><dd id="s-max">0</dd>
+                <dt>Calibration</dt><dd id="s-rms">–</dd>
+            </dl>
+        </div>
+        <div>
+            <h2>Show</h2>
+            <label class="inline"><input type="checkbox" id="o-box" checked> Boxes on the camera</label>
+            <label class="inline"><input type="checkbox" id="o-id" checked> Track IDs</label>
+            <label class="inline"><input type="checkbox" id="o-trail" checked> Trails on the plan</label>
+            <label class="inline"><input type="checkbox" id="o-outside"> Keep people who fall off the plan</label>
+        </div>
+        <div>
+            <h2>In frame</h2>
+            <div id="people"></div>
+        </div>
+    </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const video  = $('video');
+const mapImg = $('map-img');
+const camCv  = $('cam-canvas'), camCtx = camCv.getContext('2d');
+const mapCv  = $('map-canvas'), mapCtx = mapCv.getContext('2d');
+
+let frames = [], trails = new Map(), sampleDt = 0.25;
+let calib = null;                     // saved calibration for the current video
+
+const status = (msg, isError) => { $('status').textContent = msg; $('status').className = isError ? 'error' : ''; };
+const colorOf = id => 'hsl(' + ((id * 47) % 360) + ' 85% 62%)';
+
+function applyH(H, x, y) {
+    const w = H[2][0] * x + H[2][1] * y + H[2][2];
+    return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w,
+            (H[1][0] * x + H[1][1] * y + H[1][2]) / w];
+}
+
+function notice(html) {
+    const el = $('notice');
+    el.innerHTML = html;
+    el.classList.toggle('show', !!html);
+    const btn = el.querySelector('button[data-tab]');
+    if (btn) btn.addEventListener('click', () =>
+        parent.postMessage({ showTab: btn.dataset.tab }, '*'));
+}
+
+// ── loading ───────────────────────────────────────────────────────────────
+async function loadVideos() {
+    const list = await (await fetch('/api/vision/videos')).json();
+    const sel = $('video-select');
+    sel.innerHTML = '';
+    list.forEach(v => sel.add(new Option(
+        v.id + (v.has_calibration ? ' · calibrated' : v.has_tracks ? ' · tracked' : ' · no tracks'), v.id)));
+    if (!list.length) { notice('No videos in <code>data/videos</code> yet.'); return; }
+    const first = list.find(v => v.has_calibration && v.has_tracks) || list[0];
+    sel.value = first.id;
+    await load(first.id);
+}
+
+async function load(id) {
+    frames = []; trails = new Map(); calib = null;
+    video.pause();
+    video.src = '/api/vision/video/' + id;
+    mapImg.removeAttribute('src');
+    notice('');
+    status('loading…');
+
+    const [tracksRes, calibRes] = await Promise.all([
+        fetch('/api/vision/tracks/' + id).catch(() => null),
+        fetch('/api/vision/calibration/' + id).catch(() => null),
+    ]);
+
+    if (tracksRes && tracksRes.ok) parseTracks(await tracksRes.text());
+    if (calibRes && calibRes.ok) {
+        calib = await calibRes.json();
+        if (calib.map) mapImg.src = '/api/vision/maps/' + encodeURIComponent(calib.map);
+    }
+
+    const missing = [];
+    if (!frames.length) missing.push('detections');
+    if (!calib) missing.push('a camera → map calibration');
+    if (missing.length) {
+        notice('<strong>' + id + '</strong> is missing ' + missing.join(' and ') + '.'
+            + (!frames.length ? '<br>Run <code>python vision/detect_people.py data/videos/' + id + '.mp4</code> to detect people.' : '')
+            + (!calib ? '<br>Then match a few points between the camera and the store plan.' : '')
+            + (!calib ? '<br><button class="primary" data-tab="calibrate">Open calibration</button>' : ''));
+    }
+
+    $('s-tracks').textContent = trails.size;
+    $('s-max').textContent = frames.reduce((m, f) => Math.max(m, f.dets.length), 0);
+    $('s-rms').textContent = calib ? 'RMS ' + calib.rms_px + ' px' : '–';
+    status(frames.length ? frames.length + ' annotated frames' : '');
+    render();
+}
+
+function parseTracks(csv) {
+    const lines = csv.trim().split('\n');
+    const head = lines[0].trim().split(',');
+    const ix = Object.fromEntries(head.map((h, i) => [h, i]));
+    const byTime = new Map();
+    trails = new Map();
+    for (let i = 1; i < lines.length; i++) {
+        const p = lines[i].trim().split(',');
+        if (p.length < head.length) continue;
+        const t = +p[ix.time_s], id = +p[ix.track_id];
+        const d = {
+            id: id, conf: +p[ix.conf], fx: +p[ix.foot_x], fy: +p[ix.foot_y],
+            x1: +p[ix.x1], y1: +p[ix.y1], x2: +p[ix.x2], y2: +p[ix.y2],
+            est: ix.foot_src !== undefined && p[ix.foot_src] !== 'box',   // feet hidden → estimated
+        };
+        if (!byTime.has(t)) byTime.set(t, []);
+        byTime.get(t).push(d);
+        if (!trails.has(id)) trails.set(id, []);
+        trails.get(id).push({ t: t, x: d.fx, y: d.fy });
+    }
+    frames = [...byTime.entries()].sort((a, b) => a[0] - b[0]).map(e => ({ t: e[0], dets: e[1] }));
+    sampleDt = frames.length > 1 ? frames[1].t - frames[0].t : 0.25;
+}
+
+function frameAt(t) {
+    if (!frames.length) return null;
+    let lo = 0, hi = frames.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
+    }
+    const a = frames[lo], b = frames[Math.min(lo + 1, frames.length - 1)];
+    return Math.abs(b.t - t) < Math.abs(t - a.t) ? b : a;
+}
+
+// ── drawing ───────────────────────────────────────────────────────────────
+function render() {
+    const f = frameAt(video.currentTime);
+    const dur = video.duration || 0;
+    $('time').textContent = video.currentTime.toFixed(2) + ' / ' + dur.toFixed(2) + ' s';
+    if (dur && +$('seek').max !== dur) $('seek').max = dur;
+    if (document.activeElement !== $('seek')) $('seek').value = video.currentTime;
+
+    drawCamera(f);
+    drawMap(f);
+    drawSide(f);
+}
+
+function drawCamera(f) {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w) return;
+    if (camCv.width !== w) { camCv.width = w; camCv.height = h; }
+    camCtx.clearRect(0, 0, w, h);
+    if (!f) return;
+
+    const sc = w / 1280;
+    camCtx.lineWidth = Math.max(2, 2.5 * sc);
+    camCtx.font = '600 ' + Math.round(16 * sc) + "px 'Segoe UI', sans-serif";
+    camCtx.textBaseline = 'bottom'; camCtx.textAlign = 'left';
+
+    for (const d of f.dets) {
+        const c = colorOf(d.id);
+        if ($('o-box').checked) {
+            camCtx.strokeStyle = c;
+            camCtx.strokeRect(d.x1, d.y1, d.x2 - d.x1, d.y2 - d.y1);
+        }
+        // the floor point that gets mapped — hollow, with a dashed drop, when estimated
+        camCtx.fillStyle = c; camCtx.strokeStyle = c;
+        if (d.est) {
+            camCtx.setLineDash([4 * sc, 4 * sc]);
+            camCtx.beginPath(); camCtx.moveTo(d.fx, d.y2); camCtx.lineTo(d.fx, d.fy); camCtx.stroke();
+            camCtx.setLineDash([]);
+        }
+        camCtx.beginPath();
+        camCtx.ellipse(d.fx, d.fy, 7 * sc, 3.5 * sc, 0, 0, Math.PI * 2);
+        if (d.est) camCtx.stroke(); else camCtx.fill();
+        if ($('o-id').checked) {
+            const label = '#' + d.id;
+            const tw = camCtx.measureText(label).width;
+            const th = 21 * sc, ly = Math.max(th, d.y1);
+            camCtx.fillStyle = c;
+            camCtx.fillRect(d.x1, ly - th, tw + 10 * sc, th);
+            camCtx.fillStyle = '#101018';
+            camCtx.fillText(label, d.x1 + 5 * sc, ly - 4 * sc);
+        }
+    }
+}
+
+function drawMap(f) {
+    const w = mapImg.naturalWidth, h = mapImg.naturalHeight;
+    if (!w) return;
+    if (mapCv.width !== w) { mapCv.width = w; mapCv.height = h; }
+    mapCtx.clearRect(0, 0, w, h);
+    if (!f || !calib || !calib.H) return;
+
+    const sc = Math.max(w, h) / 900;
+    const keepOutside = $('o-outside').checked;
+    const inside = p => keepOutside || (p[0] >= -20 && p[0] <= w + 20 && p[1] >= -20 && p[1] <= h + 20);
+    let onMap = 0;
+
+    for (const d of f.dets) {
+        const p = applyH(calib.H, d.fx, d.fy);
+        if (!inside(p)) continue;
+        onMap++;
+        const c = colorOf(d.id);
+
+        if ($('o-trail').checked) {
+            const pts = (trails.get(d.id) || [])
+                .filter(q => q.t <= f.t && q.t >= f.t - 6)
+                .map(q => applyH(calib.H, q.x, q.y));
+            if (pts.length > 1) {
+                mapCtx.strokeStyle = c; mapCtx.globalAlpha = .5;
+                mapCtx.lineWidth = 2.5 * sc; mapCtx.lineJoin = 'round';
+                mapCtx.beginPath();
+                pts.forEach((q, i) => i ? mapCtx.lineTo(q[0], q[1]) : mapCtx.moveTo(q[0], q[1]));
+                mapCtx.stroke(); mapCtx.globalAlpha = 1;
+            }
+        }
+
+        mapCtx.fillStyle = c;
+        mapCtx.strokeStyle = 'rgba(16,16,24,.85)'; mapCtx.lineWidth = 2 * sc;
+        mapCtx.beginPath(); mapCtx.arc(p[0], p[1], 11 * sc, 0, Math.PI * 2);
+        mapCtx.fill(); mapCtx.stroke();
+        if (d.est) {                                   // dashed ring = position estimated
+            mapCtx.strokeStyle = c; mapCtx.setLineDash([3 * sc, 3 * sc]);
+            mapCtx.beginPath(); mapCtx.arc(p[0], p[1], 15 * sc, 0, Math.PI * 2); mapCtx.stroke();
+            mapCtx.setLineDash([]);
+        }
+        if ($('o-id').checked) {
+            mapCtx.fillStyle = '#101018';
+            mapCtx.font = '700 ' + Math.round(12 * sc) + "px 'Segoe UI', sans-serif";
+            mapCtx.textAlign = 'center'; mapCtx.textBaseline = 'middle';
+            mapCtx.fillText(String(d.id), p[0], p[1] + sc);
+        }
+    }
+    $('s-onmap').textContent = onMap;
+}
+
+function drawSide(f) {
+    $('s-now').textContent = f ? f.dets.length : 0;
+    $('s-frame').textContent = f ? f.t.toFixed(2) + 's' : '–';
+    const list = $('people');
+    list.innerHTML = '';
+    if (!f) return;
+    for (const d of [...f.dets].sort((a, b) => a.id - b.id)) {
+        const row = document.createElement('div');
+        row.className = 'person';
+        const sw = document.createElement('span');
+        sw.className = 'swatch'; sw.style.background = colorOf(d.id);
+        row.appendChild(sw);
+        const name = document.createElement('span');
+        name.textContent = '#' + d.id;
+        row.appendChild(name);
+        const pos = document.createElement('span');
+        pos.style.color = '#7a7a9a';
+        if (calib && calib.H) {
+            const p = applyH(calib.H, d.fx, d.fy);
+            pos.textContent = 'map ' + Math.round(p[0]) + ',' + Math.round(p[1]);
+        } else {
+            pos.textContent = 'cam ' + Math.round(d.fx) + ',' + Math.round(d.fy);
+        }
+        row.appendChild(pos);
+        list.appendChild(row);
+    }
+}
+
+// redraw on every rendered video frame where supported, else on rAF
+if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+    const step = () => { render(); video.requestVideoFrameCallback(step); };
+    video.requestVideoFrameCallback(step);
+} else {
+    const step = () => { render(); requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+}
+video.addEventListener('seeked', render);
+video.addEventListener('loadeddata', render);
+mapImg.addEventListener('load', render);
+
+// ── controls ──────────────────────────────────────────────────────────────
+$('play').addEventListener('click', () => video.paused ? video.play() : video.pause());
+video.addEventListener('play',  () => $('play').textContent = 'Pause');
+video.addEventListener('pause', () => $('play').textContent = 'Play');
+$('seek').addEventListener('input', e => { video.currentTime = +e.target.value; });
+$('speed').addEventListener('change', e => { video.playbackRate = +e.target.value; });
+$('video-select').addEventListener('change', e => load(e.target.value));
+for (const id of ['o-box', 'o-id', 'o-trail', 'o-outside']) $(id).addEventListener('change', render);
+
+document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, button')) return;
+    if (e.key === ' ') { e.preventDefault(); video.paused ? video.play() : video.pause(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); video.pause(); video.currentTime += sampleDt; }
+    else if (e.key === 'ArrowLeft')  { e.preventDefault(); video.pause(); video.currentTime = Math.max(0, video.currentTime - sampleDt); }
+});
+
+loadVideos();
+</script>
+</body>
+</html>

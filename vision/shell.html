@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12121f">
+<title>ShopView</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: dark; }
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #12121f; color: #e0e0e0;
+    display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+}
+header {
+    display: flex; align-items: flex-end; gap: 6px;
+    padding: 8px 10px 0; flex-shrink: 0;
+}
+.brand {
+    font-size: 15px; font-weight: 700; color: #6ab0ff;
+    padding: 0 14px 10px 4px; letter-spacing: .01em;
+}
+.tab {
+    background: #1c1c30; color: #8a8aa5; border: 1px solid #2a2a4a; border-bottom: 0;
+    border-radius: 8px 8px 0 0; padding: 9px 20px; cursor: pointer;
+    font-size: 14px; font-family: inherit;
+    transition: background-color .15s, color .15s;
+}
+.tab:hover { color: #ccc; background: #22223a; }
+.tab[aria-selected="true"] { background: #1c1c30; color: #6ab0ff; font-weight: 600; }
+.tab:focus-visible { outline: 2px solid #5c8ee8; outline-offset: -2px; }
+.tab .sub { display: block; font-size: 11px; color: #6a6a85; font-weight: 400; }
+.tab[aria-selected="true"] .sub { color: #7a97c4; }
+
+#panels { flex: 1; min-height: 0; position: relative; background: #1c1c30; }
+iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: none; }
+iframe.active { display: block; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+    <span class="brand">ShopView</span>
+    <div role="tablist" aria-label="Sections" style="display:flex;gap:6px">
+        <button class="tab" role="tab" data-tab="simulation" aria-selected="true">
+            Simulation <span class="sub">simulated logs &amp; chat</span></button>
+        <button class="tab" role="tab" data-tab="video" aria-selected="false">
+            Video <span class="sub">YOLO detections</span></button>
+        <button class="tab" role="tab" data-tab="calibrate" aria-selected="false">
+            Calibration <span class="sub">camera → map</span></button>
+        <button class="tab" role="tab" data-tab="livemap" aria-selected="false">
+            Live map <span class="sub">people on the plan</span></button>
+        <button class="tab" role="tab" data-tab="zones" aria-selected="false">
+            Zones <span class="sub">plan polygons → camera</span></button>
+        <button class="tab" role="tab" data-tab="live" aria-selected="false">
+            Live <span class="sub">camera stream</span></button>
+    </div>
+</header>
+
+<div id="panels">
+    <iframe id="f-simulation" title="Simulation" data-src="/viewer"></iframe>
+    <iframe id="f-video"      title="Video"       data-src="/vision"></iframe>
+    <iframe id="f-calibrate"  title="Calibration" data-src="/calibrate"></iframe>
+    <iframe id="f-livemap"    title="Live map"    data-src="/livemap"></iframe>
+    <iframe id="f-zones"      title="Zones"       data-src="/zones"></iframe>
+    <iframe id="f-live"       title="Live"        data-src="/live"></iframe>
+</div>
+
+<script>
+const TABS = ['simulation', 'video', 'calibrate', 'livemap', 'zones', 'live'];
+
+function show(name) {
+    if (!TABS.includes(name)) name = TABS[0];
+    for (const t of TABS) {
+        const frame = document.getElementById('f-' + t);
+        const btn = document.querySelector('.tab[data-tab="' + t + '"]');
+        const on = t === name;
+        // load a panel the first time it is opened, then keep it alive so each
+        // tab holds its own state (video position, half-finished calibration…)
+        if (on && !frame.src) frame.src = frame.dataset.src;
+        frame.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', String(on));
+    }
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    document.title = name === 'simulation' ? 'ShopView' : 'ShopView — ' + name;
+}
+
+document.querySelectorAll('.tab').forEach(btn =>
+    btn.addEventListener('click', () => show(btn.dataset.tab)));
+
+// panels can ask for a sibling tab (e.g. "not calibrated yet → Calibration")
+window.addEventListener('message', e => {
+    if (e.data && e.data.showTab) show(e.data.showTab);
+});
+
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+show(location.hash.slice(1) || 'simulation');
+</script>
+</body>
+</html>

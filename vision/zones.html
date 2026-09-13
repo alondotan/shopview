@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12121f">
+<title>Zones — polygons on the plan, projected into the camera</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: dark; }
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #12121f; color: #e0e0e0;
+    display: flex; flex-direction: column; height: 100dvh;
+    overflow: hidden; gap: 8px; padding: 10px;
+}
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #7a7a9a; }
+.bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #1c1c30; border-radius: 8px; padding: 8px 14px; flex-shrink: 0;
+}
+button, select, input[type=text] {
+    background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
+    border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px;
+    font-family: inherit; transition: background-color .15s;
+}
+input[type=text] { cursor: text; padding: 4px 8px; }
+button:hover:not(:disabled) { background: #3a3a6a; }
+button:disabled { opacity: .35; cursor: default; }
+button.primary { background: #2f5da8; border-color: #4a7fd0; color: #eaf2ff; }
+button.on { background: #3d7a3d; border-color: #5aa85a; color: #eaffea; }
+button.danger { background: #5a2a2a; border-color: #8a3a3a; color: #ffdada; }
+button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid #5c8ee8; outline-offset: 2px;
+}
+select { padding: 4px 6px; font-size: 12px; }
+label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: center; gap: 6px; }
+#seek { flex: 1; min-width: 140px; accent-color: #5c8ee8; }
+#time { font-family: monospace; font-size: 14px; color: #6ab0ff; min-width: 108px; }
+#opacity { width: 90px; accent-color: #5c8ee8; }
+
+#main { display: flex; gap: 10px; flex: 1; min-height: 0; }
+.pane {
+    flex: 1; min-width: 0; background: #1c1c30; border-radius: 8px; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.pane .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.hint { font-size: 11px; color: #6a6a85; }
+.stage {
+    position: relative; flex: 1; min-height: 0; background: #0b0b14; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.inner { position: relative; line-height: 0; max-width: 100%; max-height: 100%; }
+.inner > video, .inner > img { display: block; max-width: 100%; max-height: 100%; background: #000; }
+.inner > canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#map-canvas { pointer-events: auto; touch-action: none; }
+#map-canvas.draw { cursor: crosshair; }
+#map-canvas.grab { cursor: grab; }
+#map-canvas.grabbing { cursor: grabbing; }
+
+#side {
+    width: 280px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
+    padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
+}
+#zones { display: flex; flex-direction: column; gap: 4px; }
+.zone {
+    display: grid; grid-template-columns: 14px 1fr auto auto; align-items: center; gap: 6px;
+    padding: 5px 6px; border-radius: 6px; border: 1px solid transparent; font-size: 12px;
+}
+.zone.selected { background: #26264a; border-color: #4a4a8a; }
+.zone .swatch { width: 12px; height: 12px; border-radius: 3px; cursor: pointer; border: 1px solid #0008; }
+.zone input[type=text] { width: 100%; min-width: 0; padding: 2px 6px; font-size: 12px; background: transparent; border-color: transparent; }
+.zone input[type=text]:hover, .zone input[type=text]:focus { background: #2a2a4a; border-color: #3a3a5a; }
+.zone .count { font-family: monospace; color: #6ab0ff; font-weight: 600; min-width: 18px; text-align: right; }
+.zone .count.zero { color: #4a4a6a; font-weight: 400; }
+.zone .tools { display: flex; gap: 2px; }
+.zone .tools button { padding: 1px 6px; font-size: 12px; line-height: 1.4; }
+.zone.hidden .swatch { opacity: .25; }
+.zone.hidden input[type=text] { color: #6a6a85; text-decoration: line-through; }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+.stats dt { color: #9a9ab0; }
+.stats dd { font-family: monospace; color: #6ab0ff; text-align: right; font-weight: 600; }
+#status { font-size: 12px; color: #9a9ab0; }
+#status.error { color: #ff8080; }
+#status.dirty { color: #ffc46a; }
+#notice {
+    display: none; background: #241c2e; border: 1px solid #5a3a6a; border-radius: 8px;
+    padding: 14px 16px; font-size: 13px; color: #e6d6f0; line-height: 1.5;
+}
+#notice.show { display: block; }
+#notice button { margin-top: 10px; }
+.help { font-size: 12px; color: #9a9ab0; line-height: 1.5; }
+.help kbd {
+    font-family: monospace; background: #2a2a4a; border: 1px solid #3a3a5a;
+    border-radius: 4px; padding: 0 5px; font-size: 11px;
+}
+@media (max-width: 1000px) {
+    body { overflow: auto; height: auto; }
+    #main { flex-direction: column; }
+    #side { width: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+    <label class="inline">Video
+        <select id="video-select" aria-label="Source video"></select>
+    </label>
+    <button id="play">Play</button>
+    <input type="range" id="seek" min="0" max="100" step="0.05" value="0" aria-label="Video time">
+    <span id="time">0.00 / 0.00 s</span>
+    <button id="draw" class="primary" aria-pressed="false">+ New zone</button>
+    <button id="save" disabled>Save zones</button>
+    <span id="status" role="status"></span>
+</div>
+
+<div id="notice" role="status"></div>
+
+<div id="main">
+    <div class="pane">
+        <div class="head"><h2>Camera</h2>
+            <span class="hint">zones projected through the calibration (map → camera)</span></div>
+        <div class="stage">
+            <div class="inner">
+                <video id="video" playsinline preload="auto" muted></video>
+                <canvas id="cam-canvas" aria-hidden="true"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="pane">
+        <div class="head"><h2>Store plan</h2>
+            <span class="hint" id="map-hint">click <strong>+ New zone</strong>, then click corners on the plan</span></div>
+        <div class="stage">
+            <div class="inner">
+                <img id="map-img" alt="Store plan; draw zone polygons on it">
+                <canvas id="map-canvas" aria-label="Zone drawing surface" tabindex="0"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <aside id="side">
+        <div>
+            <h2>Zones <span id="map-name" style="text-transform:none;letter-spacing:0;color:#5a5a7a"></span></h2>
+            <div id="zones"></div>
+            <div class="help" id="zones-empty">No zones yet. Draw one on the plan: each click adds a corner;
+                click the first corner again, double-click, or press <kbd>Enter</kbd> to close it.</div>
+        </div>
+        <div>
+            <h2>Show</h2>
+            <label class="inline"><input type="checkbox" id="o-fill" checked> Fill zones</label>
+            <label class="inline"><input type="checkbox" id="o-label" checked> Zone names</label>
+            <label class="inline"><input type="checkbox" id="o-people" checked> Detected people</label>
+            <label class="inline"><input type="checkbox" id="o-verts" checked> Corner handles on the plan</label>
+            <label class="inline">Opacity <input type="range" id="opacity" min="0" max="100" value="35" aria-label="Zone fill opacity"></label>
+        </div>
+        <div>
+            <h2>Now</h2>
+            <dl class="stats">
+                <dt>People in frame</dt><dd id="s-now">0</dd>
+                <dt>In a zone</dt><dd id="s-inzone">0</dd>
+                <dt>Calibration</dt><dd id="s-rms">–</dd>
+            </dl>
+        </div>
+        <div class="help">
+            <strong>Editing</strong> — drag a corner to move it. <kbd>Del</kbd> removes the selected zone.<br>
+            <strong>Drawing</strong> — <kbd>Backspace</kbd> undoes the last corner, <kbd>Esc</kbd> cancels.<br>
+            If the projected outline does not hug the same floor area in the camera,
+            the calibration is off there.
+        </div>
+    </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const video  = $('video');
+const mapImg = $('map-img');
+const camCv  = $('cam-canvas'), camCtx = camCv.getContext('2d');
+const mapCv  = $('map-canvas'), mapCtx = mapCv.getContext('2d');
+
+let frames = [], sampleDt = 0.25;
+let calib = null, Hinv = null;        // camera→map and its inverse (map→camera)
+let mapName = null;                   // zones are stored per map image
+let zones = [];                       // {id, name, color, pts:[[x,y]...], visible}
+let selected = null;                  // zone id
+let drawing = null;                   // [[x,y]...] while a new polygon is being clicked
+let hover = null;                     // [x,y] mouse position on the map (map px)
+let drag = null;                      // {zone, i} while a corner is being dragged
+let dirty = false;
+
+const PALETTE = ['#ff6b6b', '#ffd166', '#06d6a0', '#4cc9f0', '#c77dff', '#ff9f43', '#f72585', '#80ed99'];
+
+const status = (msg, cls) => { $('status').textContent = msg; $('status').className = cls || ''; };
+const colorOf = id => 'hsl(' + ((id * 47) % 360) + ' 85% 62%)';
+
+// ── geometry ──────────────────────────────────────────────────────────────
+function applyH(H, x, y) {
+    const w = H[2][0] * x + H[2][1] * y + H[2][2];
+    return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w,
+            (H[1][0] * x + H[1][1] * y + H[1][2]) / w, w];
+}
+
+function invert3(m) {
+    const [a, b, c] = m[0], [d, e, f] = m[1], [g, h, i] = m[2];
+    const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+    const det = a * A + b * B + c * C;
+    if (Math.abs(det) < 1e-12) return null;
+    return [
+        [A / det, -(b * i - c * h) / det,  (b * f - c * e) / det],
+        [B / det,  (a * i - c * g) / det, -(a * f - c * d) / det],
+        [C / det, -(a * h - b * g) / det,  (a * e - b * d) / det],
+    ];
+}
+
+// A homography keeps straight lines straight, but a map edge that crosses the
+// camera's horizon flips to the other side of the image. Subdivide each edge
+// and keep only the points in front of the camera so such a zone degrades to a
+// clipped outline instead of a bow-tie.
+function projectPolygon(pts) {
+    if (!Hinv) return [];
+    const out = [];
+    const N = 12;
+    let sign = 0;
+    for (let k = 0; k < pts.length; k++) {
+        const a = pts[k], b = pts[(k + 1) % pts.length];
+        for (let s = 0; s < N; s++) {
+            const t = s / N;
+            const p = applyH(Hinv, a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t);
+            if (!sign) sign = Math.sign(p[2]);
+            if (Math.sign(p[2]) === sign) out.push(p);
+        }
+    }
+    return out;
+}
+
+function inside(pts, x, y) {
+    let c = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const [xi, yi] = pts[i], [xj, yj] = pts[j];
+        if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+}
+
+function centroid(pts) {
+    let x = 0, y = 0;
+    for (const p of pts) { x += p[0]; y += p[1]; }
+    return [x / pts.length, y / pts.length];
+}
+
+function hexA(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+function notice(html) {
+    const el = $('notice');
+    el.innerHTML = html;
+    el.classList.toggle('show', !!html);
+    const btn = el.querySelector('button[data-tab]');
+    if (btn) btn.addEventListener('click', () =>
+        parent.postMessage({ showTab: btn.dataset.tab }, '*'));
+}
+
+// ── loading ───────────────────────────────────────────────────────────────
+async function loadVideos() {
+    const list = await (await fetch('/api/vision/videos')).json();
+    const sel = $('video-select');
+    sel.innerHTML = '';
+    list.forEach(v => sel.add(new Option(
+        v.id + (v.has_calibration ? ' · calibrated' : ' · not calibrated'), v.id)));
+    if (!list.length) { notice('No videos in <code>data/videos</code> yet.'); return; }
+    const first = list.find(v => v.has_calibration) || list[0];
+    sel.value = first.id;
+    await load(first.id);
+}
+
+async function load(id) {
+    if (dirty && !confirm('Discard unsaved zones?')) { $('video-select').value = loadedId; return; }
+    frames = []; calib = null; Hinv = null; zones = []; selected = null; drawing = null; drag = null;
+    dirty = false; mapName = null; loadedId = id;
+    video.pause();
+    video.src = '/api/vision/video/' + id;
+    mapImg.removeAttribute('src');
+    notice('');
+    status('loading…');
+
+    const [tracksRes, calibRes] = await Promise.all([
+        fetch('/api/vision/tracks/' + id).catch(() => null),
+        fetch('/api/vision/calibration/' + id).catch(() => null),
+    ]);
+    if (tracksRes && tracksRes.ok) parseTracks(await tracksRes.text());
+    if (calibRes && calibRes.ok) {
+        calib = await calibRes.json();
+        Hinv = calib.H ? invert3(calib.H) : null;
+        if (calib.map) {
+            mapName = calib.map;
+            mapImg.src = '/api/vision/maps/' + encodeURIComponent(mapName);
+            await loadZones();
+        }
+    }
+
+    if (!calib) {
+        notice('<strong>' + id + '</strong> has no camera → map calibration yet, so there is no plan '
+            + 'to draw on and nothing to project.<br>Match a few points between the camera and the store plan first.'
+            + '<br><button class="primary" data-tab="calibrate">Open calibration</button>');
+    } else if (!Hinv) {
+        notice('The saved calibration for <strong>' + id + '</strong> is degenerate (H is not invertible) — recalibrate.');
+    }
+
+    $('s-rms').textContent = calib ? 'RMS ' + calib.rms_px + ' px' : '–';
+    $('map-name').textContent = mapName ? '· ' + mapName : '';
+    $('draw').disabled = !mapName;
+    status(frames.length ? frames.length + ' annotated frames' : (calib ? 'no detections for this video' : ''));
+    renderList();
+    render();
+}
+let loadedId = null;
+
+async function loadZones() {
+    const res = await fetch('/api/vision/zones/' + encodeURIComponent(mapName)).catch(() => null);
+    if (res && res.ok) {
+        const body = await res.json();
+        zones = (body.zones || []).map((z, i) => ({
+            id: z.id || ('z' + Date.now() + i),
+            name: z.name || ('Zone ' + (i + 1)),
+            color: z.color || PALETTE[i % PALETTE.length],
+            pts: z.pts, visible: z.visible !== false,
+        }));
+    }
+}
+
+async function saveZones() {
+    if (!mapName) return;
+    status('saving…');
+    const res = await fetch('/api/vision/zones/' + encodeURIComponent(mapName), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            zones: zones.map(z => ({ id: z.id, name: z.name, color: z.color, pts: z.pts, visible: z.visible })),
+            map_size: [mapImg.naturalWidth, mapImg.naturalHeight],
+        }),
+    }).catch(() => null);
+    if (!res || !res.ok) { status('save failed', 'error'); return; }
+    dirty = false;
+    $('save').disabled = true;
+    status('saved ' + zones.length + ' zone' + (zones.length === 1 ? '' : 's') + ' → ' + (await res.json()).saved_to);
+}
+
+function markDirty() {
+    dirty = true;
+    $('save').disabled = false;
+    status('unsaved changes', 'dirty');
+}
+
+function parseTracks(csv) {
+    const lines = csv.trim().split('\n');
+    const head = lines[0].trim().split(',');
+    const ix = Object.fromEntries(head.map((h, i) => [h, i]));
+    const byTime = new Map();
+    for (let i = 1; i < lines.length; i++) {
+        const p = lines[i].split(',');
+        if (p.length < head.length) continue;
+        const t = +p[ix.time_s];
+        const d = { id: +p[ix.track_id], fx: +p[ix.foot_x], fy: +p[ix.foot_y],
+                    x1: +p[ix.x1], y1: +p[ix.y1], x2: +p[ix.x2], y2: +p[ix.y2] };
+        if (!byTime.has(t)) byTime.set(t, []);
+        byTime.get(t).push(d);
+    }
+    frames = [...byTime.entries()].sort((a, b) => a[0] - b[0]).map(e => ({ t: e[0], dets: e[1] }));
+    sampleDt = frames.length > 1 ? frames[1].t - frames[0].t : 0.25;
+}
+
+function frameAt(t) {
+    if (!frames.length) return null;
+    let lo = 0, hi = frames.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
+    }
+    const a = frames[lo], b = frames[Math.min(lo + 1, frames.length - 1)];
+    return Math.abs(b.t - t) < Math.abs(t - a.t) ? b : a;
+}
+
+// ── drawing ───────────────────────────────────────────────────────────────
+function render() {
+    const f = frameAt(video.currentTime);
+    const dur = video.duration || 0;
+    $('time').textContent = video.currentTime.toFixed(2) + ' / ' + dur.toFixed(2) + ' s';
+    if (dur && +$('seek').max !== dur) $('seek').max = dur;
+    if (document.activeElement !== $('seek')) $('seek').value = video.currentTime;
+
+    drawCamera(f);
+    drawMap(f);
+    drawCounts(f);
+}
+
+function strokeFill(ctx, pts, color, alpha, lw, dashed) {
+    if (pts.length < 2) return;
+    ctx.beginPath();
+    pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.closePath();
+    if ($('o-fill').checked && alpha > 0) { ctx.fillStyle = hexA(color, alpha); ctx.fill(); }
+    ctx.setLineDash(dashed ? [lw * 3, lw * 2] : []);
+    ctx.strokeStyle = 'rgba(10,10,18,.7)'; ctx.lineWidth = lw * 2; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function label(ctx, text, x, y, color, size) {
+    ctx.font = '700 ' + Math.round(size) + "px 'Segoe UI', sans-serif";
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = size / 4; ctx.strokeStyle = 'rgba(10,10,18,.85)'; ctx.lineJoin = 'round';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = color; ctx.fillText(text, x, y);
+}
+
+function drawCamera(f) {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w) return;
+    if (camCv.width !== w) { camCv.width = w; camCv.height = h; }
+    camCtx.clearRect(0, 0, w, h);
+    const sc = w / 1280;
+    const alpha = +$('opacity').value / 100;
+
+    // zones: map polygon → camera image through H⁻¹
+    for (const z of zones) {
+        if (!z.visible) continue;
+        const pts = projectPolygon(z.pts);
+        strokeFill(camCtx, pts, z.color, alpha, (z.id === selected ? 4 : 2.5) * sc);
+        if ($('o-label').checked && pts.length > 2) {
+            const c = centroid(pts);
+            label(camCtx, z.name, c[0], c[1], z.color, 18 * sc);
+        }
+    }
+    if (drawing && drawing.length > 1 && Hinv)
+        strokeFill(camCtx, projectPolygon(hover ? [...drawing, hover] : drawing), '#ffffff', 0, 2 * sc, true);
+
+    if (!f || !$('o-people').checked) return;
+    camCtx.lineWidth = Math.max(1.5, 1.5 * sc);
+    for (const d of f.dets) {
+        const c = colorOf(d.id);
+        camCtx.strokeStyle = c; camCtx.globalAlpha = .6;
+        camCtx.strokeRect(d.x1, d.y1, d.x2 - d.x1, d.y2 - d.y1);
+        camCtx.globalAlpha = 1; camCtx.fillStyle = c;
+        camCtx.beginPath(); camCtx.ellipse(d.fx, d.fy, 7 * sc, 3.5 * sc, 0, 0, Math.PI * 2); camCtx.fill();
+    }
+}
+
+function drawMap(f) {
+    const w = mapImg.naturalWidth, h = mapImg.naturalHeight;
+    if (!w) return;
+    if (mapCv.width !== w) { mapCv.width = w; mapCv.height = h; }
+    mapCtx.clearRect(0, 0, w, h);
+    const sc = Math.max(w, h) / 900;
+    const alpha = +$('opacity').value / 100;
+
+    for (const z of zones) {
+        if (!z.visible) continue;
+        const sel = z.id === selected;
+        strokeFill(mapCtx, z.pts, z.color, alpha, (sel ? 4 : 2.5) * sc);
+        if ($('o-verts').checked && !drawing) {
+            for (const p of z.pts) {
+                mapCtx.fillStyle = sel ? '#fff' : z.color;
+                mapCtx.strokeStyle = 'rgba(10,10,18,.85)'; mapCtx.lineWidth = 1.5 * sc;
+                mapCtx.beginPath(); mapCtx.arc(p[0], p[1], (sel ? 6 : 4.5) * sc, 0, Math.PI * 2);
+                mapCtx.fill(); mapCtx.stroke();
+            }
+        }
+        if ($('o-label').checked) { const c = centroid(z.pts); label(mapCtx, z.name, c[0], c[1], z.color, 14 * sc); }
+    }
+
+    if (drawing) {
+        const pts = hover ? [...drawing, hover] : drawing;
+        if (pts.length > 1) {
+            mapCtx.beginPath();
+            pts.forEach((p, i) => i ? mapCtx.lineTo(p[0], p[1]) : mapCtx.moveTo(p[0], p[1]));
+            if (drawing.length > 2) { mapCtx.closePath(); mapCtx.fillStyle = 'rgba(255,255,255,.12)'; mapCtx.fill(); }
+            mapCtx.setLineDash([6 * sc, 4 * sc]); mapCtx.strokeStyle = '#fff'; mapCtx.lineWidth = 2 * sc; mapCtx.stroke();
+            mapCtx.setLineDash([]);
+        }
+        drawing.forEach((p, i) => {
+            const first = i === 0 && drawing.length > 2;
+            mapCtx.fillStyle = first ? '#ffd166' : '#fff';
+            mapCtx.beginPath(); mapCtx.arc(p[0], p[1], (first ? 7 : 4.5) * sc, 0, Math.PI * 2); mapCtx.fill();
+        });
+    }
+
+    if (!f || !$('o-people').checked || !calib) return;
+    for (const d of f.dets) {
+        const p = applyH(calib.H, d.fx, d.fy);
+        if (p[0] < -20 || p[0] > w + 20 || p[1] < -20 || p[1] > h + 20) continue;
+        mapCtx.fillStyle = colorOf(d.id);
+        mapCtx.strokeStyle = 'rgba(16,16,24,.85)'; mapCtx.lineWidth = 2 * sc;
+        mapCtx.beginPath(); mapCtx.arc(p[0], p[1], 8 * sc, 0, Math.PI * 2);
+        mapCtx.fill(); mapCtx.stroke();
+    }
+}
+
+function drawCounts(f) {
+    const dets = f ? f.dets : [];
+    $('s-now').textContent = dets.length;
+    let inAny = 0;
+    const per = new Map(zones.map(z => [z.id, 0]));
+    if (calib) for (const d of dets) {
+        const p = applyH(calib.H, d.fx, d.fy);
+        let hit = false;
+        for (const z of zones) if (inside(z.pts, p[0], p[1])) { per.set(z.id, per.get(z.id) + 1); hit = true; }
+        if (hit) inAny++;
+    }
+    $('s-inzone').textContent = inAny;
+    for (const el of $('zones').querySelectorAll('.count')) {
+        const n = per.get(el.dataset.zone) || 0;
+        el.textContent = n; el.classList.toggle('zero', !n);
+    }
+}
+
+// ── zone list ─────────────────────────────────────────────────────────────
+function renderList() {
+    const list = $('zones');
+    list.innerHTML = '';
+    $('zones-empty').style.display = zones.length ? 'none' : '';
+    for (const z of zones) {
+        const row = document.createElement('div');
+        row.className = 'zone' + (z.id === selected ? ' selected' : '') + (z.visible ? '' : ' hidden');
+        row.addEventListener('click', () => { selected = z.id; renderList(); render(); });
+
+        const sw = document.createElement('span');
+        sw.className = 'swatch'; sw.style.background = z.color; sw.title = 'Change colour';
+        sw.addEventListener('click', e => {
+            e.stopPropagation();
+            z.color = PALETTE[(PALETTE.indexOf(z.color) + 1) % PALETTE.length];
+            markDirty(); renderList(); render();
+        });
+        row.appendChild(sw);
+
+        const name = document.createElement('input');
+        name.type = 'text'; name.value = z.name; name.setAttribute('aria-label', 'Zone name');
+        name.addEventListener('input', () => { z.name = name.value; markDirty(); render(); });
+        name.addEventListener('keydown', e => { if (e.key === 'Enter') name.blur(); e.stopPropagation(); });
+        row.appendChild(name);
+
+        const count = document.createElement('span');
+        count.className = 'count zero'; count.dataset.zone = z.id; count.textContent = '0';
+        count.title = 'People inside right now';
+        row.appendChild(count);
+
+        const tools = document.createElement('span');
+        tools.className = 'tools';
+        const eye = document.createElement('button');
+        eye.textContent = z.visible ? '👁' : '–'; eye.title = z.visible ? 'Hide' : 'Show';
+        eye.setAttribute('aria-label', (z.visible ? 'Hide ' : 'Show ') + z.name);
+        eye.addEventListener('click', e => { e.stopPropagation(); z.visible = !z.visible; markDirty(); renderList(); render(); });
+        const del = document.createElement('button');
+        del.textContent = '×'; del.title = 'Delete zone'; del.setAttribute('aria-label', 'Delete ' + z.name);
+        del.addEventListener('click', e => { e.stopPropagation(); removeZone(z.id); });
+        tools.append(eye, del);
+        row.appendChild(tools);
+        list.appendChild(row);
+    }
+}
+
+function removeZone(id) {
+    zones = zones.filter(z => z.id !== id);
+    if (selected === id) selected = null;
+    markDirty(); renderList(); render();
+}
+
+// ── drawing / editing on the map ──────────────────────────────────────────
+function mapPoint(e) {
+    const r = mapCv.getBoundingClientRect();
+    return [(e.clientX - r.left) * mapCv.width / r.width,
+            (e.clientY - r.top) * mapCv.height / r.height];
+}
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const grabRadius = () => 10 * mapCv.width / mapCv.getBoundingClientRect().width;
+
+function setDrawMode(on) {
+    drawing = on ? [] : null;
+    $('draw').classList.toggle('on', on);
+    $('draw').setAttribute('aria-pressed', String(on));
+    $('draw').textContent = on ? 'Drawing… (Esc cancels)' : '+ New zone';
+    $('map-hint').innerHTML = on
+        ? 'click the corners; click the <strong>first corner</strong>, double-click or <kbd>Enter</kbd> to close'
+        : 'click <strong>+ New zone</strong>, then click corners on the plan';
+    mapCv.className = on ? 'draw' : '';
+    if (on) mapCv.focus();
+    render();
+}
+
+function finishPolygon() {
+    if (!drawing || drawing.length < 3) { setDrawMode(false); return; }
+    const z = {
+        id: 'z' + Date.now().toString(36),
+        name: 'Zone ' + (zones.length + 1),
+        color: PALETTE[zones.length % PALETTE.length],
+        pts: drawing.map(p => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10]),
+        visible: true,
+    };
+    zones.push(z); selected = z.id;
+    setDrawMode(false);
+    markDirty(); renderList(); render();
+    const input = $('zones').lastElementChild.querySelector('input');
+    if (input) { input.focus(); input.select(); }
+}
+
+function findVertex(p) {
+    const r = grabRadius();
+    // the selected zone's corners win, so overlapping zones stay editable
+    const order = [...zones].sort((a, b) => (b.id === selected) - (a.id === selected));
+    for (const z of order) {
+        if (!z.visible) continue;
+        for (let i = 0; i < z.pts.length; i++) if (dist(z.pts[i], p) <= r) return { zone: z, i: i };
+    }
+    return null;
+}
+
+mapCv.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || !mapImg.naturalWidth) return;
+    const p = mapPoint(e);
+    if (drawing) {
+        if (drawing.length > 2 && dist(p, drawing[0]) <= grabRadius() * 1.5) { finishPolygon(); return; }
+        drawing.push(p); render(); return;
+    }
+    const v = findVertex(p);
+    if (v) {
+        drag = v; selected = v.zone.id;
+        mapCv.setPointerCapture(e.pointerId); mapCv.className = 'grabbing';
+        renderList(); render(); return;
+    }
+    const hit = [...zones].reverse().find(z => z.visible && inside(z.pts, p[0], p[1]));
+    selected = hit ? hit.id : null;
+    renderList(); render();
+});
+
+mapCv.addEventListener('pointermove', e => {
+    if (!mapImg.naturalWidth) return;
+    const p = mapPoint(e);
+    hover = p;
+    if (drag) {
+        drag.zone.pts[drag.i] = [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10];
+        render(); return;
+    }
+    if (drawing) { render(); return; }
+    mapCv.className = findVertex(p) ? 'grab' : '';
+});
+
+const endDrag = () => {
+    if (!drag) return;
+    drag = null; mapCv.className = ''; markDirty(); render();
+};
+mapCv.addEventListener('pointerup', endDrag);
+mapCv.addEventListener('pointercancel', endDrag);
+mapCv.addEventListener('pointerleave', () => { hover = null; if (drawing) render(); });
+mapCv.addEventListener('dblclick', e => {
+    e.preventDefault();
+    if (drawing) {
+        // the double-click's own clicks added the same corner twice — drop one
+        if (drawing.length > 1 && dist(drawing[drawing.length - 1], drawing[drawing.length - 2]) < 1) drawing.pop();
+        finishPolygon();
+    }
+});
+mapCv.addEventListener('contextmenu', e => { if (drawing) { e.preventDefault(); finishPolygon(); } });
+
+$('draw').addEventListener('click', () => drawing ? setDrawMode(false) : setDrawMode(true));
+$('save').addEventListener('click', saveZones);
+
+// redraw on every rendered video frame where supported, else on rAF
+if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+    const step = () => { render(); video.requestVideoFrameCallback(step); };
+    video.requestVideoFrameCallback(step);
+} else {
+    const step = () => { render(); requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+}
+video.addEventListener('seeked', render);
+video.addEventListener('loadeddata', render);
+mapImg.addEventListener('load', render);
+
+// ── controls ──────────────────────────────────────────────────────────────
+$('play').addEventListener('click', () => video.paused ? video.play() : video.pause());
+video.addEventListener('play',  () => $('play').textContent = 'Pause');
+video.addEventListener('pause', () => $('play').textContent = 'Play');
+$('seek').addEventListener('input', e => { video.currentTime = +e.target.value; });
+$('video-select').addEventListener('change', e => load(e.target.value));
+for (const id of ['o-fill', 'o-label', 'o-people', 'o-verts']) $(id).addEventListener('change', render);
+$('opacity').addEventListener('input', render);
+
+document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select') || (e.target.matches('button') && e.key === ' ')) return;
+    if (drawing) {
+        if (e.key === 'Escape') { e.preventDefault(); setDrawMode(false); }
+        else if (e.key === 'Enter') { e.preventDefault(); finishPolygon(); }
+        else if (e.key === 'Backspace') { e.preventDefault(); drawing.pop(); render(); }
+        return;
+    }
+    if (e.key === 'Delete' && selected) { e.preventDefault(); removeZoneConfirmed(selected); }
+    else if (e.key === 'Escape') { selected = null; renderList(); render(); }
+    else if (e.key === 'n' && !e.ctrlKey && !e.metaKey && mapName) { e.preventDefault(); setDrawMode(true); }
+    else if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (dirty) saveZones(); }
+    else if (e.key === ' ') { e.preventDefault(); video.paused ? video.play() : video.pause(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); video.pause(); video.currentTime += sampleDt; }
+    else if (e.key === 'ArrowLeft')  { e.preventDefault(); video.pause(); video.currentTime = Math.max(0, video.currentTime - sampleDt); }
+});
+
+function removeZoneConfirmed(id) {
+    const z = zones.find(z => z.id === id);
+    if (z && confirm('Delete zone "' + z.name + '"?')) removeZone(id);
+}
+
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+loadVideos();
+</script>
+</body>
+</html>
