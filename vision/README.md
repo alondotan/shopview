@@ -456,20 +456,19 @@ shopview` runs it locally.
 
 Where to put it:
 
-* **Hugging Face Spaces** (recommended: free, 2 vCPU / 16 GB, Docker SDK,
-  public URL). Create a Space with the *Docker* SDK, then push this repo to it:
-
-  ```bash
-  git remote add hf https://huggingface.co/spaces/<user>/shopview
-  git push hf master:main
-  ```
-
-  (password = a *write* token from huggingface.co/settings/tokens). Add
-  `ANTHROPIC_API_KEY` under *Settings → Secrets* if the chat tab should work.
-  The container listens on 7860, as Spaces expects.
-* **Railway / Render / Fly.io** — connect the GitHub repo; the `Dockerfile` is
-  picked up automatically and `$PORT` is honoured. Render's free tier
-  (512 MB RAM) is too small for torch + YOLO; pick a plan with ≥ 2 GB.
+* **Railway** (what the demo uses). railway.com → *New Project → Deploy from
+  GitHub repo* → pick `alondotan/shopview`. The `Dockerfile` is detected, the
+  build takes ~10 min (torch + model weights), then *Settings → Networking →
+  Generate Domain* gives the public URL. Optional variable:
+  `ANTHROPIC_API_KEY` for the chat tab. Railway does not fetch Git LFS
+  objects, so the `Dockerfile` downloads the sample video from GitHub itself
+  when it finds the LFS pointer. Memory: the container needs ~1.5 GB.
+* **Hugging Face Spaces** — Docker Spaces now require a PRO subscription
+  (free CPU or not); `README.md` carries the front matter they need, so with
+  PRO it is `git push https://huggingface.co/spaces/<user>/<space> master:main`
+  (password = a write token). The video is in LFS, as Spaces require.
+* **Render / Fly.io** — same Dockerfile, `$PORT` is honoured. Render's free
+  tier (512 MB RAM) is too small for torch + YOLO; pick ≥ 2 GB.
 
 What to expect on a shared CPU host: the pre-computed analysis (Video, Live
 map, Zones tabs) is instant. The **Live** tab runs YOLO on the host's CPU: on
