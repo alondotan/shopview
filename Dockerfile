@@ -20,9 +20,12 @@ RUN pip install -r req/requirements.txt -r req/vision-requirements.txt
 
 COPY --chown=user:user . .
 
-# The sample video lives in Git LFS. Hosts that clone without LFS (Railway,
-# Render) hand us the 3-line pointer instead; fetch the real file from GitHub.
-RUN python -c "import os, urllib.request; f='data/videos/KMJS66jBtVQ.mp4';     os.path.getsize(f) > 10000 or urllib.request.urlretrieve('https://github.com/alondotan/shopview/raw/master/' + f, f);     print(f, os.path.getsize(f) // 1000000, 'MB')"
+# The sample videos live in Git LFS. Hosts that clone without LFS (Railway,
+# Render) hand us the 3-line pointer instead; fetch the real files from GitHub.
+RUN python -c "import os, glob, urllib.request; \
+    [os.path.getsize(f) > 10000 or urllib.request.urlretrieve('https://github.com/alondotan/shopview/raw/master/' + f, f) \
+     for f in sorted(glob.glob('data/videos/*.mp4'))]; \
+    print({f: os.path.getsize(f) // 1000000 for f in sorted(glob.glob('data/videos/*.mp4'))}, 'MB')"
 
 # fetch the model weights at build time so the first request is not a download:
 # person/pose detector + YOLO-World into data/models (where detect_people looks),

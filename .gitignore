@@ -6,20 +6,25 @@ __pycache__/
 data/
 *.mp4
 
-# demo data that ships with the deployable image: one sample video, its
-# analysis, the map and the camera calibration (everything else in data/ stays local)
+# demo data that ships with the deployable image: two sample videos, their
+# analysis, the maps and the camera calibrations (everything else in data/ stays local)
 !data/
 data/*
 !data/videos/
 data/videos/*
 !data/videos/KMJS66jBtVQ.mp4
+!data/videos/-1bRhYjw1qE.mp4
 !data/tracks/
 data/tracks/*
 !data/tracks/KMJS66jBtVQ_tracks.csv
 !data/tracks/KMJS66jBtVQ_objects.csv
+!data/tracks/-1bRhYjw1qE_tracks.csv
+!data/tracks/-1bRhYjw1qE_objects.csv
 !data/calibration/
 data/calibration/*
 !data/calibration/KMJS66jBtVQ.json
+!data/calibration/-1bRhYjw1qE.json
 !data/map/
 data/map/*
 !data/map/store_map_placeholder.png
+!data/map/_2026-09-14_-8.06.03.png
