@@ -57,7 +57,7 @@ import cv2
 
 from detect_people import (
     DEFAULT_OBJECT_CLASSES, DEFAULT_OBJECT_MODEL, PERSON_CLASS, TRACK_BUFFER_S,
-    TRACK_LOW_THRESH, TARGET_TRACK_FPS, _load_model, detect_objects, extract_people,
+    TRACK_LOW_THRESH, TARGET_TRACK_FPS, FootSmoother, _load_model, detect_objects, extract_people,
     load_object_model, person_row, tracker_config,
 )
 from stitch import Embedder, OnlineStitcher
@@ -451,6 +451,7 @@ class LivePipeline:
         self._emit({"type": "status", "tracker": {"file": tracker_path, **tracker_cfg},
                     **self.status()})
 
+        foot_smoother = FootSmoother(self.target_fps)
         t_start = self.started_at
         t = 0.0
         next_due = 0.0
@@ -491,6 +492,8 @@ class LivePipeline:
                                   imgsz=self.imgsz, device=self.device, tracker=tracker_path,
                                   verbose=False)[0]
             people = extract_people(results, frame, height, appearance_on=self.stitch_on)
+            for p in people:                       # steady floor points, see smooth_feet()
+                p["foot"] = foot_smoother.update(p["raw_id"], p["foot"], p["h"], t)
             if embedder is not None and people:
                 embs = embedder(frame, [p["box"] for p in people], [p["kp"] for p in people])
                 for p, e in zip(people, embs):

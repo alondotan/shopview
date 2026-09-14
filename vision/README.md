@@ -64,6 +64,33 @@ are shorter than the proportions assume (the ratios still hold, the position
 model does not); the `torso` estimate degrades when the camera looks steeply
 down, because the torso foreshortens more than the legs.
 
+### Steady floor points — smoothing
+
+Even a perfectly still shopper wobbles a few pixels frame to frame, and
+`foot_src` flips between `box` / `knees` / `torso` as an ankle comes and goes,
+jumping `foot_y` by 10–30 px; the homography magnifies that into a zig-zag on
+the plan (worst far from the camera). `smooth_feet()` runs after stitching, per
+visitor, and rewrites `foot_x,foot_y`:
+
+1. a centred rolling **median** over 0.5 s of analysed frames removes the
+   single-frame spikes;
+2. a **leaky dead-band** ignores motion smaller than 3 % of the box height: a
+   standing shopper becomes one fixed point, a walking one follows the median
+   continuously (trailing by at most the dead-band, a few pixels).
+
+On the sample video (yolo11m-pose, every frame) the map step during "still"
+seconds drops from 7.2 px (90th pct) to 1.2 px and the path-length /
+displacement ratio from 8.3 to 2.7. `--no-smooth` keeps the raw points,
+`--smooth-window` (seconds) and `--smooth-deadband` (fraction of height) tune
+it; `stats.smooth` reports how many frames were held. The live pipeline applies
+a causal version (`FootSmoother`: running median + the same dead-band, ~0.25 s
+behind).
+
+Lowering the input resolution does **not** help here: at `--imgsz 416` the
+still-frame jitter is the same and a quarter of the detections are lost; at
+`--imgsz 960` the model sees ~10 % more detections, mostly small far-away
+people, at higher confidence.
+
 ### Held objects — YOLO-World
 
 A second detector runs on every processed frame and looks for the things people
@@ -106,7 +133,8 @@ python vision/detect_people.py data/videos/KMJS66jBtVQ.mp4 \
 `--stride N` processes every Nth frame (the main speed knob), `--seconds` /
 `--start` analyse a slice, `--model` picks the weights. Held-object detection is
 on by default: `--no-objects` skips it, `--object-classes "shopping bag,box,…"`
-changes what to look for, `--object-model` / `--object-conf` tune it.
+changes what to look for, `--object-model` / `--object-conf` tune it. Floor-point
+smoothing is on by default (`--no-smooth`, see "Steady floor points").
 
 Output — `data/tracks/<video>_tracks.csv`, one row per person per processed frame:
 

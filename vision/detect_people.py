@@ -176,6 +176,95 @@ def _fit_position_model(samples: list[tuple[float, float]]):
     return float(a), float(b)
 
 
+# Floor-point smoothing (post-pass, per visitor). The detector's box wobbles a
+# few pixels frame to frame and ``foot_src`` can flip between box / knees /
+# torso, which jumps ``foot_y`` by 10–30 px; the homography then turns that
+# into a zig-zag on the plan for someone who is standing still.
+SMOOTH_WINDOW_S = 0.5      # centred rolling median over this much video time
+SMOOTH_DEADBAND = 0.03     # ignore motion smaller than this × box height
+
+
+def smooth_feet(rows: list[dict], analysed_fps: float, window_s: float = SMOOTH_WINDOW_S,
+                deadband_frac: float = SMOOTH_DEADBAND) -> dict:
+    """Smooth ``foot_x`` / ``foot_y`` in place, per ``track_id`` in frame order.
+
+    Two stages. A centred rolling median over ``window_s`` seconds of analysed
+    frames removes single-frame spikes (a missed ankle, a flipped estimator).
+    Then a *leaky* dead-band: the output only moves by the part of the
+    displacement that exceeds ``deadband_frac`` of the person's box height, so
+    a standing shopper is one fixed point, while a walking one follows the
+    median continuously (trailing it by at most the dead-band, a few pixels).
+    Returns a small stats dict.
+    """
+    window = int(round(window_s * analysed_fps)) | 1
+    if window < 3 or not rows:
+        return {"enabled": False}
+    half = window // 2
+    by_track: dict[int, list[dict]] = defaultdict(list)
+    for r in rows:
+        by_track[r["track_id"]].append(r)
+    moved = held = 0
+    for rs in by_track.values():
+        rs.sort(key=lambda r: r["frame"])
+        xs = [r["foot_x"] for r in rs]
+        ys = [r["foot_y"] for r in rs]
+        n = len(rs)
+        med = []
+        for i in range(n):
+            lo, hi = max(0, i - half), min(n, i + half + 1)
+            wx, wy = sorted(xs[lo:hi]), sorted(ys[lo:hi])
+            med.append((wx[len(wx) // 2], wy[len(wy) // 2]))
+        out_x, out_y = med[0]
+        for r, (mx, my) in zip(rs, med):
+            tol = deadband_frac * max(r["h"], 1.0)
+            dx, dy = mx - out_x, my - out_y
+            d = (dx * dx + dy * dy) ** 0.5
+            if d > tol:
+                k = (d - tol) / d              # move by the excess only
+                out_x, out_y = out_x + dx * k, out_y + dy * k
+                moved += 1
+            else:
+                held += 1
+            r["foot_x"], r["foot_y"] = round(out_x, 1), round(out_y, 1)
+    return {"enabled": True, "window_frames": window, "deadband_frac": deadband_frac,
+            "held_pct": round(100 * held / max(held + moved, 1), 1)}
+
+
+class FootSmoother:
+    """Causal version of :func:`smooth_feet` for the live pipeline: per raw id,
+    a running median over the last ``window`` points then the same leaky
+    dead-band. Lags the true position by about half the window."""
+
+    def __init__(self, analysed_fps: float, window_s: float = SMOOTH_WINDOW_S,
+                 deadband_frac: float = SMOOTH_DEADBAND, forget_s: float = 30.0):
+        self.window = max(1, int(round(window_s * analysed_fps)))
+        self.deadband_frac = deadband_frac
+        self.forget_s = forget_s
+        self._hist: dict[int, list[tuple[float, float]]] = {}
+        self._out: dict[int, tuple[float, float]] = {}
+        self._seen: dict[int, float] = {}
+
+    def update(self, raw_id: int, foot: tuple[float, float], h: float, t: float) -> tuple[float, float]:
+        hist = self._hist.setdefault(raw_id, [])
+        hist.append(foot)
+        del hist[:-self.window]
+        xs, ys = sorted(x for x, _ in hist), sorted(y for _, y in hist)
+        mx, my = xs[len(xs) // 2], ys[len(ys) // 2]
+        ox, oy = self._out.get(raw_id, (mx, my))
+        tol = self.deadband_frac * max(h, 1.0)
+        dx, dy = mx - ox, my - oy
+        d = (dx * dx + dy * dy) ** 0.5
+        if d > tol:
+            k = (d - tol) / d
+            ox, oy = ox + dx * k, oy + dy * k
+        self._out[raw_id] = (ox, oy)
+        self._seen[raw_id] = t
+        if len(self._seen) > 64:                       # forget ids not seen for a while
+            for rid in [r for r, ts in self._seen.items() if t - ts > self.forget_s]:
+                self._hist.pop(rid, None); self._out.pop(rid, None); self._seen.pop(rid, None)
+        return ox, oy
+
+
 def _kp_str(kp) -> str:
     return "" if kp is None else ";".join(f"{x:.0f}:{y:.0f}:{c:.2f}" for x, y, c in kp)
 
@@ -343,6 +432,9 @@ def analyze(
     stitch_tracks: bool = True,
     stitch_gap_s: float = 8.0,
     stitch_min_sim: float = 0.6,
+    smooth: bool = True,
+    smooth_window_s: float = SMOOTH_WINDOW_S,
+    smooth_deadband: float = SMOOTH_DEADBAND,
     progress_every: int = 10,
     on_progress=None,
     objects: bool = True,
@@ -540,6 +632,9 @@ def analyze(
                 merged_held[id_map.get(tid, tid)][label] += n_seen
         held_by_track = merged_held
 
+    smooth_stats = (smooth_feet(rows, fps / stride, smooth_window_s, smooth_deadband)
+                    if smooth else {"enabled": False})
+
     with out_csv.open("w", newline="", encoding="utf-8") as f:
         fieldnames = ["frame", "time_s", "track_id", "raw_id", "conf", "x1", "y1", "x2", "y2",
                       "cx", "cy", "foot_x", "foot_y", "foot_src", "w", "h", "keypoints"]
@@ -573,6 +668,7 @@ def analyze(
         "unique_tracks": len(track_frames),
         # tracks seen in at least 3 sampled frames — filters one-frame false positives
         "stable_tracks": sum(1 for v in track_frames.values() if v >= 3),
+        "smooth": smooth_stats,
         "stitch": ({"enabled": True, "max_gap_s": stitch_gap_s, "min_sim": stitch_min_sim,
                     "links": len(stitch_log), "log": stitch_log}
                    if stitch_tracks else {"enabled": False}),
@@ -636,6 +732,12 @@ def main() -> None:
                     help="max seconds between a fragment ending and its continuation starting")
     ap.add_argument("--stitch-sim", type=float, default=0.6,
                     help="min clothing-colour similarity (0–1) to join two fragments")
+    ap.add_argument("--no-smooth", action="store_true",
+                    help="keep the raw per-frame floor points (no median / dead-band)")
+    ap.add_argument("--smooth-window", type=float, default=SMOOTH_WINDOW_S,
+                    help=f"rolling-median window in seconds (default {SMOOTH_WINDOW_S})")
+    ap.add_argument("--smooth-deadband", type=float, default=SMOOTH_DEADBAND,
+                    help=f"hold the point while it moves < this x box height (default {SMOOTH_DEADBAND})")
     ap.add_argument("--no-objects", action="store_true",
                     help="skip the held-object detector (people only, ~2x faster)")
     ap.add_argument("--object-model", default=DEFAULT_OBJECT_MODEL,
@@ -654,6 +756,8 @@ def main() -> None:
         track_buffer_s=args.track_buffer,
         stitch_tracks=not args.no_stitch, stitch_gap_s=args.stitch_gap,
         stitch_min_sim=args.stitch_sim,
+        smooth=not args.no_smooth, smooth_window_s=args.smooth_window,
+        smooth_deadband=args.smooth_deadband,
         objects=not args.no_objects, object_model=args.object_model,
         object_classes=[c.strip() for c in args.object_classes.split(",") if c.strip()],
         object_conf=args.object_conf,
