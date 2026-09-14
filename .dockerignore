@@ -6,6 +6,7 @@ __pycache__
 data/tracks/*_preview.mp4
 data/videos/*
 !data/videos/KMJS66jBtVQ.mp4
+!data/videos/-1bRhYjw1qE.mp4
 data/live
 data/models
 Dockerfile
