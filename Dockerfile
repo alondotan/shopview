@@ -1,7 +1,8 @@
 # ShopView — simulation viewer + video analytics (YOLOX + RTMPose + ByteTrack,
 # all permissively licensed) in one container. Built for CPU hosts such as
 # Hugging Face Spaces (port 7860, runs as uid 1000), Railway or Render (they set
-# $PORT). ~700 MB image: onnxruntime + opencv, no torch. The optional OWLv2
+# $PORT). ~1.8 GB image: onnxruntime + opencv + ffmpeg, no torch (was ~3 GB
+# with torch + ultralytics). The optional OWLv2
 # object detector / CLIP embedder (vision/requirements-owl.txt) are not
 # installed — they need torch and are too slow for a 2-vCPU host anyway.
 FROM python:3.12-slim

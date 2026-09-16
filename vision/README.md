@@ -708,7 +708,7 @@ Where to put it:
   PRO it is `git push https://huggingface.co/spaces/<user>/<space> master:main`
   (password = a write token). The video is in LFS, as Spaces require.
 * **Render / Fly.io** — same Dockerfile, `$PORT` is honoured. The image has
-  no torch (onnxruntime only, ~700 MB); 1 GB of RAM is enough.
+  no torch (onnxruntime + opencv + ffmpeg, ~1.8 GB); 1 GB of RAM is enough.
 
 What to expect on a shared CPU host: the pre-computed analysis (Video, Live
 map, Zones tabs) is instant. The **Live** tab runs YOLOX + RTMPose on the
