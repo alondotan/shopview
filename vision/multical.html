@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12121f">
+<title>Multi-camera calibration — one map, all cameras</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: dark; }
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #12121f; color: #e0e0e0;
+    display: flex; flex-direction: column; height: 100dvh;
+    overflow: hidden; gap: 8px; padding: 10px;
+}
+h1 { font-size: 15px; font-weight: 600; color: #6ab0ff; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #7a7a9a; }
+.bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #1c1c30; border-radius: 8px; padding: 8px 14px; flex-shrink: 0;
+}
+button, select, input[type=text], input[type=number] {
+    background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
+    border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px;
+    transition: background-color .15s; font-family: inherit;
+}
+input[type=text], input[type=number] { cursor: text; padding: 4px 8px; }
+input[type=number] { width: 70px; }
+button:hover:not(:disabled) { background: #3a3a6a; }
+button:disabled { opacity: .35; cursor: default; }
+button.primary { background: #2f5da8; border-color: #4a7fd0; color: #eaf2ff; }
+button.primary:hover:not(:disabled) { background: #3c72c8; }
+button.danger { border-color: #6a3a3a; color: #ffb0b0; }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
+    outline: 2px solid #5c8ee8; outline-offset: 2px;
+}
+select { padding: 4px 6px; font-size: 12px; }
+label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: center; gap: 6px; }
+a { color: #6ab0ff; }
+
+#mode { display: flex; gap: 0; border: 1px solid #3a3a5a; border-radius: 6px; overflow: hidden; }
+#mode button { border: 0; border-radius: 0; padding: 5px 12px; background: #22223a; color: #8a8aa5; }
+#mode button[aria-pressed="true"] { background: #2f5da8; color: #eaf2ff; }
+
+#editor {
+    display: none; background: #1c1c30; border: 1px solid #3a3a6a; border-radius: 8px;
+    padding: 12px 14px; flex-shrink: 0; gap: 14px; align-items: flex-start; flex-wrap: wrap;
+}
+#editor.show { display: flex; }
+#editor .col { display: flex; flex-direction: column; gap: 6px; }
+#editor .cam-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-family: monospace; }
+#editor .cam-row .meta { color: #7a7a9a; font-size: 11px; font-family: 'Segoe UI', sans-serif; }
+
+#main { display: flex; gap: 10px; flex: 1; min-height: 0; }
+.pane {
+    min-width: 0; background: #1c1c30; border-radius: 8px; padding: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+}
+#map-pane { flex: 1.25; }
+#cams { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
+.cam-pane { flex: 1; min-height: 180px; }
+.cam-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cam-head .vid { font-family: monospace; font-size: 12px; color: #cdd; }
+.cam-head .t { font-family: monospace; font-size: 12px; color: #6ab0ff; min-width: 54px; }
+.cam-head input[type=range] { flex: 1; min-width: 80px; }
+.cam-head .swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.canvas-wrap {
+    position: relative; flex: 1; min-height: 0; background: #0b0b14; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.inner { position: relative; line-height: 0; max-width: 100%; max-height: 100%; }
+.inner > video, .inner > img { display: block; max-width: 100%; max-height: 100%; background: #000; }
+.inner > canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.inner > canvas.grabbing { cursor: grabbing; }
+.inner > video.birdseye {
+    position: absolute; left: 0; top: 0; max-width: none; max-height: none;
+    transform-origin: 0 0; pointer-events: none; display: none;
+}
+.hint { font-size: 12px; color: #7a7a9a; line-height: 1.4; }
+.hint.active { color: #ffd479; }
+
+#side {
+    width: 330px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
+    padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: monospace; }
+th { text-align: left; color: #7a7a9a; font-weight: 500; padding: 3px 4px; }
+td { padding: 3px 4px; border-top: 1px solid #2a2a4a; white-space: nowrap; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #23233c; }
+tr.sel { background: #2b3f66; }
+td.bad { color: #ff9a9a; font-weight: 700; }
+td.miss { color: #55556a; }
+td button { padding: 0 6px; font-size: 12px; }
+.stats { display: grid; grid-template-columns: 1fr auto auto auto; gap: 4px 10px; font-size: 12px; font-family: monospace; }
+.stats .h { color: #7a7a9a; font-family: 'Segoe UI', sans-serif; }
+.stats .v { color: #6ab0ff; text-align: right; font-weight: 600; }
+.stats .v.warn { color: #ffb347; }
+.stats .v.bad  { color: #ff8080; }
+.stats .v.none { color: #55556a; font-weight: 400; }
+#status { font-size: 12px; color: #9a9ab0; }
+#status.error { color: #ff8080; }
+#status.ok { color: #7ddc9a; }
+input[type=range] { accent-color: #5c8ee8; }
+#test-list { font-size: 12px; font-family: monospace; color: #9a9ab0; display: flex; flex-direction: column; gap: 2px; }
+#gtime { font-family: monospace; font-size: 13px; color: #6ab0ff; min-width: 60px; }
+@media (max-width: 1200px) {
+    body { overflow: auto; height: auto; }
+    #main { flex-direction: column; }
+    #side { width: auto; }
+    .cam-pane { min-height: 320px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+    <h1>Multi-camera calibration</h1>
+    <label class="inline">Scene
+        <select id="scene-select" aria-label="Scene"></select>
+    </label>
+    <button id="new-scene">New scene…</button>
+    <button id="edit-scene">Cameras…</button>
+    <label class="inline">Map
+        <select id="map-select" aria-label="Store map"></select>
+    </label>
+    <button id="upload-btn">Upload map…</button>
+    <input type="file" id="map-file" accept="image/*" hidden>
+    <div id="mode" role="group" aria-label="Click mode">
+        <button id="mode-add"  aria-pressed="true">Add landmarks</button>
+        <button id="mode-test" aria-pressed="false">Test a point</button>
+    </div>
+    <label class="inline" style="flex:1;min-width:200px">All cameras
+        <input type="range" id="gseek" min="0" max="100" step="0.1" value="0" style="flex:1" aria-label="Time, all cameras">
+        <span id="gtime">0.0 s</span>
+    </label>
+    <span id="status" role="status"></span>
+</div>
+
+<div id="editor">
+    <div class="col">
+        <h2>Scene</h2>
+        <label class="inline">Name <input type="text" id="e-name" placeholder="e.g. checkout" size="18"></label>
+        <label class="inline">Map <select id="e-map"></select></label>
+        <p class="hint">Videos of the same store, recorded at the same time.<br>
+            Offset = seconds to add to a video's clock to line it up with the others.</p>
+    </div>
+    <div class="col">
+        <h2>Cameras</h2>
+        <div id="e-cams"></div>
+    </div>
+    <div class="col" style="align-self:flex-end;flex-direction:row">
+        <button id="e-apply" class="primary">Apply</button>
+        <button id="e-cancel">Cancel</button>
+        <button id="e-delete" class="danger">Delete scene</button>
+    </div>
+</div>
+
+<div id="main">
+    <div class="pane" id="map-pane">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h2>1 · Store map</h2>
+            <span class="hint" id="hint-map">Click a floor landmark here first — then the same spot in every camera that sees it.</span>
+        </div>
+        <div class="canvas-wrap">
+            <div class="inner" id="map-inner">
+                <img id="map-img" alt="Store map">
+                <canvas id="map-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="cams"></div>
+
+    <aside id="side">
+        <div>
+            <h2>Fit per camera</h2>
+            <div class="stats" id="fit-stats"></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button id="undo">Undo</button>
+            <button id="clear">Clear</button>
+            <button id="save" class="primary" disabled>Save all</button>
+        </div>
+        <div>
+            <h2>Landmarks</h2>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead id="lm-head"></thead>
+                    <tbody id="lm-rows"></tbody>
+                </table>
+            </div>
+            <p class="hint" style="margin-top:4px">Each cell is that camera's pixel and its error. Click a row to select · drag any marker to move it · Delete removes the landmark · × removes one camera's point.</p>
+        </div>
+        <div>
+            <h2>Test points</h2>
+            <p class="hint" id="test-hint">Switch to “Test a point”, then click any image — the point is drawn on all the others. If two cameras disagree about where a spot on the floor is, one of them is off.</p>
+            <div id="test-list"></div>
+            <button id="clear-tests" style="margin-top:6px">Clear test points</button>
+        </div>
+        <div>
+            <h2>Overlays</h2>
+            <label class="inline"><input type="checkbox" id="o-people" checked> Detected people on the map (colour = camera)</label>
+            <label class="inline"><input type="checkbox" id="o-trail"> Their trails (4 s)</label>
+            <label class="inline"><input type="checkbox" id="o-grid"> Map grid warped onto the cameras</label>
+            <label class="inline" style="display:block;margin:6px 0 2px">
+                Cameras warped onto the map <span id="v-birdseye">0</span>%
+                <input type="range" id="o-birdseye" min="0" max="100" step="5" value="0"
+                       style="width:100%" aria-label="Bird's-eye overlay opacity">
+            </label>
+            <p class="hint">With every camera warped onto the plan, the same fixture must land in the same place from each of them — that is the joint check.</p>
+        </div>
+    </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const mapImg = $('map-img');
+const mapCv  = $('map-canvas'), mapCtx = mapCv.getContext('2d');
+
+// camera colours (index → hue): the same in every tab that shows several cameras
+const CAM_HUES = [205, 30, 130, 280, 60, 340];
+const camColor = (i, l) => 'hsl(' + CAM_HUES[i % CAM_HUES.length] + ' 85% ' + (l || 62) + '%)';
+const colorOf = id => 'hsl(' + ((id * 47) % 360) + ' 85% 62%)';
+
+let scene = null;          // {name, map, cameras:[{video, offset_s}], landmarks:[{map:[x,y], cams:{video:[x,y]}}]}
+let cams = [];             // [{video, offset, el, cv, ctx, bird, frames, trails, sampleDt}]
+let fits = {};             // video → {H, errors_px, rms_px, max_px, n_pairs} | {error}
+let Hinv = {};             // video → map → camera
+let selected = -1;         // landmark index
+let drag = null;           // {index, side:'map'|video}
+let tests = [];            // [{from:'map'|video, src:[x,y]}]
+let mode = 'add';
+let allVideos = [], allMaps = [];
+let dirty = false;
+
+const status = (msg, kind) => { $('status').textContent = msg; $('status').className = kind || ''; };
+
+// ── matrix helpers ────────────────────────────────────────────────────────
+function applyH(H, x, y) {
+    const w = H[2][0] * x + H[2][1] * y + H[2][2];
+    return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w,
+            (H[1][0] * x + H[1][1] * y + H[1][2]) / w];
+}
+function invert3(m) {
+    const [a, b, c] = m[0], [d, e, f] = m[1], [g, h, i] = m[2];
+    const A =  (e * i - f * h), B = -(d * i - f * g), C =  (d * h - e * g);
+    const det = a * A + b * B + c * C;
+    if (!det || !isFinite(det)) return null;
+    return [
+        [A / det, -(b * i - c * h) / det,  (b * f - c * e) / det],
+        [B / det,  (a * i - c * g) / det, -(a * f - c * d) / det],
+        [C / det, -(a * h - b * g) / det,  (a * e - b * d) / det],
+    ];
+}
+
+// ── loading ───────────────────────────────────────────────────────────────
+async function boot() {
+    [allVideos, allMaps] = await Promise.all([
+        (await fetch('/api/vision/videos')).json(),
+        (await fetch('/api/vision/maps')).json(),
+    ]);
+    fillMapSelect($('map-select'));
+    fillMapSelect($('e-map'));
+    const scenes = await loadScenes();
+    const wanted = location.hash.slice(1);
+    const first = scenes.find(s => s.name === wanted) || scenes[0];
+    if (first) await openScene(first.name);
+    else { openEditor(true); status('No scene yet — pick the map and the cameras', ''); }
+}
+
+function fillMapSelect(sel) {
+    const cur = sel.value;
+    sel.innerHTML = '';
+    allMaps.forEach(m => sel.add(new Option(m.name, m.name)));
+    if (cur && allMaps.some(m => m.name === cur)) sel.value = cur;
+}
+
+async function loadScenes() {
+    const list = await (await fetch('/api/vision/scenes')).json();
+    const sel = $('scene-select');
+    sel.innerHTML = '';
+    list.forEach(s => sel.add(new Option(
+        s.name + ' · ' + s.cameras.length + ' cams · ' + s.n_landmarks + ' pts', s.name)));
+    if (!list.length) sel.add(new Option('(no scenes)', ''));
+    return list;
+}
+
+async function openScene(name) {
+    const res = await fetch('/api/vision/scenes/' + encodeURIComponent(name));
+    if (!res.ok) { status('scene not found', 'error'); return; }
+    setScene(await res.json());
+    $('scene-select').value = name;
+    status('Loaded scene ' + name + ' (' + scene.landmarks.length + ' landmarks)', 'ok');
+}
+
+/** Install a scene object: build one pane per camera, load its tracks, set the map. */
+async function setScene(doc) {
+    scene = doc;
+    scene.landmarks = scene.landmarks || [];
+    fits = {}; Hinv = {}; selected = -1; tests = []; drag = null; dirty = false;
+    $('map-select').value = scene.map || $('map-select').value;
+    scene.map = $('map-select').value;
+    mapImg.src = '/api/vision/maps/' + encodeURIComponent(scene.map);
+    if (location.hash !== '#' + scene.name) history.replaceState(null, '', '#' + scene.name);
+
+    // camera panes
+    const box = $('cams');
+    box.innerHTML = '';
+    $('map-inner').querySelectorAll('video.birdseye').forEach(v => v.remove());
+    cams = scene.cameras.map((c, i) => {
+        const pane = document.createElement('div');
+        pane.className = 'pane cam-pane';
+        pane.innerHTML =
+            '<div class="cam-head"><span class="swatch" style="background:' + camColor(i) + '"></span>' +
+            '<h2>' + (i + 2) + ' · Camera ' + (i + 1) + '</h2><span class="vid"></span>' +
+            '<span class="t">0.0 s</span><input type="range" min="0" max="100" step="0.1" value="0" aria-label="Video time"></div>' +
+            '<div class="canvas-wrap"><div class="inner"><video playsinline preload="auto" muted></video><canvas></canvas></div></div>' +
+            '<p class="hint"></p>';
+        pane.querySelector('.vid').textContent = c.video + (c.offset_s ? ' (offset ' + c.offset_s + ' s)' : '');
+        box.appendChild(pane);
+        const el = pane.querySelector('video'), cv = pane.querySelector('canvas');
+        el.src = '/api/vision/video/' + c.video;
+        const bird = document.createElement('video');
+        bird.className = 'birdseye'; bird.muted = true; bird.playsInline = true; bird.preload = 'auto';
+        bird.setAttribute('aria-hidden', 'true');
+        $('map-inner').insertBefore(bird, mapCv);
+        const cam = { i, video: c.video, offset: +c.offset_s || 0, el, cv, ctx: cv.getContext('2d'),
+                      bird, frames: [], trails: new Map(), sampleDt: 0.25,
+                      seek: pane.querySelector('input[type=range]'), tEl: pane.querySelector('.t'),
+                      hint: pane.querySelector('.hint') };
+        el.addEventListener('loadedmetadata', () => { cam.seek.max = el.duration || 0; render(); });
+        el.addEventListener('seeked', () => { cam.tEl.textContent = el.currentTime.toFixed(1) + ' s'; render(); });
+        cam.seek.addEventListener('input', e => { el.currentTime = +e.target.value; });
+        bird.addEventListener('loadeddata', render);
+        bindCamPane(cam);
+        fetch('/api/vision/tracks/' + c.video).then(r => r.ok ? r.text() : null)
+            .then(txt => { if (txt) { parseTracks(cam, txt); render(); } }).catch(() => {});
+        return cam;
+    });
+    $('gseek').max = 0;
+    render();
+    if (scene.landmarks.length) recompute();
+}
+
+function parseTracks(cam, csv) {
+    const lines = csv.trim().split('\n');
+    const head = lines[0].trim().split(',');
+    const ix = Object.fromEntries(head.map((h, i) => [h, i]));
+    const byTime = new Map();
+    cam.trails = new Map();
+    for (let i = 1; i < lines.length; i++) {
+        const p = lines[i].split(',');
+        if (p.length < head.length) continue;
+        const t = +p[ix.time_s], id = +p[ix.track_id];
+        const d = { id, fx: +p[ix.foot_x], fy: +p[ix.foot_y] };
+        if (!byTime.has(t)) byTime.set(t, []);
+        byTime.get(t).push(d);
+        if (!cam.trails.has(id)) cam.trails.set(id, []);
+        cam.trails.get(id).push({ t, x: d.fx, y: d.fy });
+    }
+    cam.frames = [...byTime.entries()].sort((a, b) => a[0] - b[0]).map(e => ({ t: e[0], dets: e[1] }));
+    cam.sampleDt = cam.frames.length > 1 ? cam.frames[1].t - cam.frames[0].t : 0.25;
+}
+
+function frameAt(cam, t) {
+    const frames = cam.frames;
+    if (!frames.length) return null;
+    let lo = 0, hi = frames.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
+    }
+    const a = frames[lo], b = frames[Math.min(lo + 1, frames.length - 1)];
+    return Math.abs(b.t - t) < Math.abs(t - a.t) ? b : a;
+}
+
+// ── scene editor ──────────────────────────────────────────────────────────
+function openEditor(isNew) {
+    $('editor').classList.add('show');
+    $('editor').dataset.isNew = isNew ? '1' : '';
+    $('e-name').value = isNew ? '' : scene.name;
+    $('e-name').disabled = !isNew;
+    fillMapSelect($('e-map'));
+    $('e-map').value = isNew ? (allMaps[0] || {}).name : scene.map;
+    const list = $('e-cams');
+    list.innerHTML = '';
+    allVideos.forEach(v => {
+        const cur = !isNew && scene.cameras.find(c => c.video === v.id);
+        const row = document.createElement('label');
+        row.className = 'cam-row';
+        row.innerHTML = '<input type="checkbox"> <span></span> <span class="meta"></span>' +
+            ' offset <input type="number" step="0.1" value="0" aria-label="Offset seconds"> s';
+        row.querySelector('input[type=checkbox]').checked = !!cur;
+        row.querySelector('input[type=checkbox]').dataset.video = v.id;
+        row.querySelector('span').textContent = v.id;
+        row.querySelector('.meta').textContent = v.has_tracks ? 'tracked' : 'no tracks';
+        row.querySelector('input[type=number]').value = cur ? (cur.offset_s || 0) : 0;
+        list.appendChild(row);
+    });
+    $('e-delete').style.display = isNew ? 'none' : '';
+    if (isNew) $('e-name').focus();
+}
+function closeEditor() { $('editor').classList.remove('show'); }
+
+$('new-scene').addEventListener('click', () => openEditor(true));
+$('edit-scene').addEventListener('click', () => { if (scene) openEditor(false); });
+$('e-cancel').addEventListener('click', closeEditor);
+$('e-apply').addEventListener('click', () => {
+    const isNew = !!$('editor').dataset.isNew;
+    const name = ($('e-name').value || '').trim().replace(/[^A-Za-z0-9._-]+/g, '_');
+    if (!name) { status('Give the scene a name', 'error'); return; }
+    const cameras = [...$('e-cams').querySelectorAll('.cam-row')]
+        .filter(r => r.querySelector('input[type=checkbox]').checked)
+        .map(r => ({ video: r.querySelector('input[type=checkbox]').dataset.video,
+                     offset_s: +r.querySelector('input[type=number]').value || 0 }));
+    if (!cameras.length) { status('Tick at least one camera', 'error'); return; }
+    const map = $('e-map').value;
+    let landmarks = [];
+    if (!isNew) {
+        if (map !== scene.map && scene.landmarks.length && !confirm(
+                'Switching maps: the ' + scene.landmarks.length + ' landmarks were clicked on "' + scene.map +
+                '" and do not apply to the new map.\n\nOK = clear them, Cancel = keep the current map.')) {
+            return;
+        }
+        if (map === scene.map) {
+            const keep = new Set(cameras.map(c => c.video));
+            landmarks = scene.landmarks.map(lm => ({
+                map: lm.map, cams: Object.fromEntries(Object.entries(lm.cams).filter(([v]) => keep.has(v))) }));
+        }
+    }
+    closeEditor();
+    setScene({ name, map, cameras, landmarks });
+    dirty = true;
+    status(isNew ? 'New scene — click landmarks, then Save all' : 'Cameras updated — Save all to keep', '');
+    if (isNew) { $('scene-select').add(new Option(name + ' · unsaved', name)); $('scene-select').value = name; }
+});
+$('e-delete').addEventListener('click', async () => {
+    if (!scene || !confirm('Delete scene "' + scene.name + '"? The per-camera calibration files stay.')) return;
+    await fetch('/api/vision/scenes/' + encodeURIComponent(scene.name), { method: 'DELETE' });
+    closeEditor();
+    const scenes = await loadScenes();
+    if (scenes[0]) await openScene(scenes[0].name); else { scene = null; cams = []; $('cams').innerHTML = ''; openEditor(true); }
+});
+
+$('scene-select').addEventListener('change', e => {
+    if (dirty && !confirm('Unsaved changes in "' + scene.name + '" will be lost. Switch anyway?')) {
+        e.target.value = scene.name; return;
+    }
+    if (e.target.value) openScene(e.target.value);
+});
+$('map-select').addEventListener('change', e => {
+    if (!scene) return;
+    if (scene.landmarks.length && !confirm(
+            'Switching maps: the ' + scene.landmarks.length + ' landmarks were clicked on "' + scene.map +
+            '" and do not apply to the new map.\n\nOK = clear them, Cancel = keep the current map.')) {
+        e.target.value = scene.map; return;
+    }
+    scene.landmarks = []; selected = -1; fits = {}; Hinv = {}; tests = [];
+    scene.map = e.target.value;
+    mapImg.src = '/api/vision/maps/' + encodeURIComponent(scene.map);
+    dirty = true;
+    render();
+});
+
+$('upload-btn').addEventListener('click', () => $('map-file').click());
+$('map-file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/vision/maps', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) { status(data.error || 'upload failed', 'error'); return; }
+    allMaps = await (await fetch('/api/vision/maps')).json();
+    fillMapSelect($('map-select')); fillMapSelect($('e-map'));
+    status('Map uploaded: ' + data.name + ' — pick it in the Map list (or in Cameras… for a new scene)', 'ok');
+});
+
+// ── fitting ───────────────────────────────────────────────────────────────
+function sceneBody(save) {
+    return {
+        map: scene.map, cameras: scene.cameras, landmarks: scene.landmarks,
+        map_size: [mapImg.naturalWidth, mapImg.naturalHeight],
+        video_sizes: Object.fromEntries(cams.map(c => [c.video, [c.el.videoWidth, c.el.videoHeight]])),
+        save: !!save,
+    };
+}
+
+let recomputeTimer = null;
+function recompute(save) {
+    if (!scene) return;
+    clearTimeout(recomputeTimer);
+    recomputeTimer = setTimeout(async () => {
+        const res = await fetch('/api/vision/scenes/' + encodeURIComponent(scene.name) + '/calibrate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sceneBody(save)),
+        });
+        const data = await res.json();
+        if (!res.ok) { status(data.error || 'fit failed', 'error'); render(); return; }
+        fits = data.fits || {};
+        Hinv = {};
+        for (const [v, f] of Object.entries(fits)) if (f.H) Hinv[v] = invert3(f.H);
+        if (save) {
+            dirty = false;
+            status('Saved → ' + data.saved_to + (data.saved.length ? ' + calibration for ' + data.saved.join(', ') : ''), 'ok');
+            const scenes = await loadScenes();
+            $('scene-select').value = scene.name;
+        }
+        render();
+    }, save ? 0 : 150);
+}
+
+// ── pointer handling ──────────────────────────────────────────────────────
+function pixelAt(evt, el, natW, natH) {
+    const r = el.getBoundingClientRect();
+    return [(evt.clientX - r.left) / r.width * natW, (evt.clientY - r.top) / r.height * natH];
+}
+function hitRadius(el, natW) {
+    const r = el.getBoundingClientRect();
+    return 14 * (natW / Math.max(r.width, 1));
+}
+/** Nearest landmark marker on a pane ('map' or a video id) within the hit radius. */
+function hitTest(pt, side, el, natW) {
+    const rad = hitRadius(el, natW);
+    let best = -1, bestD = rad;
+    scene.landmarks.forEach((lm, i) => {
+        const c = side === 'map' ? lm.map : lm.cams[side];
+        if (!c) return;
+        const d = Math.hypot(c[0] - pt[0], c[1] - pt[1]);
+        if (d <= bestD) { bestD = d; best = i; }
+    });
+    return best;
+}
+function setPoint(i, side, pt) {
+    const p = [Math.round(pt[0]), Math.round(pt[1])];
+    if (side === 'map') scene.landmarks[i].map = p; else scene.landmarks[i].cams[side] = p;
+    dirty = true;
+}
+
+function bindPane(cv, side, natOf) {
+    cv.addEventListener('pointerdown', e => {
+        if (!scene) return;
+        const nat = natOf();
+        if (!nat[0]) return;
+        const pt = pixelAt(e, cv, nat[0], nat[1]);
+        const hit = hitTest(pt, side, cv, nat[0]);
+
+        if (hit >= 0) {                                  // grab an existing marker
+            drag = { index: hit, side };
+            selected = hit;
+            cv.setPointerCapture(e.pointerId);
+            cv.classList.add('grabbing');
+            render();
+            return;
+        }
+        if (mode === 'test') { addTest(side, pt); return; }
+
+        if (side === 'map') {
+            scene.landmarks.push({ map: [Math.round(pt[0]), Math.round(pt[1])], cams: {} });
+            selected = scene.landmarks.length - 1;
+            dirty = true;
+            status('');
+        } else {
+            if (selected < 0) { status('Click the landmark on the map first', 'error'); return; }
+            setPoint(selected, side, pt);
+            status('');
+            recompute();
+        }
+        render();
+    });
+    cv.addEventListener('pointermove', e => {
+        if (!drag || drag.side !== side) return;
+        const nat = natOf();
+        setPoint(drag.index, side, pixelAt(e, cv, nat[0], nat[1]));
+        render();
+    });
+    const endDrag = () => {
+        if (!drag || drag.side !== side) return;
+        drag = null;
+        cv.classList.remove('grabbing');
+        recompute();
+    };
+    cv.addEventListener('pointerup', endDrag);
+    cv.addEventListener('pointercancel', endDrag);
+}
+bindPane(mapCv, 'map', () => [mapImg.naturalWidth, mapImg.naturalHeight]);
+function bindCamPane(cam) { bindPane(cam.cv, cam.video, () => [cam.el.videoWidth, cam.el.videoHeight]); }
+
+function addTest(from, pt) {
+    if (!Object.keys(Hinv).length) { status('Fit at least one camera first (4 landmarks), then test', 'error'); return; }
+    tests.push({ from, src: [Math.round(pt[0]), Math.round(pt[1])] });
+    status('');
+    render();
+}
+/** Where a test point lands: on the map, and in every camera. */
+function testTargets(t) {
+    const out = { map: null, cams: {} };
+    if (t.from === 'map') out.map = t.src;
+    else if (fits[t.from] && fits[t.from].H) out.map = applyH(fits[t.from].H, t.src[0], t.src[1]);
+    if (out.map) for (const [v, inv] of Object.entries(Hinv)) {
+        out.cams[v] = v === t.from ? t.src : applyH(inv, out.map[0], out.map[1]);
+    }
+    return out;
+}
+
+// ── drawing ───────────────────────────────────────────────────────────────
+function marker(ctx, x, y, label, color, scale, opts) {
+    opts = opts || {};
+    ctx.lineWidth = (opts.selected ? 3.5 : 2) * scale;
+    ctx.strokeStyle = opts.selected ? '#ffffff' : color;
+    ctx.fillStyle = opts.hollow ? 'rgba(0,0,0,.35)' : color;
+    if (opts.dashed) ctx.setLineDash([4 * scale, 4 * scale]);
+    ctx.beginPath(); ctx.arc(x, y, 9 * scale, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - 15 * scale, y); ctx.lineTo(x + 15 * scale, y);
+    ctx.moveTo(x, y - 15 * scale); ctx.lineTo(x, y + 15 * scale);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (label != null) {
+        ctx.fillStyle = opts.hollow ? color : '#101018';
+        ctx.font = '700 ' + Math.round(12 * scale) + "px 'Segoe UI', sans-serif";
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(label), x, y + scale);
+    }
+}
+function testMarker(ctx, x, y, label, scale, isSource) {
+    const color = isSource ? '#00e5ff' : '#ff5cc8';
+    ctx.strokeStyle = color; ctx.lineWidth = 3 * scale;
+    ctx.beginPath(); ctx.arc(x, y, 13 * scale, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 2.5 * scale, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+    if (!isSource) { ctx.beginPath(); ctx.moveTo(x, y - 13 * scale); ctx.lineTo(x, y - 30 * scale); ctx.stroke(); }
+    ctx.fillStyle = color;
+    ctx.font = '700 ' + Math.round(13 * scale) + "px 'Segoe UI', sans-serif";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(label, x + 16 * scale, y - 12 * scale);
+}
+function drawWarpedGrid(ctx, inv, scale) {
+    if (!inv || !mapImg.naturalWidth) return;
+    const W = mapImg.naturalWidth, H = mapImg.naturalHeight, N = 8;
+    ctx.lineWidth = 1.5 * scale;
+    ctx.strokeStyle = 'rgba(122,220,154,.55)';
+    for (let i = 0; i <= N; i++) {
+        for (const vertical of [true, false]) {
+            ctx.beginPath();
+            let started = false;
+            for (let j = 0; j <= 40; j++) {
+                const a = (i / N) * (vertical ? W : H), b = (j / 40) * (vertical ? H : W);
+                const mx = vertical ? a : b, my = vertical ? b : a;
+                // points behind the camera flip to the wrong side of the image — skip them
+                const w = inv[2][0] * mx + inv[2][1] * my + inv[2][2];
+                if (w <= 0) { started = false; continue; }
+                const [x, y] = applyH(inv, mx, my);
+                started ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+                started = true;
+            }
+            ctx.stroke();
+        }
+    }
+}
+
+/** Every camera's frame warped onto the plan through its H (CSS matrix3d). */
+function renderBirdseye() {
+    const op = +$('o-birdseye').value / 100;
+    const rect = mapImg.getBoundingClientRect();
+    const k = rect.width / Math.max(mapImg.naturalWidth, 1);
+    for (const cam of cams) {
+        const f = fits[cam.video];
+        if (!op || !f || !f.H || !mapImg.naturalWidth || !cam.el.videoWidth) { cam.bird.style.display = 'none'; continue; }
+        if (cam.bird.src !== cam.el.src) cam.bird.src = cam.el.src;
+        if (cam.bird.readyState >= 1 && Math.abs(cam.bird.currentTime - cam.el.currentTime) > 0.08) {
+            cam.bird.currentTime = cam.el.currentTime;
+        }
+        const H = f.H;
+        const m = [k * H[0][0], k * H[1][0], H[2][0],
+                   k * H[0][1], k * H[1][1], H[2][1],
+                   k * H[0][2], k * H[1][2], H[2][2]];
+        cam.bird.style.display = 'block';
+        cam.bird.style.opacity = op;
+        cam.bird.style.width  = cam.el.videoWidth + 'px';
+        cam.bird.style.height = cam.el.videoHeight + 'px';
+        cam.bird.style.transform = 'matrix3d(' + [m[0], m[1], 0, m[2], m[3], m[4], 0, m[5],
+                                                  0, 0, 1, 0, m[6], m[7], 0, m[8]].join(',') + ')';
+    }
+}
+
+function render() {
+    if (!scene) return;
+    const lms = scene.landmarks;
+
+    // ── camera panes ──
+    cams.forEach(cam => {
+        const vw = cam.el.videoWidth, vh = cam.el.videoHeight;
+        const ctx = cam.ctx;
+        if (!vw) return;
+        if (cam.cv.width !== vw) { cam.cv.width = vw; cam.cv.height = vh; }
+        const sc = vw / 1280;
+        ctx.clearRect(0, 0, vw, vh);
+        if ($('o-grid').checked) drawWarpedGrid(ctx, Hinv[cam.video], sc);
+        lms.forEach((lm, i) => {
+            const p = lm.cams[cam.video];
+            if (p) marker(ctx, p[0], p[1], i + 1, '#ffd479', sc, { selected: i === selected });
+            else if (i === selected && Hinv[cam.video]) {
+                // where the current fit expects the selected landmark — a hint, not a point
+                const q = applyH(Hinv[cam.video], lm.map[0], lm.map[1]);
+                if (q[0] > -50 && q[0] < vw + 50 && q[1] > -50 && q[1] < vh + 50)
+                    marker(ctx, q[0], q[1], i + 1, '#7ddc9a', sc, { hollow: true, dashed: true });
+            }
+        });
+        tests.forEach((t, i) => {
+            const tg = testTargets(t);
+            const p = tg.cams[cam.video];
+            if (p) testMarker(ctx, p[0], p[1], 'T' + (i + 1), sc, t.from === cam.video);
+        });
+        const sel = selected >= 0 ? lms[selected] : null;
+        cam.hint.textContent = mode === 'test' ? 'Click anywhere — the point is drawn on the map and the other cameras.'
+            : !sel ? 'Click a landmark on the map first.'
+            : sel.cams[cam.video] ? 'Landmark ' + (selected + 1) + ' placed here — drag to fix, or click the map for the next one.'
+            : 'Now click landmark ' + (selected + 1) + ' here (skip this camera if it cannot see it).';
+        cam.hint.classList.toggle('active', mode === 'add' && !!sel && !sel.cams[cam.video]);
+    });
+
+    // ── map pane ──
+    const mw = mapImg.naturalWidth, mh = mapImg.naturalHeight;
+    if (mw) {
+        if (mapCv.width !== mw) { mapCv.width = mw; mapCv.height = mh; }
+        const sc = Math.max(mw, mh) / 900;
+        mapCtx.clearRect(0, 0, mw, mh);
+
+        if ($('o-people').checked) cams.forEach(cam => {
+            const f = fits[cam.video];
+            if (!f || !f.H) return;
+            const fr = frameAt(cam, cam.el.currentTime);
+            if (!fr) return;
+            for (const d of fr.dets) {
+                const [mx, my] = applyH(f.H, d.fx, d.fy);
+                if ($('o-trail').checked) {
+                    const pts = (cam.trails.get(d.id) || [])
+                        .filter(p => p.t <= fr.t && p.t >= fr.t - 4)
+                        .map(p => applyH(f.H, p.x, p.y));
+                    if (pts.length > 1) {
+                        mapCtx.strokeStyle = camColor(cam.i); mapCtx.globalAlpha = .5; mapCtx.lineWidth = 2.5 * sc;
+                        mapCtx.beginPath();
+                        pts.forEach((p, i) => i ? mapCtx.lineTo(p[0], p[1]) : mapCtx.moveTo(p[0], p[1]));
+                        mapCtx.stroke(); mapCtx.globalAlpha = 1;
+                    }
+                }
+                mapCtx.fillStyle = camColor(cam.i);
+                mapCtx.strokeStyle = '#101018'; mapCtx.lineWidth = 1.5 * sc;
+                mapCtx.beginPath();
+                if (cam.i % 2 === 0) mapCtx.arc(mx, my, 9 * sc, 0, Math.PI * 2);
+                else mapCtx.rect(mx - 8 * sc, my - 8 * sc, 16 * sc, 16 * sc);
+                mapCtx.fill(); mapCtx.stroke();
+                mapCtx.fillStyle = '#101018';
+                mapCtx.font = '700 ' + Math.round(10 * sc) + "px 'Segoe UI', sans-serif";
+                mapCtx.textAlign = 'center'; mapCtx.textBaseline = 'middle';
+                mapCtx.fillText(String(d.id), mx, my + sc);
+            }
+        });
+
+        lms.forEach((lm, i) => {
+            const n = Object.keys(lm.cams).length;
+            marker(mapCtx, lm.map[0], lm.map[1], i + 1, n ? '#ffd479' : '#7ddc9a', sc,
+                   { selected: i === selected, hollow: !n });
+        });
+        tests.forEach((t, i) => {
+            const tg = testTargets(t);
+            if (tg.map) testMarker(mapCtx, tg.map[0], tg.map[1], 'T' + (i + 1), sc, t.from === 'map');
+        });
+    }
+
+    renderBirdseye();
+    renderSide();
+}
+
+function renderSide() {
+    const lms = scene.landmarks;
+    // fit stats: one row per camera
+    const st = $('fit-stats');
+    st.innerHTML = '';
+    const cell = (text, cls) => { const d = document.createElement('div'); d.className = cls; d.textContent = text; return d; };
+    ['camera', 'pts', 'RMS', 'worst'].forEach(h => st.appendChild(cell(h, 'h')));
+    let anyFit = false;
+    cams.forEach(cam => {
+        const f = fits[cam.video] || {};
+        const n = lms.filter(lm => lm.cams[cam.video]).length;
+        const row = cell('', 'h');
+        row.innerHTML = '<span class="swatch" style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' +
+            camColor(cam.i) + ';vertical-align:middle;margin-right:5px"></span>';
+        row.appendChild(document.createTextNode(cam.video));
+        st.appendChild(row);
+        st.appendChild(cell(String(n), 'v' + (n < 4 ? ' warn' : '')));
+        if (f.H) {
+            anyFit = true;
+            st.appendChild(cell(f.rms_px + ' px', 'v' + (f.rms_px > 25 ? ' bad' : f.rms_px > 10 ? ' warn' : '')));
+            st.appendChild(cell(f.max_px + ' px', 'v' + (f.max_px > 25 ? ' bad' : f.max_px > 10 ? ' warn' : '')));
+        } else {
+            st.appendChild(cell(n < 4 ? (4 - n) + ' more' : (f.error || '–'), 'v none'));
+            st.appendChild(cell('', 'v none'));
+        }
+    });
+    $('save').disabled = !anyFit && !dirty;
+    $('hint-map').classList.toggle('active', mode === 'add' && (selected < 0 ||
+        cams.every(c => lms[selected].cams[c.video])));
+
+    // landmark table
+    const head = $('lm-head');
+    head.innerHTML = '';
+    const tr = document.createElement('tr');
+    ['#', 'map', ...cams.map((c, i) => 'cam ' + (i + 1)), ''].forEach(h => {
+        const th = document.createElement('th'); th.textContent = h; tr.appendChild(th);
+    });
+    head.appendChild(tr);
+    const tbody = $('lm-rows');
+    tbody.innerHTML = '';
+    lms.forEach((lm, i) => {
+        const tr = document.createElement('tr');
+        tr.className = i === selected ? 'sel' : '';
+        tr.addEventListener('click', () => { selected = (selected === i ? -1 : i); render(); });
+        const td = (text, cls) => { const d = document.createElement('td'); d.textContent = text; if (cls) d.className = cls; return d; };
+        tr.appendChild(td(i + 1));
+        tr.appendChild(td(lm.map[0] + ',' + lm.map[1]));
+        cams.forEach(cam => {
+            const p = lm.cams[cam.video];
+            if (!p) { tr.appendChild(td('–', 'miss')); return; }
+            const f = fits[cam.video];
+            const err = f && f.errors_px ? f.errors_px[i] : null;
+            const d = td('');
+            d.textContent = p[0] + ',' + p[1] + (err != null ? ' · ' + err : '');
+            if (err != null && err > 25) d.className = 'bad';
+            const x = document.createElement('button');
+            x.textContent = '×'; x.title = 'Remove this camera\'s point';
+            x.style.marginLeft = '4px';
+            x.addEventListener('click', ev => { ev.stopPropagation(); delete lm.cams[cam.video]; dirty = true; render(); recompute(); });
+            d.appendChild(x);
+            tr.appendChild(d);
+        });
+        const last = td('');
+        const btn = document.createElement('button');
+        btn.textContent = '✕'; btn.title = 'Remove landmark ' + (i + 1);
+        btn.addEventListener('click', ev => { ev.stopPropagation(); removeLandmark(i); });
+        last.appendChild(btn); tr.appendChild(last);
+        tbody.appendChild(tr);
+    });
+
+    const tl = $('test-list');
+    tl.innerHTML = '';
+    tests.forEach((t, i) => {
+        const tg = testTargets(t);
+        const div = document.createElement('div');
+        const parts = [];
+        if (tg.map) parts.push('map ' + Math.round(tg.map[0]) + ',' + Math.round(tg.map[1]));
+        cams.forEach(c => { const p = tg.cams[c.video]; if (p) parts.push('cam' + (c.i + 1) + ' ' + Math.round(p[0]) + ',' + Math.round(p[1])); });
+        div.textContent = 'T' + (i + 1) + ' from ' + (t.from === 'map' ? 'map' : 'cam' + (cams.findIndex(c => c.video === t.from) + 1))
+            + ': ' + parts.join(' · ');
+        tl.appendChild(div);
+    });
+    $('test-hint').style.display = tests.length ? 'none' : '';
+
+    // global time = camera 1's clock, scene time
+    if (cams[0] && cams[0].el.duration) {
+        const dur = Math.max(...cams.map(c => (c.el.duration || 0) + c.offset));
+        if (+$('gseek').max !== dur) $('gseek').max = dur;
+        if (document.activeElement !== $('gseek')) $('gseek').value = cams[0].el.currentTime + cams[0].offset;
+        $('gtime').textContent = (cams[0].el.currentTime + cams[0].offset).toFixed(1) + ' s';
+    }
+}
+
+function removeLandmark(i) {
+    scene.landmarks.splice(i, 1);
+    if (selected === i) selected = -1; else if (selected > i) selected--;
+    dirty = true;
+    render(); recompute();
+}
+
+// ── controls ──────────────────────────────────────────────────────────────
+function setMode(m) {
+    mode = m;
+    $('mode-add').setAttribute('aria-pressed', String(m === 'add'));
+    $('mode-test').setAttribute('aria-pressed', String(m === 'test'));
+    $('hint-map').textContent = m === 'add'
+        ? 'Click a floor landmark here first — then the same spot in every camera that sees it.'
+        : 'Click anywhere — the same floor point is drawn in every calibrated camera.';
+    render();
+}
+$('mode-add').addEventListener('click', () => setMode('add'));
+$('mode-test').addEventListener('click', () => setMode('test'));
+
+$('undo').addEventListener('click', () => {
+    if (!scene || !scene.landmarks.length) return;
+    // drop the newest camera point of the last landmark, or the landmark itself when it has none
+    const lm = scene.landmarks[scene.landmarks.length - 1];
+    const keys = Object.keys(lm.cams);
+    if (keys.length) delete lm.cams[keys[keys.length - 1]];
+    else removeLandmark(scene.landmarks.length - 1);
+    dirty = true;
+    render(); recompute();
+});
+$('clear').addEventListener('click', () => {
+    if (!scene || (scene.landmarks.length && !confirm('Remove all ' + scene.landmarks.length + ' landmarks?'))) return;
+    scene.landmarks = []; selected = -1; fits = {}; Hinv = {}; dirty = true; render();
+});
+$('clear-tests').addEventListener('click', () => { tests = []; render(); });
+$('save').addEventListener('click', () => recompute(true));
+for (const id of ['o-people', 'o-trail', 'o-grid']) $(id).addEventListener('change', render);
+$('o-birdseye').addEventListener('input', e => { $('v-birdseye').textContent = e.target.value; render(); });
+mapImg.addEventListener('load', render);
+
+function seekAll(t) {
+    for (const cam of cams) {
+        const v = Math.min(Math.max(0, t - cam.offset), cam.el.duration || 0);
+        if (Math.abs(cam.el.currentTime - v) > 0.02) cam.el.currentTime = v;
+    }
+}
+$('gseek').addEventListener('input', e => seekAll(+e.target.value));
+
+document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, button, a')) return;
+    const t0 = cams[0] ? cams[0].el.currentTime + cams[0].offset : 0;
+    const dt = cams[0] ? cams[0].sampleDt : 0.25;
+    if (e.key === 'ArrowRight') seekAll(t0 + dt);
+    else if (e.key === 'ArrowLeft') seekAll(Math.max(0, t0 - dt));
+    else if (e.key === 'Escape') { selected = -1; render(); }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && selected >= 0) {
+        e.preventDefault(); removeLandmark(selected);
+    }
+});
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+boot();
+</script>
+</body>
+</html>

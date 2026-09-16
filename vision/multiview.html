@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12121f">
+<title>Multi-cam — all cameras and the plan, one path per shopper</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: dark; }
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #12121f; color: #e0e0e0;
+    display: flex; flex-direction: column; height: 100dvh;
+    overflow: hidden; gap: 8px; padding: 10px;
+}
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #7a7a9a; }
+.bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #1c1c30; border-radius: 8px; padding: 8px 14px; flex-shrink: 0;
+}
+button, select, input[type=number] {
+    background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
+    border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px;
+    transition: background-color .15s; font-family: inherit;
+}
+input[type=number] { width: 64px; padding: 3px 6px; cursor: text; font-family: monospace; }
+button:hover:not(:disabled) { background: #3a3a6a; }
+button:disabled { opacity: .35; cursor: default; }
+button.primary { background: #2f5da8; border-color: #4a7fd0; color: #eaf2ff; }
+button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid #5c8ee8; outline-offset: 2px;
+}
+select { padding: 4px 6px; font-size: 12px; }
+label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: center; gap: 6px; }
+#seek { flex: 1; min-width: 140px; accent-color: #5c8ee8; }
+#time { font-family: monospace; font-size: 14px; color: #6ab0ff; min-width: 108px; }
+
+#main { display: flex; gap: 10px; flex: 1; min-height: 0; }
+.pane {
+    min-width: 0; background: #1c1c30; border-radius: 8px; padding: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+}
+#cams { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.cam-pane { flex: 1; min-height: 0; }
+.cam-head { display: flex; align-items: center; gap: 8px; }
+.cam-head .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.cam-head .vid { font-family: monospace; font-size: 12px; color: #cdd; }
+.cam-head .n { font-family: monospace; font-size: 12px; color: #6ab0ff; margin-left: auto; }
+#map-pane { flex: 1.2; }
+.stage {
+    position: relative; flex: 1; min-height: 0; background: #0b0b14; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.inner { position: relative; line-height: 0; max-width: 100%; max-height: 100%; }
+.inner > video, .inner > img { display: block; max-width: 100%; max-height: 100%; background: #000; }
+.inner > canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+#side {
+    width: 290px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
+    padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
+}
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+.stats dt { color: #9a9ab0; }
+.stats dd { font-family: monospace; color: #6ab0ff; text-align: right; font-weight: 600; }
+.params { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; font-size: 12px; color: #9a9ab0; align-items: center; }
+#people { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-family: monospace; }
+.person { display: flex; align-items: center; gap: 7px; }
+.person .cams { color: #7a7a9a; margin-left: auto; }
+.swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+#status { font-size: 12px; color: #9a9ab0; }
+#status.error { color: #ff8080; }
+#status.ok { color: #7ddc9a; }
+#notice {
+    display: none; background: #241c2e; border: 1px solid #5a3a6a; border-radius: 8px;
+    padding: 14px 16px; font-size: 13px; color: #e6d6f0; line-height: 1.5;
+}
+#notice.show { display: block; }
+#notice button { margin-top: 10px; }
+.hint { font-size: 11px; color: #7a7a9a; line-height: 1.4; }
+#links { font-size: 11px; font-family: monospace; color: #9a9ab0; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1100px) {
+    body { overflow: auto; height: auto; }
+    #main { flex-direction: column; }
+    #side { width: auto; }
+    .cam-pane { min-height: 300px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+    <label class="inline">Scene
+        <select id="scene-select" aria-label="Scene"></select>
+    </label>
+    <button id="play">Play</button>
+    <input type="range" id="seek" min="0" max="100" step="0.05" value="0" aria-label="Scene time">
+    <span id="time">0.00 / 0.00 s</span>
+    <label class="inline">Speed
+        <select id="speed">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+        </select>
+    </label>
+    <span id="status" role="status"></span>
+</div>
+
+<div id="notice" role="status"></div>
+
+<div id="main">
+    <div id="cams"></div>
+
+    <div class="pane" id="map-pane">
+        <div class="cam-head"><h2>Store plan</h2><span class="n" id="s-onmap"></span></div>
+        <div class="stage">
+            <div class="inner">
+                <img id="map-img" alt="Store plan with the fused visitor positions">
+                <canvas id="map-canvas" aria-hidden="true"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <aside id="side">
+        <div>
+            <h2>Fusion</h2>
+            <dl class="stats">
+                <dt>Tracks per camera</dt><dd id="s-tracks">–</dd>
+                <dt>Visitors after fusion</dt><dd id="s-visitors">–</dd>
+                <dt>Seen by 2+ cameras</dt><dd id="s-multi">–</dd>
+                <dt>Bridged through another cam</dt><dd id="s-bridged">–</dd>
+                <dt>Links (overlap / hand-off)</dt><dd id="s-links">–</dd>
+            </dl>
+        </div>
+        <div>
+            <h2>Parameters</h2>
+            <div class="params">
+                <label for="p-dist">Same person if within (map px)</label><input type="number" id="p-dist" step="5" min="5" value="100">
+                <label for="p-overlap">Min shared seconds</label><input type="number" id="p-overlap" step="0.5" min="0" value="1">
+                <label for="p-gap">Max hand-off gap (s)</label><input type="number" id="p-gap" step="1" min="0" value="6">
+                <label for="p-sim">Min clothing similarity (0 = off)</label><input type="number" id="p-sim" step="0.05" min="0" max="1" value="0.4">
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+                <button id="refuse" class="primary">Re-fuse</button>
+            </div>
+            <p class="hint" style="margin-top:6px">Runs in seconds and is saved to <code>data/fusion/</code>. Colour = visitor, so one person should keep one colour in every camera and on the plan. Clothing similarity between two views: the same person scores ≈0.45–0.7, different people ≈0.25–0.4.</p>
+        </div>
+        <div>
+            <h2>Show</h2>
+            <label class="inline"><input type="checkbox" id="o-box" checked> Boxes on the cameras</label>
+            <label class="inline"><input type="checkbox" id="o-id"> Also the camera's own track id</label>
+            <label class="inline"><input type="checkbox" id="o-raw"> Each camera's own estimate on the plan</label>
+            <label class="inline"><input type="checkbox" id="o-trail" checked> Trails on the plan (8 s)</label>
+        </div>
+        <div>
+            <h2>In view now</h2>
+            <div id="people"></div>
+        </div>
+        <div>
+            <h2>Links</h2>
+            <div id="links"></div>
+        </div>
+    </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const mapImg = $('map-img');
+const mapCv  = $('map-canvas'), mapCtx = mapCv.getContext('2d');
+
+const CAM_HUES = [205, 30, 130, 280, 60, 340];
+const camColor = (i, l) => 'hsl(' + CAM_HUES[i % CAM_HUES.length] + ' 85% ' + (l || 62) + '%)';
+const colorOf = id => 'hsl(' + ((id * 47) % 360) + ' 85% 62%)';
+
+let scene = null, fusion = null;
+let cams = [];                 // [{i, video, offset, el, cv, ctx, frames, sampleDt, calib, assign: Map(track→visitor), nEl}]
+let visitors = [];             // fusion.visitors with a parsed trail
+let duration = 0;
+let playing = false;
+
+const status = (msg, kind) => { $('status').textContent = msg; $('status').className = kind || ''; };
+function applyH(H, x, y) {
+    const w = H[2][0] * x + H[2][1] * y + H[2][2];
+    return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w,
+            (H[1][0] * x + H[1][1] * y + H[1][2]) / w];
+}
+function notice(html) {
+    const el = $('notice');
+    el.innerHTML = html;
+    el.classList.toggle('show', !!html);
+    el.querySelectorAll('button[data-tab]').forEach(btn => btn.addEventListener('click', () =>
+        parent.postMessage({ showTab: btn.dataset.tab }, '*')));
+}
+
+// ── loading ───────────────────────────────────────────────────────────────
+async function boot() {
+    const list = await (await fetch('/api/vision/scenes')).json();
+    const sel = $('scene-select');
+    sel.innerHTML = '';
+    list.forEach(s => sel.add(new Option(s.name + ' · ' + s.cameras.length + ' cams' + (s.has_fusion ? ' · fused' : ''), s.name)));
+    if (!list.length) {
+        notice('No multi-camera scene yet. Create one in the calibration tab: pick the map, tick the cameras, click shared landmarks.'
+            + '<br><button class="primary" data-tab="multical">Open multi-cam calibration</button>');
+        return;
+    }
+    const wanted = location.hash.slice(1);
+    const first = list.find(s => s.name === wanted) || list.find(s => s.has_fusion) || list[0];
+    sel.value = first.name;
+    await load(first.name);
+}
+
+async function load(name) {
+    pauseAll();
+    cams = []; visitors = []; fusion = null; duration = 0;
+    $('cams').innerHTML = '';
+    mapImg.removeAttribute('src');
+    notice('');
+    status('loading…');
+    const res = await fetch('/api/vision/scenes/' + encodeURIComponent(name));
+    if (!res.ok) { status('scene not found', 'error'); return; }
+    scene = await res.json();
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    if (scene.map) mapImg.src = '/api/vision/maps/' + encodeURIComponent(scene.map);
+
+    cams = scene.cameras.map((c, i) => {
+        const pane = document.createElement('div');
+        pane.className = 'pane cam-pane';
+        pane.innerHTML = '<div class="cam-head"><span class="swatch" style="background:' + camColor(i) + '"></span>' +
+            '<h2>Camera ' + (i + 1) + '</h2><span class="vid"></span><span class="n"></span></div>' +
+            '<div class="stage"><div class="inner"><video playsinline preload="auto" muted></video><canvas aria-hidden="true"></canvas></div></div>';
+        pane.querySelector('.vid').textContent = c.video;
+        $('cams').appendChild(pane);
+        const el = pane.querySelector('video'), cv = pane.querySelector('canvas');
+        el.src = '/api/vision/video/' + c.video;
+        const cam = { i, video: c.video, offset: +c.offset_s || 0, el, cv, ctx: cv.getContext('2d'),
+                      frames: [], sampleDt: 0.25, calib: null, assign: new Map(), nEl: pane.querySelector('.n') };
+        el.addEventListener('loadedmetadata', () => {
+            duration = Math.max(...cams.map(k => (k.el.duration || 0) + k.offset));
+            render();
+        });
+        el.addEventListener('seeked', render);
+        return cam;
+    });
+
+    const missing = [];
+    await Promise.all(cams.map(async cam => {
+        const [tr, cb] = await Promise.all([
+            fetch('/api/vision/tracks/' + cam.video).catch(() => null),
+            fetch('/api/vision/calibration/' + cam.video).catch(() => null),
+        ]);
+        if (tr && tr.ok) parseTracks(cam, await tr.text()); else missing.push(cam.video + ': no detections');
+        if (cb && cb.ok) cam.calib = await cb.json(); else missing.push(cam.video + ': not calibrated');
+    }));
+    if (missing.length) {
+        notice('<strong>' + name + '</strong> is not ready: ' + missing.join(' · ') + '.'
+            + '<br><button class="primary" data-tab="multical">Open multi-cam calibration</button>');
+    }
+
+    const fr = await fetch('/api/vision/scenes/' + encodeURIComponent(name) + '/fusion');
+    if (fr.ok) applyFusion(await fr.json());
+    else if (!missing.length) await refuse();
+    status(fusion ? 'fused ' + fusion.computed_at.replace('T', ' ').slice(0, 16) : '');
+    render();
+}
+
+function parseTracks(cam, csv) {
+    const lines = csv.trim().split('\n');
+    const head = lines[0].trim().split(',');
+    const ix = Object.fromEntries(head.map((h, i) => [h, i]));
+    const byTime = new Map();
+    for (let i = 1; i < lines.length; i++) {
+        const p = lines[i].trim().split(',');
+        if (p.length < head.length) continue;
+        const t = +p[ix.time_s], id = +p[ix.track_id];
+        const d = { id, conf: +p[ix.conf], fx: +p[ix.foot_x], fy: +p[ix.foot_y],
+                    x1: +p[ix.x1], y1: +p[ix.y1], x2: +p[ix.x2], y2: +p[ix.y2],
+                    est: ix.foot_src !== undefined && p[ix.foot_src] !== 'box' };
+        if (!byTime.has(t)) byTime.set(t, []);
+        byTime.get(t).push(d);
+    }
+    cam.frames = [...byTime.entries()].sort((a, b) => a[0] - b[0]).map(e => ({ t: e[0], dets: e[1] }));
+    cam.sampleDt = cam.frames.length > 1 ? cam.frames[1].t - cam.frames[0].t : 0.25;
+}
+
+function frameAt(cam, t) {
+    const frames = cam.frames;
+    if (!frames.length) return null;
+    let lo = 0, hi = frames.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
+    }
+    const a = frames[lo], b = frames[Math.min(lo + 1, frames.length - 1)];
+    const f = Math.abs(b.t - t) < Math.abs(t - a.t) ? b : a;
+    return Math.abs(f.t - t) <= cam.sampleDt * 1.5 ? f : null;     // nothing sampled near this instant
+}
+
+// ── fusion ────────────────────────────────────────────────────────────────
+function applyFusion(doc) {
+    fusion = doc;
+    visitors = doc.visitors;
+    for (const cam of cams) cam.assign = new Map();
+    for (const v of visitors) for (const m of v.members) {
+        const cam = cams[m.cam];
+        if (cam) cam.assign.set(m.track_id, v.id);
+    }
+    const p = doc.params || {};
+    if (p.max_dist_px != null) $('p-dist').value = p.max_dist_px;
+    if (p.min_overlap_s != null) $('p-overlap').value = p.min_overlap_s;
+    if (p.max_gap_s != null) $('p-gap').value = p.max_gap_s;
+    if (p.min_sim != null) $('p-sim').value = p.min_sim;
+    const s = doc.stats || {};
+    $('s-tracks').textContent = (s.camera_tracks || []).join(' / ');
+    $('s-visitors').textContent = s.visitors != null ? s.visitors : '–';
+    $('s-multi').textContent = s.visitors_multi_cam != null ? s.visitors_multi_cam : '–';
+    $('s-bridged').textContent = s.visitors_bridged != null ? s.visitors_bridged : '–';
+    $('s-links').textContent = s.links != null ? s.links_overlap + ' / ' + s.links_handoff : '–';
+    const box = $('links');
+    box.innerHTML = '';
+    for (const l of doc.links || []) {
+        const div = document.createElement('div');
+        const v = cams[l.a.cam] && cams[l.a.cam].assign.get(l.a.track_id);
+        div.innerHTML = '<span class="swatch" style="display:inline-block;width:8px;height:8px;border-radius:2px;background:' + colorOf(v || 0) + ';margin-right:5px"></span>';
+        div.appendChild(document.createTextNode(
+            'cam' + (l.a.cam + 1) + ' #' + l.a.track_id + ' ↔ cam' + (l.b.cam + 1) + ' #' + l.b.track_id + '  ' +
+            (l.kind === 'overlap' ? l.overlap_s + 's shared, ' + l.d_med_px + ' px apart'
+                                  : 'hand-off ' + l.gap_s + 's, ' + l.dist_px + ' px')
+            + (l.sim != null ? ', clothes ' + l.sim : '')));
+        box.appendChild(div);
+    }
+    if (!(doc.links || []).length) box.textContent = 'no cross-camera links — check the calibration, or raise the distance';
+}
+
+async function refuse() {
+    if (!scene) return;
+    status('fusing…');
+    $('refuse').disabled = true;
+    try {
+        const res = await fetch('/api/vision/scenes/' + encodeURIComponent(scene.name) + '/fuse', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ max_dist_px: +$('p-dist').value, min_overlap_s: +$('p-overlap').value,
+                                   max_gap_s: +$('p-gap').value, min_sim: +$('p-sim').value, save: true }),
+        });
+        const doc = await res.json();
+        if (!res.ok) { status(doc.error || 'fusion failed', 'error'); return; }
+        applyFusion(doc);
+        status('fused: ' + doc.stats.tracks_total + ' tracks → ' + doc.stats.visitors + ' visitors', 'ok');
+    } finally { $('refuse').disabled = false; render(); }
+}
+$('refuse').addEventListener('click', refuse);
+
+/** Fused position of a visitor at scene time t (nearest grid sample within 0.3 s), or null. */
+function fusedAt(v, t) {
+    const tr = v.trail;
+    if (!tr.length || t < tr[0][0] - 0.3 || t > tr[tr.length - 1][0] + 0.3) return null;
+    let lo = 0, hi = tr.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (tr[mid][0] <= t) lo = mid; else hi = mid - 1;
+    }
+    const a = tr[lo], b = tr[Math.min(lo + 1, tr.length - 1)];
+    const p = Math.abs(b[0] - t) < Math.abs(t - a[0]) ? b : a;
+    return Math.abs(p[0] - t) <= 0.3 ? p : null;
+}
+
+// ── time & sync ───────────────────────────────────────────────────────────
+// Camera 1 is the clock; the others are nudged to it while playing and set
+// exactly on a seek. Scene time = video time + that camera's offset.
+const master = () => cams[0];
+const sceneTime = () => master() ? master().el.currentTime + master().offset : 0;
+
+function seekAll(t) {
+    for (const cam of cams) {
+        const v = Math.min(Math.max(0, t - cam.offset), cam.el.duration || 0);
+        if (Math.abs(cam.el.currentTime - v) > 0.02) cam.el.currentTime = v;
+    }
+}
+function syncFollowers() {
+    const t = sceneTime();
+    for (const cam of cams.slice(1)) {
+        const want = t - cam.offset;
+        if (Math.abs(cam.el.currentTime - want) > 0.15) cam.el.currentTime = want;
+        if (playing && cam.el.paused && want >= 0 && want < (cam.el.duration || 0)) cam.el.play().catch(() => {});
+    }
+}
+function playAll() {
+    playing = true;
+    for (const cam of cams) cam.el.play().catch(() => {});
+    $('play').textContent = 'Pause';
+}
+function pauseAll() {
+    playing = false;
+    for (const cam of cams) cam.el.pause();
+    $('play').textContent = 'Play';
+}
+
+// ── drawing ───────────────────────────────────────────────────────────────
+function render() {
+    if (!scene) return;
+    const t = sceneTime();
+    $('time').textContent = t.toFixed(2) + ' / ' + duration.toFixed(2) + ' s';
+    if (duration && +$('seek').max !== duration) $('seek').max = duration;
+    if (document.activeElement !== $('seek')) $('seek').value = t;
+    if (playing) {
+        if (master().el.ended) pauseAll(); else syncFollowers();
+    }
+
+    const now = cams.map(cam => ({ cam, f: frameAt(cam, t - cam.offset) }));
+    now.forEach(({ cam, f }) => drawCamera(cam, f));
+    drawMap(t, now);
+    drawSide(t, now);
+}
+
+function drawCamera(cam, f) {
+    const w = cam.el.videoWidth, h = cam.el.videoHeight, ctx = cam.ctx;
+    if (!w) return;
+    if (cam.cv.width !== w) { cam.cv.width = w; cam.cv.height = h; }
+    ctx.clearRect(0, 0, w, h);
+    cam.nEl.textContent = f ? f.dets.length + ' in view' : '';
+    if (!f) return;
+    const sc = w / 1280;
+    const r = 14 * sc;
+    for (const d of f.dets) {
+        const v = cam.assign.get(d.id);
+        const c = v ? colorOf(v) : '#8a8aa5';
+        ctx.lineWidth = Math.max(2, 2.5 * sc);
+        if ($('o-box').checked) {
+            ctx.strokeStyle = c;
+            if (!v) ctx.setLineDash([6 * sc, 4 * sc]);        // too short to be a visitor
+            ctx.strokeRect(d.x1, d.y1, d.x2 - d.x1, d.y2 - d.y1);
+            ctx.setLineDash([]);
+        }
+        ctx.fillStyle = c; ctx.strokeStyle = c;
+        if (d.est) {
+            ctx.setLineDash([4 * sc, 4 * sc]);
+            ctx.beginPath(); ctx.moveTo(d.fx, d.y2); ctx.lineTo(d.fx, d.fy); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.beginPath();
+        ctx.ellipse(d.fx, d.fy, 7 * sc, 3.5 * sc, 0, 0, Math.PI * 2);
+        if (d.est) ctx.stroke(); else ctx.fill();
+        // the visitor badge sits on the box's top-left corner, kept inside the frame
+        if (v) badge(ctx, Math.max(r, d.x1 + r * 0.3), Math.max(r, d.y1 - r * 0.3), v, r);
+        if ($('o-id').checked) {
+            ctx.fillStyle = c;
+            ctx.font = '600 ' + Math.round(13 * sc) + "px 'Segoe UI', sans-serif";
+            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            ctx.fillText('#' + d.id, d.x1 + (v ? r * 2 : 2 * sc), Math.max(0, d.y1 - r * 1.2));
+        }
+    }
+}
+
+/** The visitor badge — the same circle-with-number in every camera and on the plan. */
+function badge(ctx, x, y, id, r, ring) {
+    ctx.fillStyle = colorOf(id);
+    ctx.strokeStyle = 'rgba(16,16,24,.85)'; ctx.lineWidth = Math.max(1.5, r / 6);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    if (ring) {
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, r / 8);
+        ctx.beginPath(); ctx.arc(x, y, r * 1.35, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.fillStyle = '#101018';
+    ctx.font = '700 ' + Math.round(r * 1.05) + "px 'Segoe UI', sans-serif";
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(id), x, y + r * 0.08);
+}
+
+function camDot(ctx, camIdx, x, y, r) {
+    ctx.beginPath();
+    if (camIdx % 3 === 0) ctx.arc(x, y, r, 0, Math.PI * 2);
+    else if (camIdx % 3 === 1) ctx.rect(x - r, y - r, 2 * r, 2 * r);
+    else { ctx.moveTo(x, y - r * 1.2); ctx.lineTo(x + r * 1.2, y); ctx.lineTo(x, y + r * 1.2); ctx.lineTo(x - r * 1.2, y); ctx.closePath(); }
+}
+
+function drawMap(t, now) {
+    const w = mapImg.naturalWidth, h = mapImg.naturalHeight;
+    if (!w) return;
+    if (mapCv.width !== w) { mapCv.width = w; mapCv.height = h; }
+    mapCtx.clearRect(0, 0, w, h);
+    const sc = Math.max(w, h) / 900;
+    let onMap = 0;
+
+    // each camera's own view of where people are (small, camera-shaped)
+    if ($('o-raw').checked) for (const { cam, f } of now) {
+        if (!f || !cam.calib) continue;
+        for (const d of f.dets) {
+            const p = applyH(cam.calib.H, d.fx, d.fy);
+            const v = cam.assign.get(d.id);
+            mapCtx.fillStyle = v ? colorOf(v) : '#8a8aa5';
+            mapCtx.strokeStyle = camColor(cam.i, 40); mapCtx.lineWidth = 2 * sc;
+            camDot(mapCtx, cam.i, p[0], p[1], 6 * sc);
+            mapCtx.fill(); mapCtx.stroke();
+        }
+    }
+
+    // the fused visitor: one big dot, trail, id
+    const active = [];
+    for (const v of visitors) {
+        const p = fusedAt(v, t);
+        if (!p) continue;
+        active.push({ v, p });
+        onMap++;
+        const c = colorOf(v.id);
+        if ($('o-trail').checked) {
+            mapCtx.strokeStyle = c; mapCtx.globalAlpha = .55; mapCtx.lineWidth = 3 * sc; mapCtx.lineJoin = 'round';
+            mapCtx.beginPath();
+            let prev = null;
+            for (const q of v.trail) {
+                if (q[0] > t) break;
+                if (q[0] < t - 8) continue;
+                if (prev && q[0] - prev[0] > 1.5) prev = null;         // a gap stays a gap
+                prev ? mapCtx.lineTo(q[1], q[2]) : mapCtx.moveTo(q[1], q[2]);
+                prev = q;
+            }
+            mapCtx.stroke(); mapCtx.globalAlpha = 1;
+        }
+        // one badge per person; a white ring when several cameras see them right now
+        badge(mapCtx, p[1], p[2], v.id, 12 * sc, p[3] > 1);
+    }
+    $('s-onmap').textContent = onMap ? onMap + ' on the plan' : '';
+    drawMap.active = active;
+}
+
+function drawSide(t, now) {
+    const list = $('people');
+    list.innerHTML = '';
+    for (const { v, p } of (drawMap.active || []).sort((a, b) => a.v.id - b.v.id)) {
+        const row = document.createElement('div');
+        row.className = 'person';
+        const sw = document.createElement('span');
+        sw.className = 'swatch'; sw.style.background = colorOf(v.id);
+        row.appendChild(sw);
+        const name = document.createElement('span');
+        name.textContent = String(v.id);
+        row.appendChild(name);
+        const pos = document.createElement('span');
+        pos.style.color = '#7a7a9a';
+        pos.textContent = Math.round(p[1]) + ',' + Math.round(p[2]);
+        row.appendChild(pos);
+        const seen = document.createElement('span');
+        seen.className = 'cams';
+        // which cameras have a box for this visitor right now
+        const here = now.filter(({ cam, f }) => f && f.dets.some(d => cam.assign.get(d.id) === v.id)).map(({ cam }) => cam.i + 1);
+        seen.textContent = 'cam ' + (here.length ? here.join('+') : '–');
+        row.appendChild(seen);
+        list.appendChild(row);
+    }
+}
+
+// redraw on every rendered frame of the master video, else on rAF
+const loop = () => { render(); requestAnimationFrame(loop); };
+requestAnimationFrame(loop);
+mapImg.addEventListener('load', render);
+
+// ── controls ──────────────────────────────────────────────────────────────
+$('play').addEventListener('click', () => playing ? pauseAll() : playAll());
+$('seek').addEventListener('input', e => seekAll(+e.target.value));
+$('speed').addEventListener('change', e => { for (const cam of cams) cam.el.playbackRate = +e.target.value; });
+$('scene-select').addEventListener('change', e => load(e.target.value));
+for (const id of ['o-box', 'o-id', 'o-raw', 'o-trail']) $(id).addEventListener('change', render);
+
+document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, button')) return;
+    const dt = master() ? master().sampleDt : 0.25;
+    if (e.key === ' ') { e.preventDefault(); playing ? pauseAll() : playAll(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); pauseAll(); seekAll(sceneTime() + dt); }
+    else if (e.key === 'ArrowLeft')  { e.preventDefault(); pauseAll(); seekAll(Math.max(0, sceneTime() - dt)); }
+});
+
+boot();
+</script>
+</body>
+</html>

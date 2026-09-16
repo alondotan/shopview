@@ -1,0 +1,7 @@
+{
+  "note": "camera-pixel polygons of the fixtures shoppers interact with (1280x720 frame)",
+  "fixtures": [
+    {"id": "fridge", "name": "drinks fridge", "kind": "glass-door refrigerator, 4 doors", "pts": [[595, 5], [805, 5], [805, 125], [595, 125]]},
+    {"id": "fridge2", "name": "second fridge", "kind": "glass-door refrigerator", "pts": [[815, 5], [885, 5], [885, 120], [815, 120]]}
+  ]
+}

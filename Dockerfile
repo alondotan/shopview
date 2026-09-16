@@ -1,12 +1,15 @@
-# ShopView — simulation viewer + video analytics (YOLO) in one container.
-# Built for CPU hosts such as Hugging Face Spaces (port 7860, runs as uid 1000),
-# Railway or Render (they set $PORT). ~2 GB image: torch CPU + ultralytics.
+# ShopView — simulation viewer + video analytics (YOLOX + RTMPose + ByteTrack,
+# all permissively licensed) in one container. Built for CPU hosts such as
+# Hugging Face Spaces (port 7860, runs as uid 1000), Railway or Render (they set
+# $PORT). ~700 MB image: onnxruntime + opencv, no torch. The optional OWLv2
+# object detector / CLIP embedder (vision/requirements-owl.txt) are not
+# installed — they need torch and are too slow for a 2-vCPU host anyway.
 FROM python:3.12-slim
 
-ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 YOLO_CONFIG_DIR=/tmp/yolo OMP_NUM_THREADS=2
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 OMP_NUM_THREADS=2
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ffmpeg libgl1 libglib2.0-0 \
+    && apt-get install -y --no-install-recommends ffmpeg libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # non-root user with uid 1000 (what Hugging Face Spaces runs containers as)
@@ -15,7 +18,6 @@ WORKDIR /app
 
 COPY requirements.txt ./req/requirements.txt
 COPY vision/requirements.txt ./req/vision-requirements.txt
-RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 RUN pip install -r req/requirements.txt -r req/vision-requirements.txt
 
 COPY --chown=user:user . .
@@ -28,14 +30,11 @@ RUN python -c "import os, glob, urllib.request; \
     print({f: os.path.getsize(f) // 1000000 for f in sorted(glob.glob('data/videos/*.mp4'))}, 'MB')"
 
 # fetch the model weights at build time so the first request is not a download:
-# person/pose detector + YOLO-World into data/models (where detect_people looks),
-# and YOLO-World's CLIP text encoder, which ultralytics keeps under ./weights
-# relative to the working directory — so it is fetched from /app, the runtime cwd.
+# the default detector + pose model into data/models (where detector.py looks)
 RUN mkdir -p data/models data/live && chown -R user:user /app
 USER user
 ENV HOME=/home/user
-RUN cd data/models && python -c "from ultralytics import YOLO; YOLO('yolo11n-pose.pt'); YOLO('yolov8s-worldv2.pt')"
-RUN python -c "from ultralytics import YOLOWorld; m = YOLOWorld('data/models/yolov8s-worldv2.pt'); m.set_classes(['shopping bag'])"
+RUN python vision/detector.py --fetch
 
 EXPOSE 7860
 # one process (the live pipeline lives in it), many threads (SSE streams hold connections)

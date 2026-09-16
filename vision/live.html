@@ -42,6 +42,10 @@ li small { color: #8a8aa5; margin-left: auto; }
             <label style="flex:3 1 260px">Source
                 <input type="text" id="source" placeholder="rtsp://user:pass@camera/stream · 0 (webcam) · video id" list="videos">
                 <datalist id="videos"></datalist></label>
+            <label>Model <select id="model">
+                <option value="yolox_s+rtmpose-m">yolox_s + rtmpose-m</option>
+                <option value="yolox_tiny+rtmpose-s">yolox_tiny + rtmpose-s (fast)</option>
+                <option value="yolox_m+rtmpose-m">yolox_m + rtmpose-m (accurate)</option></select></label>
             <label>Analysed fps <input type="number" id="fps" value="6" min="1" max="30" step="1"></label>
             <label>Stitch sim <input type="number" id="sim" value="0.6" min="0" max="1" step="0.05"></label>
             <label>Decide after (s) <input type="number" id="decide" value="2" min="0" max="10" step="0.5"></label>
@@ -88,7 +92,7 @@ function setStats(s) {
             (s.achieved_fps || 0) < 0.7 * (s.target_fps || 6) ? 'warn' : 'ok'],
         ['people now', s.people_now || 0],
         ['merges', `${st.merges || 0} · pool ${st.pool || 0} · pending ${st.pending || 0}`],
-        ['objects', ob.runs === undefined ? 'off' : `${ob.runs} runs · ${ob.last_ms} ms`],
+        ['objects', ob.runs === undefined ? 'off' : `${ob.runs} runs · ${ob.model || ''}${ob.last_ms ? ' · ' + ob.last_ms + ' ms' : ''}`],
         ['error', s.error || '—', s.error ? 'bad' : ''],
     ];
     $('stats').innerHTML = rows.map(([k, v, c]) => `<b>${k}</b><span class="${c || ''}">${v}</span>`).join('');
@@ -149,7 +153,7 @@ function disconnect() {
 
 $('start').addEventListener('click', async () => {
     const body = {
-        source: $('source').value.trim(), fps: +$('fps').value, stitch_sim: +$('sim').value,
+        source: $('source').value.trim(), model: $('model').value, fps: +$('fps').value, stitch_sim: +$('sim').value,
         decide_after: +$('decide').value, objects: $('objects').value === '1',
     };
     const r = await fetch(API + '/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

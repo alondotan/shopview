@@ -9,7 +9,10 @@ person, using three cues:
 * **time** — fragment B starts shortly after fragment A ends (no overlap);
 * **position** — B starts about where A was heading (A's last floor point,
   extrapolated with its velocity, allowing walking speed for the gap);
-* **clothes** — the colour of A's torso/legs matches B's.
+* **clothes** — the colour of A's torso/legs matches B's;
+* **head continuity** — for a very short gap, B's head starts where A's head
+  was heading; then the clothes only have to not contradict (see
+  :func:`link_cost`, "quick re-appearance").
 
 The clothing descriptor (:func:`appearance`) is an HSV histogram of the torso
 (between the shoulders and hips, from the pose keypoints, or the upper-middle of
@@ -41,7 +44,7 @@ H_BINS, S_BINS, V_BINS = 12, 3, 8
 SAT_MIN = 50                                    # below: achromatic (0–255 scale)
 FEAT_LEN = H_BINS * S_BINS + V_BINS
 KP_LSH, KP_RSH, KP_LHIP, KP_RHIP, KP_LKNEE, KP_RKNEE = 5, 6, 11, 12, 13, 14
-KP_VISIBLE = 0.5
+from detector import KP_VISIBLE  # noqa: E402  (0.3 — see detector.py)
 MIN_REGION_PX = 6                               # skip regions thinner than this
 
 
@@ -98,7 +101,22 @@ def appearance(frame_hsv, box, kp) -> tuple[np.ndarray | None, np.ndarray | None
     if torso_r is None:
         # no usable keypoints: upper-middle of the box is almost always the torso
         torso_r = (x1 + 0.2 * w, y1 + 0.15 * h, x2 - 0.2 * w, y1 + 0.5 * h)
+    else:
+        # the box is the visible extent: when a shelf hides the hips the pose
+        # model still guesses them, below the box — that strip is shelf, not shirt
+        torso_r = (torso_r[0], max(torso_r[1], y1), torso_r[2], min(torso_r[3], y2))
     return _hist(_crop(frame_hsv, torso_r)), _hist(_crop(frame_hsv, legs_r)) if legs_r else None
+
+
+def head_point(box, kp) -> tuple[float, float]:
+    """Where the head is: x from the visible face keypoints (nose, eyes, ears),
+    y the top of the box. The box centre would do for x, but it shifts by half
+    a body width when a full-body box becomes a head-and-shoulders one — the
+    face does not. The head is the part a shelf hides last, so it is the anchor
+    for the quick re-appearance rule in :func:`link_cost`."""
+    x1, y1, x2, _ = box
+    face = [p[0] for p in (kp[:5] if kp else []) if p[2] >= KP_VISIBLE]
+    return (sum(face) / len(face) if face else (x1 + x2) / 2), y1
 
 
 # Weight of the learned embedding (when both fragments have one) against the
@@ -127,20 +145,27 @@ def similarity(a: "Fragment", b: "Fragment") -> float:
 
 
 class Embedder:
-    """Learned appearance vector per person crop — a classifier backbone
-    (default ``yolo11n-cls.pt``, ImageNet features, a few ms per crop on CPU)
-    run on the torso region. Optional: the colour histogram alone is the
-    default; this is the upgrade path for crowded scenes where colour is not
-    enough. Returns L2-normalised vectors, so their dot product is the cosine."""
+    """Learned appearance vector per person crop — OpenAI CLIP's image tower
+    (``openai/clip-vit-base-patch32``, MIT, through ``transformers``) run on
+    the torso region, ~20 ms per crop on a CPU. Optional: the colour histogram
+    alone is the default; this is the upgrade path for crowded scenes where
+    colour is not enough. Needs ``pip install -r vision/requirements-owl.txt``.
+    Returns L2-normalised vectors, so their dot product is the cosine."""
 
-    def __init__(self, model: str = "yolo11n-cls.pt", device: str = "cpu", imgsz: int = 128):
-        from pathlib import Path
+    HF = {"clip": "openai/clip-vit-base-patch32", "clip-large": "openai/clip-vit-large-patch14"}
 
-        from ultralytics import YOLO
-        root = Path(__file__).resolve().parent.parent / "data" / "models"
-        w = root / model
-        self.model = YOLO(str(w) if w.exists() else model)
-        self.device, self.imgsz = device, imgsz
+    def __init__(self, model: str = "clip", device: str = "cpu"):
+        try:
+            import torch
+            from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
+        except ImportError as e:
+            raise RuntimeError("the CLIP embedder needs torch + transformers: "
+                               "pip install -r vision/requirements-owl.txt") from e
+        name = self.HF.get(model, model)
+        self.torch = torch
+        self.processor = CLIPImageProcessor.from_pretrained(name)
+        self.model = CLIPVisionModelWithProjection.from_pretrained(name).eval().to(device)
+        self.device = device
 
     def __call__(self, frame_bgr, boxes: list[tuple], kps: list | None = None) -> list:
         crops, idx = [], []
@@ -162,10 +187,12 @@ class Embedder:
         out: list = [None] * len(boxes)
         if not crops:
             return out
-        feats = self.model.embed(crops, imgsz=self.imgsz, device=self.device, verbose=False)
+        rgb = [cv2.cvtColor(c, cv2.COLOR_BGR2RGB) for c in crops]
+        inputs = self.processor(images=rgb, return_tensors="pt").to(self.device)
+        with self.torch.no_grad():
+            feats = self.model(**inputs).image_embeds.cpu().numpy().astype(np.float32)
         for i, f in zip(idx, feats):
-            v = f.detach().cpu().numpy().astype(np.float32).ravel()
-            out[i] = v / max(float(np.linalg.norm(v)), 1e-6)
+            out[i] = f / max(float(np.linalg.norm(f)), 1e-6)
         return out
 
 
@@ -176,6 +203,7 @@ class Fragment:
     id: int
     t: list[float] = field(default_factory=list)          # sampled times (s)
     foot: list[tuple[float, float]] = field(default_factory=list)
+    head: list[tuple[float, float] | None] = field(default_factory=list)  # see head_point()
     heights: list[float] = field(default_factory=list)
     torso_sum: np.ndarray | None = None
     torso_n: int = 0
@@ -184,9 +212,10 @@ class Fragment:
     emb_sum: np.ndarray | None = None
     emb_n: int = 0
 
-    def add(self, t, foot, h, torso, legs, emb=None):
+    def add(self, t, foot, h, torso, legs, emb=None, head=None):
         self.t.append(t)
         self.foot.append(foot)
+        self.head.append(head)
         self.heights.append(h)
         if torso is not None:
             self.torso_sum = torso if self.torso_sum is None else self.torso_sum + torso
@@ -228,14 +257,23 @@ class Fragment:
 
     def velocity(self, window_s: float = 1.5) -> tuple[float, float]:
         """Mean floor-point velocity (px/s) over the last ``window_s`` seconds."""
+        return self._velocity(self.foot, window_s)
+
+    def head_velocity(self, window_s: float = 1.0) -> tuple[float, float] | None:
+        """Mean head-point velocity (px/s) over the last ``window_s``
+        seconds; None when the heads were not recorded."""
+        if self.head[-1] is None:
+            return None
+        return self._velocity(self.head, window_s)
+
+    def _velocity(self, pts, window_s: float) -> tuple[float, float]:
         i = len(self.t) - 1
-        while i > 0 and self.t[-1] - self.t[i - 1] <= window_s:
+        while i > 0 and self.t[-1] - self.t[i - 1] <= window_s and pts[i - 1] is not None:
             i -= 1
         dt = self.t[-1] - self.t[i]
         if dt <= 0:
             return 0.0, 0.0
-        return ((self.foot[-1][0] - self.foot[i][0]) / dt,
-                (self.foot[-1][1] - self.foot[i][1]) / dt)
+        return ((pts[-1][0] - pts[i][0]) / dt, (pts[-1][1] - pts[i][1]) / dt)
 
 
 # ── stitching ─────────────────────────────────────────────────────────────
@@ -247,13 +285,37 @@ BASE_SLACK_HEIGHTS = 0.6
 MAX_SLACK_HEIGHTS = 3.5
 EXTRAPOLATE_MAX_S = 1.0     # trust A's velocity for at most this long
 
+# Quick re-appearance. The commonest break is a shelf: the legs go, the box
+# shrinks to head and shoulders, the tracker's IoU match fails and a new id is
+# born a few frames later — with the head still where it was heading. The
+# clothing descriptor is at its worst just then (torso half hidden, background
+# in the crop), so it is not asked to *prove* the match, only not to contradict
+# it. The rule is deliberately tight on time and head position: in a crowded
+# till a different person can appear at the same spot a second or two later.
+QUICK_GAP_S = 1.0           # B starts this soon after A ends …
+QUICK_HEAD_HEIGHTS = 0.3    # … with its head this close (in body heights) to A's …
+QUICK_FOOT_FRACTION = 0.7   # … and its feet well inside the walking slack, not at its edge
+QUICK_MIN_SIM = 0.35        # then the clothes need only this much similarity
+
+
+def head_distance(a: Fragment, b: Fragment, gap: float) -> float | None:
+    """Distance (px) from A's last head, carried forward with its velocity
+    over the gap, to B's first head; None when heads were not recorded."""
+    ha, hb = a.head[-1], b.head[0]
+    v = a.head_velocity()
+    if ha is None or hb is None or v is None:
+        return None
+    dt = min(gap, EXTRAPOLATE_MAX_S)
+    return ((ha[0] + v[0] * dt - hb[0]) ** 2 + (ha[1] + v[1] * dt - hb[1]) ** 2) ** 0.5
+
 
 def link_cost(a: Fragment, b: Fragment, max_gap_s: float, min_sim: float):
     """Can fragment B be the continuation of fragment A? Returns (cost, info)
     or None. Same gate for the offline pass and the live stitcher: B starts
     after A ends, within ``max_gap_s``; about where A was heading (last floor
     point + velocity, plus walking-speed slack growing with the gap); clothes
-    at least ``min_sim`` alike."""
+    at least ``min_sim`` alike — or, for a *quick re-appearance* (short gap,
+    head continuous), at least ``QUICK_MIN_SIM`` alike."""
     gap = b.t0 - a.t1
     if gap <= 0 or gap > max_gap_s:
         return None
@@ -265,13 +327,21 @@ def link_cost(a: Fragment, b: Fragment, max_gap_s: float, min_sim: float):
     allowed = h * min(BASE_SLACK_HEIGHTS + WALK_HEIGHTS_PER_S * gap, MAX_SLACK_HEIGHTS)
     if d > allowed:
         return None
+    hd = head_distance(a, b, gap)
+    quick = (hd is not None and gap <= QUICK_GAP_S and hd <= QUICK_HEAD_HEIGHTS * h
+             and d <= QUICK_FOOT_FRACTION * allowed)
     sim = similarity(a, b)
-    if sim < min_sim:
+    if sim < (min(min_sim, QUICK_MIN_SIM) if quick else min_sim):
         return None
     cost = 0.45 * (d / allowed) + 0.45 * (1 - sim) + 0.10 * (gap / max_gap_s)
-    return cost, {"from": a.id, "to": b.id, "gap_s": round(gap, 2),
-                  "dist_px": round(d, 1), "allowed_px": round(allowed, 1),
-                  "sim": round(sim, 3), "cost": round(cost, 3)}
+    info = {"from": a.id, "to": b.id, "gap_s": round(gap, 2),
+            "dist_px": round(d, 1), "allowed_px": round(allowed, 1),
+            "sim": round(sim, 3), "cost": round(cost, 3)}
+    if hd is not None:
+        info["head_px"] = round(hd, 1)
+    if quick:
+        info["quick"] = True
+    return cost, info
 
 
 def stitch(frags: dict[int, Fragment], max_gap_s: float = 8.0, min_sim: float = 0.6,
@@ -349,13 +419,13 @@ class OnlineStitcher:
         self._buffer: list[dict] = []                # rows waiting for their id to settle
 
     # ── per frame ──
-    def observe(self, raw_id: int, t: float, foot, h, torso, legs, emb=None) -> None:
+    def observe(self, raw_id: int, t: float, foot, h, torso, legs, emb=None, head=None) -> None:
         f = self.frags.get(raw_id)
         if f is None:
             f = self.frags[raw_id] = Fragment(raw_id)
             self.pending[raw_id] = t
             self.root[raw_id] = raw_id
-        f.add(t, foot, h, torso, legs, emb)
+        f.add(t, foot, h, torso, legs, emb, head)
         self.last_seen[raw_id] = t
 
     def step(self, t: float) -> list[dict]:
@@ -454,7 +524,7 @@ def fragments_from_csv(csv_path, video_path, embedder: "Embedder | None" = None
                 torso, legs = appearance(hsv, box, kp)
                 frags.setdefault(int(r[key]), Fragment(int(r[key]))).add(
                     float(r["time_s"]), (float(r["foot_x"]), float(r["foot_y"])),
-                    float(r["h"]), torso, legs, emb)
+                    float(r["h"]), torso, legs, emb, head=head_point(box, kp))
             wi += 1
         frame_idx += 1
     cap.release()
@@ -510,9 +580,10 @@ if __name__ == "__main__":
     ap.add_argument("--out", default=None, help="write here instead of overwriting the CSV")
     ap.add_argument("--objects", default=None, help="objects CSV whose person_id to remap")
     ap.add_argument("--embed", default=None,
-                    help="also use a learned embedding, e.g. yolo11n-cls.pt (slower, for crowded scenes)")
+                    help="also use a learned embedding: clip (slower, for crowded scenes; needs requirements-owl.txt)")
     a = ap.parse_args()
     res = restitch(a.csv, a.video, a.gap, a.sim, a.out, a.objects, a.embed)
     print(json.dumps({k: v for k, v in res.items() if k != "log"}, indent=1))
     for l in res["log"]:
-        print(f"  {l['from']:4d} -> {l['to']:4d}  gap {l['gap_s']:5.2f}s  dist {l['dist_px']:6.1f}px  sim {l['sim']:.2f}")
+        print(f"  {l['from']:4d} -> {l['to']:4d}  gap {l['gap_s']:5.2f}s  dist {l['dist_px']:6.1f}px  "
+              f"sim {l['sim']:.2f}{'  quick' if l.get('quick') else ''}")

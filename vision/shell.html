@@ -47,13 +47,17 @@ iframe.active { display: block; }
         <button class="tab" role="tab" data-tab="simulation" aria-selected="true">
             Simulation <span class="sub">simulated logs &amp; chat</span></button>
         <button class="tab" role="tab" data-tab="video" aria-selected="false">
-            Video <span class="sub">YOLO detections</span></button>
+            Video <span class="sub">detections</span></button>
         <button class="tab" role="tab" data-tab="calibrate" aria-selected="false">
             Calibration <span class="sub">camera → map</span></button>
         <button class="tab" role="tab" data-tab="livemap" aria-selected="false">
             Live map <span class="sub">people on the plan</span></button>
         <button class="tab" role="tab" data-tab="zones" aria-selected="false">
             Zones <span class="sub">plan polygons → camera</span></button>
+        <button class="tab" role="tab" data-tab="multical" aria-selected="false">
+            Multi-cam calibration <span class="sub">one map, all cameras</span></button>
+        <button class="tab" role="tab" data-tab="multiview" aria-selected="false">
+            Multi-cam <span class="sub">cameras + plan, fused tracks</span></button>
         <button class="tab" role="tab" data-tab="live" aria-selected="false">
             Live <span class="sub">camera stream</span></button>
     </div>
@@ -65,11 +69,13 @@ iframe.active { display: block; }
     <iframe id="f-calibrate"  title="Calibration" data-src="/calibrate"></iframe>
     <iframe id="f-livemap"    title="Live map"    data-src="/livemap"></iframe>
     <iframe id="f-zones"      title="Zones"       data-src="/zones"></iframe>
+    <iframe id="f-multical"   title="Multi-cam calibration" data-src="/multical"></iframe>
+    <iframe id="f-multiview"  title="Multi-cam"   data-src="/multiview"></iframe>
     <iframe id="f-live"       title="Live"        data-src="/live"></iframe>
 </div>
 
 <script>
-const TABS = ['simulation', 'video', 'calibrate', 'livemap', 'zones', 'live'];
+const TABS = ['simulation', 'video', 'calibrate', 'livemap', 'zones', 'multical', 'multiview', 'live'];
 
 function show(name) {
     if (!TABS.includes(name)) name = TABS[0];

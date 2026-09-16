@@ -5,21 +5,55 @@ video. **Stage 1 (done): detect and track people, and what they carry.**
 
 ## Model choice
 
-`YOLO11` via [ultralytics](https://docs.ultralytics.com), restricted to the COCO
-`person` class, with **BoT-SORT** for IDs across frames and a **stitching pass**
-that re-joins broken IDs by clothing colour (see "Keeping one ID per shopper").
+Three models, all permissively licensed, all run through **onnxruntime** on the
+CPU (`detector.py`, `bytetrack.py`):
 
-* `yolo11n-pose.pt` — default: boxes **plus 17 body keypoints**, same speed as
-  the plain model (~2.2x realtime on this CPU at stride 3 / 640px). The
-  keypoints are what lets the floor point be estimated when the feet are hidden
-  (next section).
-* `yolo11s-pose.pt` / `yolo11m-pose.pt` — more accurate, proportionally slower
-* `yolo11n.pt` etc. — boxes only; the floor point is then always the box bottom
-* Licence: ultralytics is **AGPL-3.0**. Fine for internal/research use; a closed
-  commercial product needs an ultralytics licence or an Apache-2.0 alternative
-  (YOLOX, RT-DETR).
+* **YOLOX** ([Megvii](https://github.com/Megvii-BaseDetection/YOLOX), Apache-2.0)
+  finds the people — and, in the same pass, the COCO objects the held-object
+  stage wants (handbag, backpack, bottle, cell phone…).
+* **RTMPose** ([OpenMMLab](https://github.com/open-mmlab/mmpose/tree/main/projects/rtmpose),
+  Apache-2.0) puts **17 COCO body keypoints** on each person box, a few ms per
+  crop. The keypoints are what lets the floor point be estimated when the feet
+  are hidden (next section).
+* **ByteTrack** ([Zhang et al.](https://github.com/ifzhang/ByteTrack), MIT,
+  ported in `bytetrack.py`) keeps IDs across frames; a **stitching pass** then
+  re-joins broken IDs by clothing colour (see "Keeping one ID per shopper").
 
-Weights are cached in `data/models/`.
+`--model` is `<detector>+<pose>`:
+
+| spec | per frame, this laptop | notes |
+|---|---|---|
+| `yolox_s+rtmpose-m` | ~110 ms (people + pose) | **default** — YOLOX-s is about YOLO11-n's accuracy (COCO AP 40.5) |
+| `yolox_tiny+rtmpose-s` | ~50 ms | fast; small far-away people are missed more |
+| `yolox_m+rtmpose-m` | ~180 ms | the shipped sample analysis |
+| `yolox_s` | ~35 ms | boxes only; the floor point is then always the box bottom |
+
+The network input is a property of the weights (416 px for tiny/nano, 640 px
+otherwise; the frame is letter-boxed into it), so there is no `--imgsz`.
+Weights are fetched into `data/models/` on first use (`python vision/detector.py
+--fetch` does it ahead of time — the Dockerfile does).
+
+### Licences
+
+| component | licence | role |
+|---|---|---|
+| YOLOX code + COCO weights | Apache-2.0 | people + COCO objects |
+| RTMPose code + weights (via mmpose / rtmlib) | Apache-2.0 | keypoints |
+| ByteTrack (reference implementation, ported) | MIT | tracking |
+| OWLv2 weights (optional, `--object-model owlv2`) | Apache-2.0 | free-text objects |
+| CLIP weights (optional, `--embed clip`) | MIT | appearance embedding |
+| onnxruntime / OpenCV / numpy / torch / transformers | MIT / Apache-2.0 / BSD | runtime |
+| lap, yt-dlp, Flask | BSD-2 / Unlicense / BSD-3 | assignment, download, server |
+
+No AGPL anywhere: the earlier ultralytics stack (YOLO11, YOLO-World, its
+BoT-SORT) was AGPL-3.0, which would have required releasing the whole service's
+source or buying an Ultralytics licence. One caveat that is legal rather than
+technical: the RTMPose "body7" checkpoints were trained on seven public pose
+datasets (COCO, MPII, AI Challenger, CrowdPose, Halpe, PoseTrack18, sub-JHMDB),
+some of which carry research-only terms for the *data*; the weights themselves
+are released under Apache-2.0 by OpenMMLab, as is standard practice, but a
+COCO-only RTMPose checkpoint exists if a lawyer wants the cleaner lineage. The
+YOLOX weights are COCO-only.
 
 ### Where are the feet? — the floor point when a shelf hides the legs
 
@@ -78,7 +112,7 @@ visitor, and rewrites `foot_x,foot_y`:
    standing shopper becomes one fixed point, a walking one follows the median
    continuously (trailing by at most the dead-band, a few pixels).
 
-On the sample video (yolo11m-pose, every frame) the map step during "still"
+On the sample video (every frame, measured with the earlier detector) the map step during "still"
 seconds drops from 7.2 px (90th pct) to 1.2 px and the path-length /
 displacement ratio from 8.3 to 2.7. `--no-smooth` keeps the raw points,
 `--smooth-window` (seconds) and `--smooth-deadband` (fraction of height) tune
@@ -86,19 +120,31 @@ it; `stats.smooth` reports how many frames were held. The live pipeline applies
 a causal version (`FootSmoother`: running median + the same dead-band, ~0.25 s
 behind).
 
-Lowering the input resolution does **not** help here: at `--imgsz 416` the
-still-frame jitter is the same and a quarter of the detections are lost; at
-`--imgsz 960` the model sees ~10 % more detections, mostly small far-away
-people, at higher confidence.
+Lowering the input resolution does **not** help here: at 416 px (the
+`yolox_tiny` input) the still-frame jitter is the same and a quarter of the
+detections are lost.
 
-### Held objects — YOLO-World
+### Held objects — COCO classes for free, OWLv2 for free text
 
-A second detector runs on every processed frame and looks for the things people
-carry. It is [YOLO-World](https://docs.ultralytics.com/models/yolo-world/)
-(`yolov8s-worldv2.pt`), an *open-vocabulary* model: the classes are free-text
-prompts, embedded with CLIP once at start-up, so it is not limited to COCO's 80
-classes — "cardboard box" and "shopping basket" are not COCO classes at all.
-Default prompts:
+Every processed frame also looks for the things people carry. Two backends
+(`--object-model`):
+
+* **`yolox`** (default) — no second model at all: the YOLOX pass that found the
+  people is an 80-class COCO detector, so the wanted COCO classes are simply
+  read off it. Of the default list that is `handbag`, `backpack`, `bottle` and
+  `cell phone` (`COCO_ALIASES` maps "phone", "bag", "purse"…); the rest are
+  reported as skipped at start-up. Free, and what the Live tab and the Docker
+  image use.
+* **`owlv2`** / **`owlv2-large`** — [OWLv2](https://huggingface.co/google/owlv2-base-patch16-ensemble)
+  (Google, Apache-2.0) through `transformers`, an *open-vocabulary* model: the
+  classes are free-text prompts, so "cardboard box" and "shopping basket" work
+  even though they are not COCO classes. ~1 s per frame on this laptop
+  (`--object-interval` in the live pipeline keeps it off the critical path),
+  so it is for offline runs where the labels matter. Needs
+  `pip install -r vision/requirements-owl.txt` (torch + transformers, ~1 GB of
+  weights on first use).
+
+Default classes (COCO names or prompts, `--object-classes`):
 
 ```
 shopping bag, handbag, backpack, cardboard box, shopping basket, shopping cart, bottle, phone
@@ -107,11 +153,8 @@ shopping bag, handbag, backpack, cardboard box, shopping basket, shopping cart, 
 Each object is attributed to the person whose box contains at least 40 % of it
 (`assign_holder()` in `detect_people.py`; on a tie the person whose centre is
 nearer). Objects that are inside nobody — shelf stock, a bag on the floor — are
-kept with an empty `person_id`, so the viewer can hide them.
-
-Cost: ~0.8 s per frame on this CPU on top of ~0.35 s for people, i.e. the run is
-about 3x slower with objects on. `--no-objects` turns it off; `yolov8m-worldv2.pt`
-is more accurate and slower again. Needs the `clip` package (see `requirements.txt`).
+kept with an empty `person_id`, so the viewer can hide them. `--no-objects`
+turns the stage off.
 
 ## Install
 
@@ -131,10 +174,12 @@ python vision/detect_people.py data/videos/KMJS66jBtVQ.mp4 \
 ```
 
 `--stride N` processes every Nth frame (the main speed knob), `--seconds` /
-`--start` analyse a slice, `--model` picks the weights. Held-object detection is
-on by default: `--no-objects` skips it, `--object-classes "shopping bag,box,…"`
-changes what to look for, `--object-model` / `--object-conf` tune it. Floor-point
-smoothing is on by default (`--no-smooth`, see "Steady floor points").
+`--start` analyse a slice, `--model` picks the weights (`yolox_s+rtmpose-m`
+default, see "Model choice"). Held-object detection is on by default:
+`--no-objects` skips it, `--object-classes "handbag,backpack,…"` changes what to
+look for, `--object-model owlv2` switches to free-text prompts, `--object-conf`
+tunes the threshold. Floor-point smoothing is on by default (`--no-smooth`, see
+"Steady floor points").
 
 Output — `data/tracks/<video>_tracks.csv`, one row per person per processed frame:
 
@@ -164,7 +209,7 @@ The endpoints are a Flask blueprint mounted by `server.py` under `/api/vision`
 |---|---|---|
 | GET  | `/api/vision/videos` | locally downloaded videos |
 | POST | `/api/vision/download` | `{"url": ...}` → download one |
-| POST | `/api/vision/jobs` | `{"video","stride","seconds","start","model","conf","preview","tracker","reid","track_buffer","stitch","stitch_gap","stitch_sim","objects","object_classes","object_model","object_conf"}` → starts a background job (`stride` 0/missing = auto) |
+| POST | `/api/vision/jobs` | `{"video","stride","seconds","start","model","conf","preview","track_buffer","stitch","stitch_gap","stitch_sim","objects","object_classes","object_model","object_conf"}` → starts a background job (`stride` 0/missing = auto) |
 | GET  | `/api/vision/jobs` | all jobs + live progress |
 | GET  | `/api/vision/jobs/<id>` | one job (status, progress, stats) |
 | GET  | `/api/vision/jobs/<id>/tracks` | raw tracks CSV |
@@ -172,8 +217,12 @@ The endpoints are a Flask blueprint mounted by `server.py` under `/api/vision`
 | GET  | `/api/vision/jobs/<id>/objects` | raw objects CSV |
 | GET  | `/api/vision/objects/<video_id>` | objects CSV matching `/tracks/<video_id>` (same run) |
 | GET  | `/api/vision/jobs/<id>/preview` | annotated mp4 |
+| GET/POST/DELETE | `/api/vision/scenes/<name>` | a multi-camera scene (map, cameras, shared landmarks) |
+| POST | `/api/vision/scenes/<name>/calibrate` | fit every camera's homography from the shared landmarks; `save` writes the per-camera files too |
+| POST | `/api/vision/scenes/<name>/fuse` | join the cameras' tracks into visitors → `data/fusion/<name>.json` + `_tracks.csv` |
+| GET  | `/api/vision/scenes/<name>/fusion` | the saved fusion result (`fusion.csv` for the CSV) |
 
-## The app — five tabs
+## The app — seven tabs
 
 `http://localhost:5000/` is a tab shell (`vision/shell.html`); each tab is its own
 page in an iframe, loaded on first open and kept alive afterwards, so a
@@ -183,10 +232,12 @@ in the URL hash, so `/#livemap` links straight to one.
 | Tab | Page | What it is |
 |---|---|---|
 | Simulation | `/viewer` (`viewer.html`) | the original simulated-log viewer, animation / analytics / paths / chat |
-| Video | `/vision` (`vision/player.html`) | the video with YOLO detections drawn over it |
+| Video | `/vision` (`vision/player.html`) | the video with the detections drawn over it |
 | Calibration | `/calibrate` (`vision/calibrate.html`) | match points between camera and store plan |
 | Live map | `/livemap` (`vision/livemap.html`) | video and plan side by side, people placed on the plan |
 | Zones | `/zones` (`vision/zones.html`) | draw polygons on the plan, see them projected into the camera |
+| Multi-cam calibration | `/multical` (`vision/multical.html`) | one map, all the cameras of a store, shared landmarks |
+| Multi-cam | `/multiview` (`vision/multiview.html`) | every camera and the plan in sync, tracks fused into one path per shopper |
 
 ## Live map tab
 
@@ -197,6 +248,125 @@ last 6 s. The side panel lists who is in frame with their plan coordinates.
 
 It needs both a tracks CSV and a saved calibration for the video; when one is
 missing it says which and offers a button through to the Calibration tab.
+
+## Several cameras on one store
+
+A real store has more than one camera, and one shopper walks from one view
+into the next — or stands where two of them overlap. The two multi-cam tabs
+handle that; `1ye32v77GE0` and `-8zyEwAa50Q` are the sample pair: the same
+checkout area, recorded at the same moment from two angles (scene
+`checkout`, plan `data/map/checkout_plan.png` — a schematic drawn from the
+footage; replace it with the real plan via *Upload map…*).
+
+A **scene** (`data/scenes/<name>.json`) is the list of videos that share one
+map and one clock, plus the *shared landmarks*. Every camera still gets its
+own `data/calibration/<video>.json`, written by the joint tool, so the
+single-camera tabs (Live map, Zones) keep working per camera.
+
+### Multi-cam calibration tab — one map, all cameras
+
+`http://localhost:5000/multical`. *New scene…* → name, map, tick the cameras
+(an *offset* per camera lines up clocks that do not start together: seconds
+to add to that video's time). Then:
+
+1. click a floor landmark **on the map** — a numbered marker appears;
+2. click the same spot **in every camera that sees it** (skip the cameras
+   that do not — a landmark needs the map plus at least one camera);
+3. click the map again for the next landmark. Each camera is fitted from
+   the landmarks it has, from the 4th one on; the side panel shows one RMS
+   per camera, the table one cell per landmark × camera with its error.
+
+Once a camera has a fit, the selected landmark is drawn dashed in that
+camera at the spot the fit *expects* it — a hint of where to click, and a
+quick check on the fit. Everything from the single-camera tool is there,
+across all cameras: drag any marker (map or camera), *Test a point* puts a
+click from any pane on the map **and on every other camera** (two cameras
+that disagree about a floor spot are the whole point of the joint view),
+the map grid warped into each camera, and every camera warped onto the plan
+at once (opacity slider) — when the calibrations agree, the same counter
+lands in the same place from each of them. The detected people of every
+camera are drawn on the map in the camera's colour (circle = camera 1,
+square = camera 2), so scrubbing shows whether the two views put the same
+shopper at the same spot. *Save all* writes the scene and one calibration
+file per camera. The per-camera slider scrubs one video; the *All cameras*
+slider moves all of them together.
+
+### Multi-cam tab — the cameras and the plan together
+
+`http://localhost:5000/multiview`. All cameras of the scene play in sync
+(camera 1 is the clock, the others are nudged to it), the plan beside them.
+Colour means **visitor**: one person keeps one colour in every camera and
+on the plan. On the plan each camera's own floor point is a small
+camera-shaped dot, the fused position a big one (double ring = seen by two
+or more cameras at that instant), with the fused trail. The side panel lists
+who is in view and which cameras see them, the fusion stats, every
+cross-camera link with its evidence, and the three parameters with a
+*Re-fuse* button (a second, saved to `data/fusion/`). Re-fuse after changing
+a calibration.
+
+### Fusion — joining tracks from different cameras (`fusion.py`)
+
+```bash
+python vision/fusion.py checkout            # → data/fusion/checkout.json + checkout_tracks.csv
+python vision/fusion.py checkout --max-dist 80 --max-gap 10 --min-sim 0.35
+```
+
+Each camera's tracks (after its own stitching) are mapped onto the plan
+through its homography; then tracks from *different* cameras are linked
+when they are plausibly the same person:
+
+* **overlap** — both cameras see the person at the same time for at least
+  `min_overlap_s` (1 s) and the two mapped points stay close: median
+  distance under `max_dist_px` (60 map px) and most samples within it;
+* **hand-off** — B starts within `max_gap_s` (6 s) after A ends, about
+  where A was heading (last point + velocity, slack ≈ `max_dist_px` per
+  second of gap) — the person walked out of one view into the other;
+* and in both cases the **clothes must agree**: the same torso/legs colour
+  histogram the per-camera stitching uses (`stitch.appearance`), averaged
+  over each track, must score at least `min_sim` (0.4). On the sample pair —
+  a steep view against a shallow one — the same person scores 0.46–0.68 and
+  different people 0.24–0.38. This is what stops two shoppers side by side
+  at the till from being merged when the geometry cannot tell them apart:
+  a floor point estimated behind a counter is easily 50–100 map px off, so
+  `max_dist_px` has to be generous (100). The histograms need the video
+  frames (a few seconds per video, cached in `data/fusion/appearance_*`).
+
+A track whose floor points were mostly *estimated* (feet hidden behind a
+counter — `foot_src` ≠ `box`) gets up to 1.5× the distance, because such
+points are a few times less accurate than seen feet; that is what joins the
+shopper at the belt whom the shallow camera places a metre too far along
+the lane. A long co-location at some distance outranks a brief brush at none (two
+shoppers pass within a metre of each other all the time; they do not stand
+together for a quarter of a minute), so the link cost also falls with the
+shared time, up to 15 s.
+
+Links are taken cheapest first with union-find. A merge is refused when it
+would put two tracks **of the same camera that overlap in time** into one
+visitor — one person is not two boxes in one frame. Same-camera fragments
+are never linked directly (the per-camera stitch already did that with
+clothing), but they do end up together when the other camera bridges them
+(A1 ↔ B ↔ A2): `stats.visitors_bridged` counts those, and that is what the
+second camera buys — it covers the first one's occlusions. The fused trail
+is sampled every 0.2 s as the confidence-weighted mean of the cameras that
+see the person then (estimated floor points count half); holes stay holes.
+
+Output: `data/fusion/<scene>.json` (visitors with their member tracks per
+camera, trails, links, stats) and `data/fusion/<scene>_tracks.csv`:
+
+```
+time_s,visitor_id,map_x,map_y,n_cams,cams
+```
+
+one row per visitor per 0.2 s in map pixels — the input for the zones /
+events stage, whichever camera(s) saw the person.
+
+Known limit: in a shallow view the feet of the people nearest the camera
+leave the frame, the floor point is clamped to the bottom edge and lands on
+the plan 50–100 px from where the other camera puts them — the calibration
+is not wrong, the point is. With the clothing gate the right link usually
+still wins; when two long tracks of one camera both fit, the nearer one
+does. `max_dist_px` is in map pixels because the plan's scale is unknown —
+set it to roughly one metre on your plan.
 
 ## Zones tab — polygons on the plan, projected into the camera
 
@@ -342,19 +512,20 @@ each has a fix in `detect_people.py` / `stitch.py`:
    2.6 frames/s; a walking shopper moved most of a body width between samples, so
    the box no longer overlapped its own previous box. Stride is now automatic,
    ≈6 analysed frames/s (`TARGET_TRACK_FPS`), whatever the video's rate.
-2. **Weak detections thrown away before the tracker.** ByteTrack/BoT-SORT match
+2. **Weak detections thrown away before the tracker.** ByteTrack matches
    low-confidence boxes (a shopper half behind a shelf, conf 0.15) to *existing*
    tracks in a second pass — but the detector was cut at 0.35 first, so that pass
    never ran. The detector now runs down to 0.1; `--conf` (0.35) is the bar for
    the first-stage match and for starting a *new* track, and only boxes that
    belong to an established track reach the CSV.
 3. **No notion of appearance.** Two people crossing swapped IDs, and anyone
-   re-emerging after an occlusion got a new one. The tracker is now BoT-SORT with
-   its ReID gate on (`with_reid`, the detector's own features, no extra model, no
-   measurable cost) and no camera-motion compensation (fixed camera). Its lost
-   buffer is given in seconds (`--track-buffer`, 4 s) and converted to analysed
-   frames. The generated YAML sits in `data/models/tracker_*.yaml`; pass your own
-   with `--tracker path.yaml`.
+   re-emerging after an occlusion got a new one. ByteTrack itself is
+   IoU-only (a fixed camera needs no motion compensation); the appearance work
+   is done by the stitching pass below, which is where it can see a whole
+   fragment's clothing rather than one frame's. The tracker's lost buffer is
+   given in seconds (`--track-buffer`, 4 s) and converted to analysed frames;
+   the settings actually used are in `stats.tracker` (`tracker_settings()` in
+   `detect_people.py`).
 
 Then, after the whole video has been seen, **stitching** (`stitch.py`) joins
 fragments that are plausibly one person: B starts within `--stitch-gap` (8 s) of
@@ -369,6 +540,41 @@ over every bin. Links are chosen greedily by a cost mixing distance, gap and
 clothing dissimilarity; each fragment gets at most one predecessor and one
 successor. `stats.stitch.log` lists every link with its numbers.
 
+**Quick re-appearance.** The commonest break is a shelf: the legs disappear,
+the box shrinks to head and shoulders, the tracker's IoU match fails
+(ByteTrack's low-confidence second pass never looks at *lost* tracks) and a new id is
+born a few frames later — while the head never left the picture. The clothing
+descriptor is at its worst just then (torso half hidden, shelf in the crop), so
+it is not asked to prove such a match, only not to contradict it. A link is a
+*quick re-appearance* when
+
+* B starts **≤ 1 s** after A ends (`QUICK_GAP_S`);
+* B's first **head** lands within **0.3 body heights** of where A's head was
+  heading (`QUICK_HEAD_HEIGHTS`). The head is the face keypoints' x at the box
+  top (`head_point()`): the box centre would shift by half a body width when a
+  full-body box turns into a head-and-shoulders one, the face does not;
+* B's first floor point is well inside the walking slack, at most 70 % of it
+  (`QUICK_FOOT_FRACTION`) — someone who *replaces* A at the edge of the
+  plausible range is not A;
+
+and then the clothes need a similarity of only `QUICK_MIN_SIM` 0.35 instead of
+0.6. The three gates are tight on purpose and were set on labelled pairs from
+both sample videos: the true re-appearances all had gaps ≤ 0.85 s, head
+distances ≤ 0.25 h and floor points ≤ 67 % of the slack, while at the crowded
+till of the first sample a *different* person appears at the same spot 1.1–1.3 s
+later with clothing similarity 0.52–0.59, or 0.4 s later at 95 % of the slack.
+Such links carry `"quick": true` in the log. The torso crop is also clipped to
+the detection box now: when a shelf hides the hips the pose model still
+guesses them, below the box, and that strip is shelf, not shirt.
+
+Effect: on `-1bRhYjw1qE` the man in the white shirt walking behind the shelf at
+0.9–1.5 s keeps his id (1→6), the bald man in grey survives two breaks (8→9→11)
+and the man in black behind the rack one (5→7) — 16 visitors → 12, every link
+checked by eye. On `KMJS66jBtVQ` it adds three correct links (the man carrying
+a box 36→49→64, a toddler 76→86, the man in the red cap 107→115) and no wrong
+one — 60 visitors → 54. The live stitcher applies the same rule, with the
+fragments it has 2 s after the new id appears.
+
 `--stitch-sim` (0.6) was set by eye on the sample video: at 0.6 all 9 links in
 the first minute were the same person; at 0.55 two of 14 were wrong (a pink top
 and a maroon top at the crowded till). A wrong join corrupts two visitors, a
@@ -377,9 +583,11 @@ pass alone with other values via `python vision/stitch.py … --sim 0.5` — it
 re-reads the video frames for the descriptor but skips detection (seconds, not
 minutes).
 
-Measured on the first 60 s of the sample video (7 people in frame on average):
+Measured on the first 60 s of the sample video (7 people in frame on average,
+with the earlier YOLO11 detector — the mechanism, not the detector, is what
+changed between the columns):
 
-| | old (ByteTrack, stride 5, conf 0.35) | new (BoT-SORT + ReID, stride 2, stitch 0.6) |
+| | old (stride 5, conf 0.35, no stitching) | new (stride 2, stitch 0.6) |
 |---|---|---|
 | analysed frames / s | 2.6 | 6.5 |
 | IDs from the tracker | 33 | 40 |
@@ -430,11 +638,13 @@ What is different from the offline path, and why:
 * **Rate is "about 6 analysed frames per second"** (`--fps`), whatever the
   camera delivers — a frame is processed when `1/fps` has elapsed. The
   tracker's lost buffer is derived from that.
-* **Held objects run off the critical path.** YOLO-World is the expensive
-  detector and bags do not change every frame, so it runs in its own thread on
-  the most recent frame, at most every `--object-interval` seconds (1 s), and its
-  results are attributed to the *visitor* ids current at that moment (they wait
-  for the same `decide-after` window).
+* **Held objects run off the critical path.** With the default `yolox`
+  object model they come out of the same pass as the people and are reported
+  every `--object-interval` seconds (1 s). With `owlv2` the detector is the
+  expensive part and bags do not change every frame, so it runs in its own
+  thread on the most recent frame at that interval. Either way the results are
+  attributed to the *visitor* ids current at that moment (they wait for the
+  same `decide-after` window).
 
 Events (one JSON object per line in the `--out` file, same over SSE):
 
@@ -450,27 +660,28 @@ clock, so results line up with the offline CSV). Tested on the sample video in
 `--fast` mode: the online stitcher makes the same links as the offline pass
 (10 merges in the first minute, 44 raw ids → 34 visitors).
 
-**CPU budget.** People-only (yolo11n-pose, 640 px) measured 70 ms per frame on
-this laptop when it was cool and 280 ms an hour later under browser/Docker load
-and throttling — the same code, the same frames, a 4x spread. At 70 ms, 6
-analysed fps fits; at 280 ms the pipeline degrades to ~3 fps by dropping
-frames (it never queues them), which is where IDs start to jump. YOLO-World
-costs 600–850 ms per run and competes for the same cores: with it on every
-second the tracker fell to ~2 fps. For a CPU-only demo: run objects every
-2–3 s (`--object-interval`) or turn them off, close what else is using the
-cores, plug the laptop in with a performance power plan — or use a small GPU,
-which removes the question. `status.achieved_fps` against `target_fps`,
+**CPU budget.** People + pose (`yolox_s+rtmpose-m`) measure ~115 ms per
+frame on this laptop with ~10 people in view (the pose model's cost grows with
+the head count; YOLOX-s alone is ~30 ms). At 115 ms, 6 analysed fps fits with
+room to spare; a machine 3x slower degrades to ~3 fps by dropping frames (the
+pipeline never queues them), which is where IDs start to jump. COCO objects
+are free; OWLv2 costs ~1 s per run and competes for the same cores — run it
+every 2–3 s (`--object-interval`) or leave objects on `yolox`. `yolox_tiny+rtmpose-s`
+halves the cost again if the machine cannot keep up — or use a small GPU
+(`onnxruntime-gpu`, `--device cuda`), which removes the question. `status.achieved_fps` against `target_fps`,
 `frame_ms` against the `1000/fps` budget, and `ingest.frames_dropped` show live
 whether the machine keeps up; the Live tab colours them.
 
-**Learned re-identification (optional, off).** `--embed yolo11n-cls.pt` adds an
-ImageNet-classifier embedding of the torso to the clothing similarity
-(`Embedder` in `stitch.py`; also `--embed` on `stitch.py` for offline re-runs).
-Measured on the labelled pairs from the sample video it does *not* separate
-people: cosine 0.87–0.99 for same-person pairs, 0.86–0.96 for different people,
-median 0.91 between strangers — a classifier backbone is not a ReID model. The
-hook is there so a real ReID network (OSNet-style weights, an extra dependency)
-can be dropped in when the crowded till needs it; `EMB_COS_LO` / `EMB_WEIGHT`
+**Learned re-identification (optional, off).** `--embed clip` adds a CLIP
+image embedding of the torso (`openai/clip-vit-base-patch32`, MIT; needs
+`vision/requirements-owl.txt`) to the clothing similarity (`Embedder` in
+`stitch.py`; also `--embed` on `stitch.py` for offline re-runs). The earlier
+ImageNet-classifier embedding, measured on the labelled pairs from the sample
+video, did *not* separate people: cosine 0.87–0.99 for same-person pairs,
+0.86–0.96 for different people, median 0.91 between strangers — a
+classification backbone is not a ReID model, and CLIP is not expected to do
+much better. The hook is there so a real ReID network (OSNet-style weights,
+an extra dependency) can be dropped in when the crowded till needs it; `EMB_COS_LO` / `EMB_WEIGHT`
 would be recalibrated for it.
 
 ## Deploying a shareable demo
@@ -486,47 +697,52 @@ Where to put it:
 
 * **Railway** (what the demo uses). railway.com → *New Project → Deploy from
   GitHub repo* → pick `alondotan/shopview`. The `Dockerfile` is detected, the
-  build takes ~10 min (torch + model weights), then *Settings → Networking →
-  Generate Domain* gives the public URL. Optional variable:
-  `ANTHROPIC_API_KEY` for the chat tab. Railway does not fetch Git LFS
-  objects, so the `Dockerfile` downloads the sample video from GitHub itself
-  when it finds the LFS pointer. Memory: the container needs ~1.5 GB.
+  build takes a few minutes (onnxruntime + ~90 MB of model weights, no torch),
+  then *Settings → Networking → Generate Domain* gives the public URL. Every
+  push to `master` redeploys. Optional variable: `ANTHROPIC_API_KEY` for the
+  chat tab and the actions stage. Railway does not fetch Git LFS objects, so
+  the `Dockerfile` downloads the sample videos from GitHub itself when it
+  finds the LFS pointers. Memory: the container needs ~1 GB.
 * **Hugging Face Spaces** — Docker Spaces now require a PRO subscription
   (free CPU or not); `README.md` carries the front matter they need, so with
   PRO it is `git push https://huggingface.co/spaces/<user>/<space> master:main`
   (password = a write token). The video is in LFS, as Spaces require.
-* **Render / Fly.io** — same Dockerfile, `$PORT` is honoured. Render's free
-  tier (512 MB RAM) is too small for torch + YOLO; pick ≥ 2 GB.
+* **Render / Fly.io** — same Dockerfile, `$PORT` is honoured. The image has
+  no torch (onnxruntime only, ~700 MB); 1 GB of RAM is enough.
 
 What to expect on a shared CPU host: the pre-computed analysis (Video, Live
-map, Zones tabs) is instant. The **Live** tab runs YOLO on the host's CPU: on
-2 vCPU expect 2–4 analysed fps with held objects off, so stitching still works
-but IDs will jump more than on a fast machine. New analysis jobs on other
+map, Zones tabs) is instant. The **Live** tab runs YOLOX + RTMPose on the
+host's CPU: on 2 vCPU expect 2–4 analysed fps, so stitching still works but
+IDs will jump more than on a fast machine (`yolox_tiny+rtmpose-s` in the
+model field helps). New analysis jobs on other
 videos run at a fraction of realtime. Uploads (maps, calibrations, live JSONL)
 land on ephemeral disk and vanish on redeploy.
 
-## Results on the sample video
+## Results on the sample videos
 
-CCTV of a small retail store, 111 s, 1270x720, 13.09 fps.
+The shipped analysis (`data/tracks/*.csv`) is `yolox_m+rtmpose-m`, every
+frame, on this laptop's CPU; the people/tracking numbers are from the default
+`yolox` object run, the object rows from a second run with `--object-model
+owlv2 --device mps` (free-text labels; 14 and 12 minutes on the Apple GPU):
 
-| | |
-|---|---|
-| frames processed (stride 3) | 484 |
-| person detections | 3 558 |
-| avg people in frame | 7.35 |
-| max people in frame | 12 |
-| raw track IDs | 85 |
-| wall time | 50 s (2.2x realtime, CPU) |
+| | KMJS66jBtVQ (small shop) | -1bRhYjw1qE (second clip) |
+|---|---|---|
+| video | 111 s, 1270x720, 13.09 fps | 60 s, 1280x720, 30 fps |
+| frames processed | 1 452 | 1 810 |
+| person detections | 15 671 | 6 176 |
+| avg / max people in frame | 10.8 / 15 | 3.4 / 6 |
+| raw tracker IDs → visitors after stitching | 95 → 61 | 19 → 14 |
+| feet estimated (hidden by a shelf) | 40 % | 29 % |
+| wall time | 251 s (0.44x realtime) | 222 s (0.27x realtime) |
+| objects (`yolox`, COCO) | handbag 2 254, backpack 211 (2 224 held) | bottle 3 267 (shelf stock, unheld), handbag 107 |
+| objects (`owlv2`, shipped) | shopping basket 9 349, shopping cart 3 567, shopping bag 1 857, handbag 1 700, cardboard box 658 (5 281 held, 29 visitors) | bottle 17 216 (the fridge), shopping bag 724, cardboard box 508 (1 298 held, 10 visitors) |
 
-85 raw IDs for ~12–15 actual shoppers — ByteTrack restarts an ID whenever a person
-is occluded by a shelf. Merging those into real visitors is the next stage.
-
-With objects on (same video, stride 3): see `--no-objects` timing above; the
-detector finds mostly `shopping bag` and `handbag`, plus the odd `cardboard box`
-being carried to the till. Two YOLO-World habits to know about: it labels the
-same bag "shopping bag" in one frame and "handbag" in the next (the per-track
-tally shows both), and it sometimes calls a stack of boxed stock on a shelf
-"cardboard box" — those have no holder and are hidden by default.
+The earlier YOLO11-m run at 960 px on the same clips gave 83 → 54 and 17 → 12
+ids, with 56 % / 36 % of the feet estimated — the same picture, so the
+calibration, zones and stitching thresholds carried over unchanged. OWLv2
+labels the display racks "shopping basket" and the shelf stock "bottle" /
+"cardboard box" — those have no holder and are hidden by default in the
+viewer; the held ones are what the per-visitor tally shows.
 
 ## Next stages
 
@@ -540,3 +756,10 @@ tally shows both), and it sometimes calls a stack of boxed stock on a shelf
    → `ENTERED`, `BROWSING`, `JOINED_QUEUE`… in the same schema as `*_video.csv`.
 4. **Per-visit summary** — dwell, sections, funnel stage → `week_summary`-shaped
    CSV, which the existing viewer and chat already consume unchanged.
+5. ~~Several cameras~~ — done, see "Several cameras on one store". Still open:
+   a ReID embedding across cameras (view-invariant where the colour histogram
+   is only roughly so), floor points for people cut off by the frame edge
+   (extrapolate below the frame instead of clamping), and automatic calibration of a new camera from
+   the shoppers themselves (simultaneous floor points in two views are
+   correspondences — tried on the sample pair; at a checkout too few people
+   move for RANSAC to lock on, an aisle camera would do better).

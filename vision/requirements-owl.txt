@@ -1,0 +1,5 @@
+# Optional: OWLv2 open-vocabulary object detection (--object-model owlv2) and the
+# CLIP appearance embedder (--embed clip). Both Apache-2.0 / MIT, both need torch.
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu   # CPU-only wheel
+torch>=2.2
+transformers>=4.40

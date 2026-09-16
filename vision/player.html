@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#12121f">
-<title>Vision Player — YOLO annotations</title>
+<title>Vision Player — detections</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { color-scheme: dark; }
@@ -149,6 +149,7 @@ const video  = document.getElementById('video');
 const canvas = document.getElementById('overlay');
 const ctx    = canvas.getContext('2d');
 const $      = id => document.getElementById(id);
+const KP_VISIBLE = 0.3;   // keypoint confidence that counts as visible (see detector.py)
 
 let frames   = [];          // [{t, dets:[{id,x1,y1,x2,y2,conf,fx,fy}]}] sorted by t
 let trails   = new Map();   // track_id -> [{t,x,y,conf}]
@@ -457,11 +458,11 @@ function drawSkeleton(kp, c, scale) {
     ctx.strokeStyle = c; ctx.fillStyle = c; ctx.globalAlpha = 0.85;
     ctx.lineWidth = Math.max(1.5, 2 * scale);
     for (const [a, b] of LIMBS) {
-        if (kp[a][2] < 0.5 || kp[b][2] < 0.5) continue;
+        if (kp[a][2] < KP_VISIBLE || kp[b][2] < KP_VISIBLE) continue;
         ctx.beginPath(); ctx.moveTo(kp[a][0], kp[a][1]); ctx.lineTo(kp[b][0], kp[b][1]); ctx.stroke();
     }
     for (const [x, y, v] of kp) {
-        if (v < 0.5) continue;
+        if (v < KP_VISIBLE) continue;
         ctx.beginPath(); ctx.arc(x, y, 3 * scale, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();

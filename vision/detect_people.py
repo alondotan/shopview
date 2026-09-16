@@ -1,9 +1,10 @@
-"""Stage 1 — detect and track people in a store video with YOLO.
+"""Stage 1 — detect and track people in a store video.
 
-Runs YOLO11 (ultralytics) restricted to the `person` class, with BoT-SORT for
-IDs across frames (see ``tracker_config``) and a post-run stitching pass that
-re-joins broken IDs by clothing colour + position + time (``stitch.py``), and
-writes one CSV row per person-detection per processed frame:
+Runs YOLOX for the boxes and RTMPose for the body keypoints (``detector.py``,
+both Apache-2.0), ByteTrack for IDs across frames (``bytetrack.py``, MIT; see
+``tracker_settings``) and a post-run stitching pass that re-joins broken IDs
+by clothing colour + position + time (``stitch.py``), and writes one CSV row
+per person-detection per processed frame:
 
     frame,time_s,track_id,raw_id,conf,x1,y1,x2,y2,cx,cy,foot_x,foot_y,w,h
 
@@ -11,7 +12,7 @@ writes one CSV row per person-detection per processed frame:
 
 `cx,cy` is the box centre; `foot_x,foot_y` is where the person touches the
 floor — the point the later homography / zone-mapping stage needs. With a pose
-model (the default, ``yolo11n-pose.pt``) that is the bottom of the box when the
+model (the default, ``yolox_s+rtmpose-m``) that is the bottom of the box when the
 feet are visible, and otherwise *estimated* from the visible body parts, because
 in a CCTV view a shelf often hides everything below the waist and the box then
 stops at the shelf, not at the feet. ``foot_src`` says which:
@@ -23,10 +24,12 @@ stops at the shelf, not at the feet. ``foot_src`` says which:
 
 ``keypoints`` holds the 17 COCO keypoints as ``x:y:conf;…`` for the viewer.
 
-Optionally (``objects=True``, the default) a second, open-vocabulary detector
-(YOLO-World) looks for things people carry — shopping bags, handbags, boxes,
-baskets… — and each object is attributed to the person whose box contains it.
-Those go to a sibling CSV, ``<video>_objects.csv``:
+Optionally (``objects=True``, the default) the things people carry are
+detected too — by default the COCO classes YOLOX already finds in the same pass
+(handbag, backpack, bottle, cell phone…), or with ``object_model="owlv2"`` an
+open-vocabulary detector that takes free-text prompts (shopping basket,
+cardboard box…) — and each object is attributed to the person whose box
+contains it. Those go to a sibling CSV, ``<video>_objects.csv``:
 
     frame,time_s,label,conf,x1,y1,x2,y2,cx,cy,w,h,person_id
 
@@ -37,20 +40,22 @@ inside anyone's box (on a shelf, on the floor).
 from __future__ import annotations
 import argparse
 import csv
-import hashlib
 import time
 from collections import defaultdict
 from pathlib import Path
 
 import cv2
+import numpy as np
 
-from stitch import Fragment, appearance, stitch
+from bytetrack import ByteTracker
+from detector import (
+    COCO_CLASSES, DEFAULT_MODEL, KP_VISIBLE, MODEL_DIR, PERSON_CLASS, RtmPose, Yolox,
+    draw_objects, draw_people, nms_boxes, parse_model_spec,
+)
+from stitch import Fragment, appearance, head_point, stitch
 
 ROOT = Path(__file__).resolve().parent.parent
 TRACK_DIR = ROOT / "data" / "tracks"
-MODEL_DIR = ROOT / "data" / "models"
-
-PERSON_CLASS = 0  # COCO class id for "person"
 
 # ── tracker ───────────────────────────────────────────────────────────────
 # How many *analysed* frames per second the tracker should see. IoU matching
@@ -67,52 +72,58 @@ def auto_stride(fps: float) -> int:
     return max(1, round(fps / TARGET_TRACK_FPS))
 
 
-def tracker_config(tracker: str, reid: bool, fps: float, stride: int, conf: float,
-                   buffer_s: float = TRACK_BUFFER_S, reid_model: str = "auto") -> tuple[str, dict]:
-    """Path to a tracker YAML tuned for a fixed store camera, plus its settings.
-
-    ``tracker`` is ``bytetrack``, ``botsort`` or a path to your own YAML (used as
-    is). The generated file lives in ``data/models`` and is keyed by its content.
-
-    * thresholds: the detector runs down at ``TRACK_LOW_THRESH`` so the tracker
-      sees weak detections; ``conf`` becomes the first-stage / new-track bar;
-    * ``track_buffer`` is in analysed frames, so it is derived from seconds;
-    * BoT-SORT: no global-motion compensation (the camera does not move) and,
-      with ``reid``, appearance features to tell crossing people apart:
-      ``reid_model="auto"`` reuses the detector's own features (free), or name a
-      classifier such as ``yolo11n-cls.pt`` to embed each person crop separately.
-    """
-    if tracker.endswith((".yaml", ".yml")):
-        return tracker, {"tracker": tracker}
-    if tracker not in ("bytetrack", "botsort"):
-        raise ValueError(f"tracker must be bytetrack, botsort or a .yaml path, not {tracker!r}")
-    cfg = {
-        "tracker_type": tracker,
-        "track_high_thresh": round(conf, 3),
-        "track_low_thresh": TRACK_LOW_THRESH,
-        "new_track_thresh": round(max(conf, 0.45), 3),
-        "track_buffer": max(5, round(buffer_s * fps / stride)),
+def tracker_settings(fps: float, stride: int, conf: float,
+                     buffer_s: float = TRACK_BUFFER_S) -> dict:
+    """ByteTrack settings for a fixed store camera (see ``bytetrack.py``):
+    the detector runs down at ``TRACK_LOW_THRESH`` so the tracker's second
+    stage sees weak detections; ``conf`` is the first-stage / new-track bar;
+    ``buffer`` is in analysed frames, so it is derived from seconds."""
+    return {
+        "track_high": round(conf, 3),
+        "track_low": TRACK_LOW_THRESH,
+        "new_track": round(max(conf, 0.45), 3),
+        "buffer": max(5, round(buffer_s * fps / stride)),
         "match_thresh": 0.8,
         "fuse_score": True,
     }
-    if tracker == "botsort":
-        cfg.update({
-            "gmc_method": "none",
-            "proximity_thresh": 0.5,
-            "appearance_thresh": 0.8,
-            "with_reid": bool(reid),
-            "model": reid_model,
-        })
-    text = "\n".join(f"{k}: {v}" for k, v in cfg.items()) + "\n"
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    path = MODEL_DIR / f"tracker_{tracker}_{hashlib.md5(text.encode()).hexdigest()[:8]}.yaml"
-    if not path.exists():
-        path.write_text(text, encoding="utf-8")
-    return str(path), cfg
+
+
+class PeopleModel:
+    """Detector + pose + tracker for one video: ``model(frame, run_conf)`` →
+    (tracked people, every detection of the frame). Each tracked person is a
+    dict with ``raw_id``, the tracker's box, ``conf`` and ``kp`` — 17 COCO
+    keypoints as (x, y, conf), or None without a pose model. The full
+    detection tuple (boxes, scores, class ids) is returned so the held-object
+    stage can take the COCO objects from the same pass."""
+
+    def __init__(self, spec: str = DEFAULT_MODEL, device: str = "cpu", det_conf: float = TRACK_LOW_THRESH,
+                 tracker: dict | None = None) -> None:
+        det_name, pose_name = parse_model_spec(spec)
+        self.det = Yolox(det_name, device)
+        self.pose = RtmPose(pose_name, device) if pose_name else None
+        self.det_conf = det_conf
+        self.tracker = ByteTracker(**(tracker or {}))
+        self.spec = spec
+
+    @property
+    def imgsz(self) -> int:
+        return self.det.input_w
+
+    def __call__(self, frame, run_conf: float | None = None):
+        boxes, scores, cls = self.det(frame, min(run_conf or self.det_conf, self.det_conf))
+        m = (cls == PERSON_CLASS) & (scores >= self.det_conf)
+        pboxes = boxes[m]
+        tracks = self.tracker.update(pboxes, scores[m])
+        kps = [None] * len(tracks)
+        if self.pose is not None and tracks:
+            kp, kv = self.pose(frame, [pboxes[t.det_index] for t in tracks])
+            kps = [[(float(x), float(y), float(c)) for (x, y), c in zip(pk, pv)] for pk, pv in zip(kp, kv)]
+        tracked = [{"raw_id": t.id, "box": t.xyxy, "conf": t.score, "kp": k} for t, k in zip(tracks, kps)]
+        return tracked, (boxes, scores, cls)
+
 
 # ── foot-point estimation from pose keypoints ─────────────────────────────
 KP_LSH, KP_RSH, KP_LHIP, KP_RHIP, KP_LKNEE, KP_RKNEE, KP_LANK, KP_RANK = 5, 6, 11, 12, 13, 14, 15, 16
-KP_VISIBLE = 0.5          # keypoint confidence to count as "seen"
 
 # Vertical body proportions as fractions of standing height (head top → sole).
 # Measured on 271 full-body detections in the sample video; they agree with
@@ -269,26 +280,90 @@ def _kp_str(kp) -> str:
     return "" if kp is None else ";".join(f"{x:.0f}:{y:.0f}:{c:.2f}" for x, y, c in kp)
 
 
-# What to look for in people's hands. YOLO-World takes free-text prompts, so this
-# is not limited to COCO's 80 classes — "cardboard box" and "shopping basket"
-# are not COCO classes at all.
+# What to look for in people's hands. With the default ``yolox`` object model
+# only the COCO classes among these are found (handbag, backpack, bottle, cell
+# phone — ``COCO_ALIASES`` maps the everyday names); ``owlv2`` takes them all
+# as free-text prompts — "cardboard box" and "shopping basket" are not COCO
+# classes at all.
 DEFAULT_OBJECT_CLASSES = [
     "shopping bag", "handbag", "backpack", "cardboard box",
     "shopping basket", "shopping cart", "bottle", "phone",
 ]
-DEFAULT_OBJECT_MODEL = "yolov8s-worldv2.pt"
+DEFAULT_OBJECT_MODEL = "yolox"
+OBJECT_MODELS = ("yolox", "owlv2", "owlv2-large")
+COCO_ALIASES = {"phone": "cell phone", "mobile phone": "cell phone", "smartphone": "cell phone",
+                "bag": "handbag", "purse": "handbag", "trolley": "suitcase"}
 
 # An object counts as "held" when at least this fraction of its box lies inside
 # the person's box.
 HELD_MIN_OVERLAP = 0.4
 
 
-def _load_model(model_name: str):
-    """YOLO or YOLO-World from the local cache, downloading on first use."""
-    from ultralytics import YOLO, YOLOWorld
-    weights = MODEL_DIR / model_name
-    cls = YOLOWorld if "world" in model_name.lower() else YOLO
-    return cls(str(weights) if weights.exists() else model_name)
+class CocoObjects:
+    """Held-object "detector" that costs nothing: it picks the wanted COCO
+    classes out of the YOLOX pass that found the people."""
+
+    def __init__(self, object_classes: list[str]) -> None:
+        wanted = [COCO_ALIASES.get(c.lower(), c.lower()) for c in object_classes]
+        self.class_ids = sorted({COCO_CLASSES.index(c) for c in wanted if c in COCO_CLASSES})
+        self.names = COCO_CLASSES
+        self.missing = sorted({c for c in wanted if c not in COCO_CLASSES})
+        if self.missing:
+            print(f"warning: not COCO classes, skipped: {self.missing} — "
+                  f"use --object-model owlv2 for free-text classes")
+
+    def __call__(self, frame, conf: float, frame_dets=None):
+        if frame_dets is None:
+            raise ValueError("CocoObjects needs the frame's YOLOX detections")
+        boxes, scores, cls = frame_dets
+        m = np.isin(cls, self.class_ids) & (scores >= conf)
+        boxes, scores, cls = boxes[m], scores[m], cls[m]
+        idx = nms_boxes(boxes, scores, 0.45)               # agnostic: one box per object
+        return boxes[idx], scores[idx], cls[idx]
+
+
+class Owlv2Objects:
+    """Open-vocabulary detector — Google OWLv2 (Apache-2.0) through
+    ``transformers``: the classes are free-text prompts, embedded with the
+    model's own CLIP text tower. Accurate and slow on a CPU (seconds per
+    frame), so it is the option, not the default. Needs
+    ``pip install -r vision/requirements-owl.txt``."""
+
+    HF = {"owlv2": "google/owlv2-base-patch16-ensemble",
+          "owlv2-large": "google/owlv2-large-patch14-ensemble"}
+
+    def __init__(self, name: str, object_classes: list[str], device: str = "cpu") -> None:
+        try:
+            import torch
+            from transformers import Owlv2ForObjectDetection, Owlv2Processor
+        except ImportError as e:
+            raise RuntimeError("OWLv2 needs torch + transformers: "
+                               "pip install -r vision/requirements-owl.txt") from e
+        self.torch = torch
+        self.device = device
+        self.processor = Owlv2Processor.from_pretrained(self.HF[name])
+        self.model = Owlv2ForObjectDetection.from_pretrained(self.HF[name]).eval().to(device)
+        self.names = list(object_classes)
+
+    def __call__(self, frame, conf: float, frame_dets=None):
+        h, w = frame.shape[:2]
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        inputs = self.processor(text=[self.names], images=rgb, return_tensors="pt").to(self.device)
+        with self.torch.no_grad():
+            out = self.model(**inputs)
+        # the processor pads the image to a square before resizing, so the
+        # boxes come back relative to that square, not to the frame
+        side = max(h, w)
+        post = getattr(self.processor, "post_process_grounded_object_detection", None) \
+            or self.processor.post_process_object_detection          # older transformers
+        res = post(out, threshold=conf, target_sizes=self.torch.tensor([[side, side]]))[0]
+        boxes = res["boxes"].cpu().numpy().astype(np.float32)
+        scores = res["scores"].cpu().numpy().astype(np.float32)
+        cls = res["labels"].cpu().numpy().astype(int)
+        boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, w)
+        boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, h)
+        idx = nms_boxes(boxes, scores, 0.45)               # agnostic: not "bag" + "handbag" twice
+        return boxes[idx], scores[idx], cls[idx]
 
 
 def _overlap_fraction(obj, person) -> float:
@@ -321,33 +396,25 @@ def assign_holder(obj_box, people: list[tuple[int, tuple]]) -> int | None:
     return best
 
 
-def extract_people(results, frame, height: int, appearance_on: bool = True) -> list[dict]:
-    """One dict per tracked person in a ``model.track`` result: raw id, box,
+def extract_people(tracked: list[dict], frame, height: int, appearance_on: bool = True) -> list[dict]:
+    """One dict per tracked person from :class:`PeopleModel`: raw id, box,
     conf, keypoints, floor point (+ how it was found), and — with
     ``appearance_on`` — the clothing descriptors for stitching. Shared by the
     offline analyser and the live pipeline."""
-    boxes = results.boxes
-    if boxes is None or boxes.id is None:
-        return []
-    ids = boxes.id.int().tolist()
-    xyxy = boxes.xyxy.tolist()
-    confs = boxes.conf.tolist()
-    kps = [None] * len(ids)
-    if getattr(results, "keypoints", None) is not None and results.keypoints.conf is not None:
-        kxy = results.keypoints.xy.tolist()
-        kcf = results.keypoints.conf.tolist()
-        kps = [[(x, y, c) for (x, y), c in zip(pxy, pcf)] for pxy, pcf in zip(kxy, kcf)]
-    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) if (appearance_on and ids) else None
+    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) if (appearance_on and tracked) else None
     out = []
-    for tid, (x1, y1, x2, y2), c, kp in zip(ids, xyxy, confs, kps):
+    for t in tracked:
+        x1, y1, x2, y2 = t["box"]
+        kp = t["kp"]
         fx, fy, src, full = estimate_foot((x1, y1, x2, y2), kp)
         torso = legs = None
         if frame_hsv is not None:
             torso, legs = appearance(frame_hsv, (x1, y1, x2, y2), kp)
         out.append({
-            "raw_id": tid, "box": (x1, y1, x2, y2), "conf": c, "kp": kp,
+            "raw_id": t["raw_id"], "box": (x1, y1, x2, y2), "conf": t["conf"], "kp": kp,
             "w": x2 - x1, "h": y2 - y1,
             "foot": (fx, min(fy, height)), "foot_src": src, "full_body": full,
+            "head": head_point((x1, y1, x2, y2), kp),  # stays visible behind a shelf
             "torso": torso, "legs": legs,
         })
     return out
@@ -373,61 +440,46 @@ def person_row(p: dict, frame_idx: int, t_sec: float) -> dict:
     }
 
 
-def detect_objects(obj_model, frame, people_here, object_conf, imgsz, device,
-                   class_ids: list[int] | None = None):
+def detect_objects(obj_model, frame, people_here, object_conf, frame_dets=None) -> list[dict]:
     """Run the held-object detector on one frame and attribute each object to
-    the person holding it. Returns (ultralytics result, list of object dicts)."""
-    kw = {"classes": class_ids} if class_ids else {}
-    # agnostic NMS: one box per object, not "shopping bag" + "handbag" twice
-    res = obj_model.predict(frame, conf=object_conf, imgsz=imgsz, device=device,
-                            agnostic_nms=True, verbose=False, **kw)[0]
+    the person holding it. ``frame_dets`` is the YOLOX output of the same
+    frame (what :class:`CocoObjects` reads; ignored by OWLv2)."""
+    boxes, scores, cls = obj_model(frame, object_conf, frame_dets)
     found = []
-    ob = res.boxes
-    if ob is not None and len(ob):
-        for (x1, y1, x2, y2), c, k in zip(ob.xyxy.tolist(), ob.conf.tolist(),
-                                          ob.cls.int().tolist()):
-            holder = assign_holder((x1, y1, x2, y2), people_here)
-            w, h = x2 - x1, y2 - y1
-            found.append({
-                "label": obj_model.names[k], "conf": round(c, 3),
-                "x1": round(x1, 1), "y1": round(y1, 1),
-                "x2": round(x2, 1), "y2": round(y2, 1),
-                "cx": round(x1 + w / 2, 1), "cy": round(y1 + h / 2, 1),
-                "w": round(w, 1), "h": round(h, 1),
-                "person_id": "" if holder is None else holder,
-            })
-    return res, found
+    for (x1, y1, x2, y2), c, k in zip(boxes.tolist(), scores.tolist(), cls.tolist()):
+        holder = assign_holder((x1, y1, x2, y2), people_here)
+        w, h = x2 - x1, y2 - y1
+        found.append({
+            "label": obj_model.names[k], "conf": round(c, 3),
+            "x1": round(x1, 1), "y1": round(y1, 1),
+            "x2": round(x2, 1), "y2": round(y2, 1),
+            "cx": round(x1 + w / 2, 1), "cy": round(y1 + h / 2, 1),
+            "w": round(w, 1), "h": round(h, 1),
+            "person_id": "" if holder is None else holder,
+        })
+    return found
 
 
-def load_object_model(object_model: str, object_classes: list[str]):
-    """YOLO-World (free-text classes) or a plain YOLO restricted to the named
-    COCO classes. Returns (model, class_ids) — class_ids is empty for YOLO-World."""
-    m = _load_model(object_model)
-    if hasattr(m, "set_classes"):
-        m.set_classes(object_classes)
-        return m, []
-    ids = sorted(k for k, v in m.names.items() if v in object_classes)
-    missing = set(object_classes) - set(m.names.values())
-    if missing:
-        print(f"warning: {object_model} has no class {sorted(missing)} — "
-              f"use a YOLO-World model for free-text classes")
-    return m, ids
+def load_object_model(object_model: str, object_classes: list[str], device: str = "cpu"):
+    """``yolox`` (COCO classes from the people pass, free) or ``owlv2`` /
+    ``owlv2-large`` (free-text classes, slow)."""
+    if object_model == "yolox":
+        return CocoObjects(object_classes)
+    if object_model in Owlv2Objects.HF:
+        return Owlv2Objects(object_model, object_classes, device)
+    raise ValueError(f"object model must be one of {OBJECT_MODELS}, not {object_model!r}")
 
 
 def analyze(
     video: Path,
-    model_name: str = "yolo11n-pose.pt",
+    model_name: str = DEFAULT_MODEL,
     conf: float = 0.35,
-    imgsz: int = 640,
     stride: int | None = None,
     max_seconds: float | None = None,
     start_seconds: float = 0.0,
     preview: Path | None = None,
     out_csv: Path | None = None,
     device: str = "cpu",
-    tracker: str = "botsort",
-    reid: bool = True,
-    reid_model: str = "auto",
     track_buffer_s: float = TRACK_BUFFER_S,
     stitch_tracks: bool = True,
     stitch_gap_s: float = 8.0,
@@ -447,20 +499,19 @@ def analyze(
     small stats dict.
 
     ``stride`` None → :func:`auto_stride` (about ``TARGET_TRACK_FPS`` analysed
-    frames per second). ``tracker`` / ``reid`` / ``track_buffer_s`` → see
-    :func:`tracker_config`. With ``stitch_tracks`` the raw tracker IDs are
+    frames per second). ``model_name`` is a ``detector+pose`` spec (see
+    ``detector.py``), ``track_buffer_s`` → :func:`tracker_settings`. With
+    ``stitch_tracks`` the raw tracker IDs are
     merged after the run by clothing colour + position + time (``stitch.py``);
     the CSV then carries the merged id as ``track_id`` and the tracker's own id
     as ``raw_id``.
     """
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    model = _load_model(model_name)
 
     obj_model = None
-    obj_model_classes: list[int] = []
     if objects:
         object_classes = object_classes or DEFAULT_OBJECT_CLASSES
-        obj_model, obj_model_classes = load_object_model(object_model, object_classes)
+        obj_model = load_object_model(object_model, object_classes, device)
 
     cap = cv2.VideoCapture(str(video))
     if not cap.isOpened():
@@ -472,11 +523,14 @@ def analyze(
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     stride = stride or auto_stride(fps)
-    tracker_path, tracker_cfg = tracker_config(tracker, reid, fps, stride, conf, track_buffer_s, reid_model)
+    tracker_cfg = tracker_settings(fps, stride, conf, track_buffer_s)
     # Let weak detections reach the tracker's second stage; the tracker itself
-    # applies ``conf`` (track_high_thresh) and only ever outputs boxes that
-    # belong to an established track, so the CSV stays clean.
-    det_conf = min(conf, TRACK_LOW_THRESH) if tracker_cfg.get("track_low_thresh") else conf
+    # applies ``conf`` (track_high) and only ever outputs boxes that belong to
+    # an established track, so the CSV stays clean.
+    det_conf = min(conf, TRACK_LOW_THRESH)
+    model = PeopleModel(model_name, device, det_conf, tracker_cfg)
+    # the COCO-objects path reads the same YOLOX pass, so run it low enough for both
+    run_conf = min(det_conf, object_conf) if isinstance(obj_model, CocoObjects) else det_conf
 
     if start_seconds:
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(start_seconds * fps))
@@ -488,7 +542,8 @@ def analyze(
     out_csv = out_csv or TRACK_DIR / f"{video.stem}_tracks.csv"
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     objects_csv = objects_csv or out_csv.with_name(
-        out_csv.name.replace("_tracks.csv", "_objects.csv"))
+        out_csv.name.replace("_tracks.csv", "_objects.csv") if out_csv.name.endswith("_tracks.csv")
+        else out_csv.stem + "_objects.csv")
 
     writer = None
     if preview:
@@ -511,9 +566,9 @@ def analyze(
     t0 = time.time()
 
     print(f"video   : {video.name}  ({width}x{height}, {fps:.2f} fps, {total_frames} frames)")
-    print(f"model   : {model_name}  conf={conf} (detector {det_conf}) imgsz={imgsz} device={device}")
+    print(f"model   : {model_name}  conf={conf} (detector {det_conf}) imgsz={model.imgsz} device={device}")
     print(f"sampling: every {stride} frame(s) → {fps / stride:.2f} analysed fps")
-    print(f"tracker : {tracker_path}  {tracker_cfg}")
+    print(f"tracker : bytetrack {tracker_cfg}")
     if stitch_tracks:
         print(f"stitch  : gap ≤ {stitch_gap_s}s, clothing similarity ≥ {stitch_min_sim}")
     if obj_model is not None:
@@ -529,19 +584,10 @@ def analyze(
             frame_idx += 1
             continue
 
-        results = model.track(
-            frame,
-            persist=True,
-            classes=[PERSON_CLASS],
-            conf=det_conf,
-            imgsz=imgsz,
-            device=device,
-            tracker=tracker_path,
-            verbose=False,
-        )[0]
+        tracked, frame_dets = model(frame, run_conf)
 
         t_sec = frame_idx / fps
-        people = extract_people(results, frame, height, appearance_on=stitch_tracks)
+        people = extract_people(tracked, frame, height, appearance_on=stitch_tracks)
         n = len(people)
         people_here: list[tuple[int, tuple]] = [(p["raw_id"], p["box"]) for p in people]
         for p in people:
@@ -550,18 +596,17 @@ def analyze(
             foot_src_counts[p["foot_src"]] += 1
             if p["torso"] is not None or p["legs"] is not None:
                 frags.setdefault(p["raw_id"], Fragment(p["raw_id"])).add(
-                    t_sec, p["foot"], p["h"], p["torso"], p["legs"])
+                    t_sec, p["foot"], p["h"], p["torso"], p["legs"], head=p["head"])
             rows.append(person_row(p, frame_idx, t_sec))
             track_frames[p["raw_id"]] += 1
 
         per_frame_counts[frame_idx] = n
         processed += 1
 
-        obj_results = None
+        found: list[dict] = []
         n_obj = 0
         if obj_model is not None:
-            obj_results, found = detect_objects(obj_model, frame, people_here, object_conf,
-                                                imgsz, device, obj_model_classes)
+            found = detect_objects(obj_model, frame, people_here, object_conf, frame_dets)
             for o in found:
                 obj_rows.append({"frame": frame_idx, "time_s": round(t_sec, 3), **o})
                 obj_by_label[o["label"]] += 1
@@ -570,10 +615,7 @@ def analyze(
                 n_obj += 1
 
         if writer is not None:
-            canvas = results.plot()
-            if obj_results is not None:
-                canvas = obj_results.plot(img=canvas, line_width=1, font_size=8)
-            writer.write(canvas)
+            writer.write(draw_objects(draw_people(frame.copy(), people), found))
 
         if processed % progress_every == 0:
             elapsed = time.time() - t0
@@ -660,8 +702,10 @@ def analyze(
         "analysed_fps": round(fps / stride, 2),
         "frames_processed": processed,
         "detections": len(rows),
-        # tracker config actually used (path + the settings written into it)
-        "tracker": {"file": tracker_path, "detector_conf": det_conf, **tracker_cfg},
+        "model": model_name,
+        "imgsz": model.imgsz,
+        # tracker settings actually used
+        "tracker": {"type": "bytetrack", "detector_conf": det_conf, **tracker_cfg},
         # ids straight from the tracker, before stitching
         "raw_tracks": raw_track_count,
         # after stitching: what the CSV's track_id column holds
@@ -706,24 +750,18 @@ def analyze(
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("video", type=Path, help="path to video file")
-    ap.add_argument("--model", default="yolo11n-pose.pt",
-                    help="yolo11n-pose.pt (default; keypoints → feet estimated when hidden) / "
-                         "yolo11s-pose.pt (accurate) / yolo11n.pt (boxes only)")
+    ap.add_argument("--model", default=DEFAULT_MODEL,
+                    help=f"detector+pose, e.g. {DEFAULT_MODEL} (default; keypoints → feet estimated "
+                         "when hidden) / yolox_tiny+rtmpose-s (fast) / yolox_m+rtmpose-m (accurate) "
+                         "/ yolox_s (boxes only)")
     ap.add_argument("--conf", type=float, default=0.35)
-    ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--stride", type=int, default=None,
                     help=f"process every Nth frame (default: auto, ≈{TARGET_TRACK_FPS:.0f} analysed fps)")
     ap.add_argument("--start", type=float, default=0.0, help="start offset in seconds")
     ap.add_argument("--seconds", type=float, default=None, help="how many seconds to analyse")
     ap.add_argument("--preview", type=Path, default=None, help="write annotated mp4 here")
     ap.add_argument("--out", type=Path, default=None, help="output tracks CSV")
-    ap.add_argument("--device", default="cpu")
-    ap.add_argument("--tracker", default="botsort",
-                    help="botsort (default; appearance-aware) / bytetrack / path to your own yaml")
-    ap.add_argument("--no-reid", action="store_true",
-                    help="botsort without appearance features (faster, more ID swaps)")
-    ap.add_argument("--reid-model", default="auto",
-                    help="auto (detector features, free) or e.g. yolo11n-cls.pt for the tracker's ReID gate")
+    ap.add_argument("--device", default="cpu", help="cpu (default) or cuda (needs onnxruntime-gpu)")
     ap.add_argument("--track-buffer", type=float, default=TRACK_BUFFER_S,
                     help="seconds a lost track is kept alive inside the tracker")
     ap.add_argument("--no-stitch", action="store_true",
@@ -739,20 +777,18 @@ def main() -> None:
     ap.add_argument("--smooth-deadband", type=float, default=SMOOTH_DEADBAND,
                     help=f"hold the point while it moves < this x box height (default {SMOOTH_DEADBAND})")
     ap.add_argument("--no-objects", action="store_true",
-                    help="skip the held-object detector (people only, ~2x faster)")
-    ap.add_argument("--object-model", default=DEFAULT_OBJECT_MODEL,
-                    help="yolov8s-worldv2.pt (default) / yolov8m-worldv2.pt (accurate) "
-                         "/ any YOLO-World or plain YOLO weights")
+                    help="skip the held-object stage")
+    ap.add_argument("--object-model", default=DEFAULT_OBJECT_MODEL, choices=OBJECT_MODELS,
+                    help="yolox (default: COCO classes from the people pass, free) / "
+                         "owlv2, owlv2-large (free-text classes, seconds per frame on a CPU)")
     ap.add_argument("--object-classes", default=",".join(DEFAULT_OBJECT_CLASSES),
-                    help="comma-separated free-text prompts for YOLO-World")
+                    help="comma-separated classes: COCO names for yolox, free text for owlv2")
     ap.add_argument("--object-conf", type=float, default=0.25)
     args = ap.parse_args()
 
     analyze(
-        video=args.video, model_name=args.model, conf=args.conf, imgsz=args.imgsz,
-        stride=args.stride, start_seconds=args.start, max_seconds=args.seconds,
+        video=args.video, model_name=args.model, conf=args.conf, stride=args.stride, start_seconds=args.start, max_seconds=args.seconds,
         preview=args.preview, out_csv=args.out, device=args.device,
-        tracker=args.tracker, reid=not args.no_reid, reid_model=args.reid_model,
         track_buffer_s=args.track_buffer,
         stitch_tracks=not args.no_stitch, stitch_gap_s=args.stitch_gap,
         stitch_min_sim=args.stitch_sim,

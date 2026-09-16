@@ -17,8 +17,10 @@ live:
 * **Rate**: instead of "every Nth frame", the pipeline processes a frame
   whenever ``1 / target_fps`` seconds have passed (about 6 per second, what
   IoU tracking needs); the tracker's lost buffer is derived from that.
-* **Held objects** (:class:`ObjectWorker`): YOLO-World is the expensive part
-  and bags do not change every frame, so it runs in its own thread about once
+* **Held objects**: with the default ``yolox`` object model they come out of
+  the same detector pass as the people (free, reported about once a second);
+  with ``owlv2`` the detector is the expensive part and bags do not change
+  every frame, so :class:`ObjectWorker` runs it in its own thread about once
   a second on the most recent frame, and its results are attributed to the
   visitor ids current at that moment.
 
@@ -56,10 +58,11 @@ from pathlib import Path
 import cv2
 
 from detect_people import (
-    DEFAULT_OBJECT_CLASSES, DEFAULT_OBJECT_MODEL, PERSON_CLASS, TRACK_BUFFER_S,
-    TRACK_LOW_THRESH, TARGET_TRACK_FPS, FootSmoother, _load_model, detect_objects, extract_people,
-    load_object_model, person_row, tracker_config,
+    DEFAULT_OBJECT_CLASSES, DEFAULT_OBJECT_MODEL, TRACK_BUFFER_S, TRACK_LOW_THRESH,
+    TARGET_TRACK_FPS, CocoObjects, FootSmoother, PeopleModel, detect_objects, extract_people,
+    load_object_model, person_row, tracker_settings,
 )
+from detector import DEFAULT_MODEL
 from stitch import Embedder, OnlineStitcher
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -192,14 +195,14 @@ class FrameSource:
 
 # ── held objects, off the critical path ───────────────────────────────────
 class ObjectWorker:
-    """Runs the held-object detector in its own thread on the most recent
-    frame it was given, at most once per ``interval_s``. ``results()`` drains
-    what it found, each tagged with the frame's ``seq`` and ``t`` and the
-    people (raw ids + boxes) that were in that frame."""
+    """Runs a slow held-object detector (OWLv2) in its own thread on the most
+    recent frame it was given, at most once per ``interval_s``. ``results()``
+    drains what it found, each tagged with the frame's ``seq`` and ``t`` and
+    the people (raw ids + boxes) that were in that frame."""
 
-    def __init__(self, model, class_ids, object_conf, imgsz, device, interval_s=1.0):
-        self.model, self.class_ids = model, class_ids
-        self.object_conf, self.imgsz, self.device = object_conf, imgsz, device
+    def __init__(self, model, object_conf, interval_s=1.0):
+        self.model = model
+        self.object_conf = object_conf
         self.interval_s = interval_s
         self._job = None
         self._cond = threading.Condition()
@@ -246,8 +249,7 @@ class ObjectWorker:
                 frame, people_here, t, seq = self._job
                 self._job = None
             t0 = time.time()
-            _, found = detect_objects(self.model, frame, people_here, self.object_conf,
-                                      self.imgsz, self.device, self.class_ids)
+            found = detect_objects(self.model, frame, people_here, self.object_conf)
             self.last_ms = (time.time() - t0) * 1000
             self.runs += 1
             last = time.time()
@@ -263,14 +265,10 @@ class LivePipeline:
     def __init__(
         self,
         source,
-        model_name: str = "yolo11n-pose.pt",
+        model_name: str = DEFAULT_MODEL,
         conf: float = 0.35,
-        imgsz: int = 640,
         device: str = "cpu",
         target_fps: float = TARGET_TRACK_FPS,
-        tracker: str = "botsort",
-        reid: bool = True,
-        reid_model: str = "auto",
         track_buffer_s: float = TRACK_BUFFER_S,
         stitch: bool = True,
         stitch_gap_s: float = 8.0,
@@ -289,9 +287,8 @@ class LivePipeline:
         ring: int = 2000,
     ):
         self.source_spec = source
-        self.model_name, self.conf, self.imgsz, self.device = model_name, conf, imgsz, device
+        self.model_name, self.conf, self.device = model_name, conf, device
         self.target_fps = target_fps
-        self.tracker_name, self.reid, self.reid_model = tracker, reid, reid_model
         self.track_buffer_s = track_buffer_s
         self.stitch_on = stitch
         self.stitcher = OnlineStitcher(stitch_gap_s, stitch_min_sim, decide_after_s) if stitch else None
@@ -322,6 +319,8 @@ class LivePipeline:
         self._snapshot_lock = threading.Lock()
         self.source: FrameSource | None = None
         self.objects_worker: ObjectWorker | None = None
+        self._inline_objects = None                   # CocoObjects: read from the people pass
+        self._object_runs = 0
         self._pending_objects: list[dict] = []
 
     # ── control ──
@@ -362,9 +361,12 @@ class LivePipeline:
                 "size": src.size, "frames_read": src.frames_read,
                 "frames_dropped": src.frames_dropped, "reconnects": src.reconnects,
                 "last_error": src.last_error}),
-            "objects": (None if self.objects_worker is None else {
-                "runs": self.objects_worker.runs, "last_ms": round(self.objects_worker.last_ms, 1),
-                "interval_s": self.object_interval_s}),
+            "objects": ({"runs": self.objects_worker.runs, "last_ms": round(self.objects_worker.last_ms, 1),
+                         "interval_s": self.object_interval_s, "model": self.object_model_name}
+                        if self.objects_worker is not None else
+                        {"runs": self._object_runs, "last_ms": 0.0, "interval_s": self.object_interval_s,
+                         "model": self.object_model_name}
+                        if self._inline_objects is not None else None),
             "stitch": (None if self.stitcher is None else {
                 "merges": len(self.stitcher.merges), "pool": len(self.stitcher.frags),
                 "pending": len(self.stitcher.pending), "decide_after_s": self.decide_after_s,
@@ -431,16 +433,19 @@ class LivePipeline:
 
     def _run(self) -> None:
         self.state = "loading"
-        model = _load_model(self.model_name)
-        embedder = Embedder(self.embed_name, self.device) if self.embed_name else None
-        if self.objects_on:
-            obj_model, class_ids = load_object_model(self.object_model_name, self.object_classes)
-            self.objects_worker = ObjectWorker(obj_model, class_ids, self.object_conf, self.imgsz,
-                                               self.device, self.object_interval_s).start()
-        tracker_path, tracker_cfg = tracker_config(
-            self.tracker_name, self.reid, self.target_fps, 1, self.conf,
-            self.track_buffer_s, self.reid_model)
+        tracker_cfg = tracker_settings(self.target_fps, 1, self.conf, self.track_buffer_s)
         det_conf = min(self.conf, TRACK_LOW_THRESH)
+        model = PeopleModel(self.model_name, self.device, det_conf, tracker_cfg)
+        embedder = Embedder(self.embed_name, self.device) if self.embed_name else None
+        run_conf = det_conf
+        if self.objects_on:
+            obj_model = load_object_model(self.object_model_name, self.object_classes, self.device)
+            if isinstance(obj_model, CocoObjects):
+                self._inline_objects = obj_model
+                run_conf = min(det_conf, self.object_conf)
+            else:
+                self.objects_worker = ObjectWorker(obj_model, self.object_conf,
+                                                   self.object_interval_s).start()
         if self.jsonl is not None:
             self.jsonl.parent.mkdir(parents=True, exist_ok=True)
             self._jsonl_fh = self.jsonl.open("a", encoding="utf-8")
@@ -448,7 +453,7 @@ class LivePipeline:
         self.source = FrameSource(self.source_spec, fast=self.fast).start()
         self.started_at = time.time()
         self.state = "running"
-        self._emit({"type": "status", "tracker": {"file": tracker_path, **tracker_cfg},
+        self._emit({"type": "status", "tracker": {"type": "bytetrack", **tracker_cfg},
                     **self.status()})
 
         foot_smoother = FootSmoother(self.target_fps)
@@ -458,6 +463,7 @@ class LivePipeline:
         last_status = time.time()
         min_dt = 1.0 / self.target_fps
         height = None
+        last_objects_t = -1e9
         # file in fast mode: use the file's own clock so results are comparable
         # with the offline analyser; otherwise the wall clock
         file_clock = self.fast and self.source.is_file
@@ -488,10 +494,8 @@ class LivePipeline:
                 height = frame.shape[0]
 
             t0 = time.time()
-            results = model.track(frame, persist=True, classes=[PERSON_CLASS], conf=det_conf,
-                                  imgsz=self.imgsz, device=self.device, tracker=tracker_path,
-                                  verbose=False)[0]
-            people = extract_people(results, frame, height, appearance_on=self.stitch_on)
+            tracked, frame_dets = model(frame, run_conf)
+            people = extract_people(tracked, frame, height, appearance_on=self.stitch_on)
             for p in people:                       # steady floor points, see smooth_feet()
                 p["foot"] = foot_smoother.update(p["raw_id"], p["foot"], p["h"], t)
             if embedder is not None and people:
@@ -508,7 +512,7 @@ class LivePipeline:
                 rows.append(row)
                 if self.stitcher is not None:
                     self.stitcher.observe(p["raw_id"], t, p["foot"], p["h"], p["torso"],
-                                          p["legs"], p.get("emb"))
+                                          p["legs"], p.get("emb"), head=p["head"])
                     self.stitcher.push(row)
             if self.stitcher is not None:
                 for m in self.stitcher.step(t):
@@ -520,9 +524,16 @@ class LivePipeline:
                 self._emit({"type": "people", "t": round(released[-1]["time_s"], 3),
                             "ts": released[-1]["ts"], "rows": released})
 
+            if self._inline_objects is not None and t - last_objects_t >= self.object_interval_s:
+                found = detect_objects(self._inline_objects, frame, [(p["raw_id"], p["box"]) for p in people],
+                                       self.object_conf, frame_dets)
+                self._pending_objects.append({"t": t, "seq": seq, "objects": found})
+                self._object_runs += 1
+                last_objects_t = t
             if self.objects_worker is not None:
                 self.objects_worker.submit(frame, [(p["raw_id"], p["box"]) for p in people], t, seq)
                 self._pending_objects.extend(self.objects_worker.results())
+            if self._inline_objects is not None or self.objects_worker is not None:
                 self._flush_objects(t)
 
             self.last_frame_ms = (time.time() - t0) * 1000
@@ -591,20 +602,16 @@ def main() -> None:
     ap.add_argument("--seconds", type=float, default=None, help="stop after this much stream time")
     ap.add_argument("--fast", action="store_true", help="file only: no pacing, no drops")
     ap.add_argument("--fps", type=float, default=TARGET_TRACK_FPS, help="analysed frames per second")
-    ap.add_argument("--model", default="yolo11n-pose.pt")
+    ap.add_argument("--model", default=DEFAULT_MODEL, help="detector+pose spec, see detector.py")
     ap.add_argument("--conf", type=float, default=0.35)
-    ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--device", default="cpu")
-    ap.add_argument("--tracker", default="botsort")
-    ap.add_argument("--no-reid", action="store_true")
-    ap.add_argument("--reid-model", default="auto")
     ap.add_argument("--track-buffer", type=float, default=TRACK_BUFFER_S)
     ap.add_argument("--no-stitch", action="store_true")
     ap.add_argument("--stitch-gap", type=float, default=8.0)
     ap.add_argument("--stitch-sim", type=float, default=0.6)
     ap.add_argument("--decide-after", type=float, default=2.0,
                     help="seconds a new id is watched before it is matched to a lost one (= output delay)")
-    ap.add_argument("--embed", default=None, help="learned appearance model, e.g. yolo11n-cls.pt")
+    ap.add_argument("--embed", default=None, help="learned appearance model: clip (needs requirements-owl.txt)")
     ap.add_argument("--no-objects", action="store_true")
     ap.add_argument("--object-model", default=DEFAULT_OBJECT_MODEL)
     ap.add_argument("--object-classes", default=",".join(DEFAULT_OBJECT_CLASSES))
@@ -630,9 +637,8 @@ def main() -> None:
             print(f"status: {s}")
 
     pipe = LivePipeline(
-        a.source, model_name=a.model, conf=a.conf, imgsz=a.imgsz, device=a.device,
-        target_fps=a.fps, tracker=a.tracker, reid=not a.no_reid, reid_model=a.reid_model,
-        track_buffer_s=a.track_buffer, stitch=not a.no_stitch, stitch_gap_s=a.stitch_gap,
+        a.source, model_name=a.model, conf=a.conf, device=a.device,
+        target_fps=a.fps, track_buffer_s=a.track_buffer, stitch=not a.no_stitch, stitch_gap_s=a.stitch_gap,
         stitch_min_sim=a.stitch_sim, decide_after_s=a.decide_after, embed=a.embed,
         objects=not a.no_objects, object_model=a.object_model,
         object_classes=[c.strip() for c in a.object_classes.split(",") if c.strip()],

@@ -22,8 +22,8 @@ if _env_file.exists():
 
 app = Flask(__name__)
 
-# Video-analytics (YOLO) endpoints under /api/vision — optional: only mounted when
-# the vision extras (ultralytics, opencv, yt-dlp) are installed.
+# Video-analytics endpoints under /api/vision — optional: only mounted when
+# the vision extras (onnxruntime, opencv, yt-dlp) are installed.
 sys.path.insert(0, str(HERE / "vision"))
 try:
     from vision_api import bp as vision_bp
@@ -118,7 +118,7 @@ def _sse(obj: dict) -> str:
 
 @app.route("/")
 def index():
-    """Tab shell: Simulation | Video | Calibration | Live map | Zones."""
+    """Tab shell: Simulation | Video | Calibration | Live map | Zones | Multi-cam | Live."""
     return send_file(HERE / "vision" / "shell.html")
 
 
@@ -156,6 +156,18 @@ def vision_live():
 def vision_calibrate():
     """Click matching points on a camera frame and the store map."""
     return send_file(HERE / "vision" / "calibrate.html")
+
+
+@app.route("/multical")
+def vision_multical():
+    """Joint calibration: one map, several cameras, shared landmarks."""
+    return send_file(HERE / "vision" / "multical.html")
+
+
+@app.route("/multiview")
+def vision_multiview():
+    """All cameras of a scene and the plan together, tracks fused into visitors."""
+    return send_file(HERE / "vision" / "multiview.html")
 
 
 @app.route("/api/video-log")

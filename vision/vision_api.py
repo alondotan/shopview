@@ -14,6 +14,15 @@ Endpoints (all under /api/vision):
     GET  /objects/<video_id>     – objects CSV matching /tracks/<video_id>
     GET  /zones/<map>            – zone polygons drawn on a store map
     POST /zones/<map>            – save them
+    GET  /scenes                 – multi-camera scenes (videos sharing one map + clock)
+    GET  /scenes/<name>          – one scene: map, cameras, shared landmarks
+    POST /scenes/<name>          – save it
+    DELETE /scenes/<name>
+    POST /scenes/<name>/calibrate – fit every camera's homography from the shared
+                                   landmarks (save=true also writes the per-camera
+                                   calibration files)
+    POST /scenes/<name>/fuse     – join the cameras' tracks into visitors (fusion.py)
+    GET  /scenes/<name>/fusion   – the saved fusion result (+ .csv)
     POST /live/start {source,…}  – run the live pipeline on a camera / RTSP url / video
     POST /live/stop
     GET  /live/status
@@ -37,7 +46,9 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request, send_file
 
 from detect_people import DEFAULT_OBJECT_CLASSES, DEFAULT_OBJECT_MODEL, TRACK_BUFFER_S, analyze
+from detector import DEFAULT_MODEL
 from download_video import download
+from fusion import DEFAULT_PARAMS as FUSION_DEFAULTS, FUSION_DIR, SCENE_DIR, fuse_scene, save_fusion, scene_path
 from homography import CALIB_DIR, solve_homography
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -133,9 +144,8 @@ def create_job():
     job_id = uuid.uuid4().hex[:8]
     preview = TRACK_DIR / f"{video.stem}_{job_id}_preview.mp4" if body.get("preview") else None
     params = {
-        "model_name": body.get("model", "yolo11n-pose.pt"),
+        "model_name": body.get("model", DEFAULT_MODEL),
         "conf": float(body.get("conf", 0.35)),
-        "imgsz": int(body.get("imgsz", 640)),
         # 0 / missing → auto (≈6 analysed fps, what the tracker needs)
         "stride": int(body.get("stride") or 0) or None,
         "start_seconds": float(body.get("start", 0.0)),
@@ -143,14 +153,12 @@ def create_job():
         "device": body.get("device", "cpu"),
         "preview": preview,
         "out_csv": TRACK_DIR / f"{video.stem}_{job_id}_tracks.csv",
-        # tracking: botsort + appearance features, then clothing/position stitching
-        "tracker": body.get("tracker", "botsort"),
-        "reid": bool(body.get("reid", True)),
+        # tracking: bytetrack, then clothing/position stitching
         "track_buffer_s": float(body.get("track_buffer", TRACK_BUFFER_S)),
         "stitch_tracks": bool(body.get("stitch", True)),
         "stitch_gap_s": float(body.get("stitch_gap", 8.0)),
         "stitch_min_sim": float(body.get("stitch_sim", 0.6)),
-        # held-object detection (YOLO-World, free-text classes) — on by default
+        # held-object detection (yolox: COCO classes, or owlv2: free text) — on by default
         "objects": bool(body.get("objects", True)),
         "object_model": body.get("object_model", DEFAULT_OBJECT_MODEL),
         "object_classes": _class_list(body.get("object_classes")),
@@ -461,6 +469,187 @@ def post_zones(map_name: str):
     return jsonify({**doc, "saved_to": str(path.relative_to(ROOT))})
 
 
+# ── scenes: several cameras on one store ──────────────────────────────────
+# A scene is a list of videos that share a map and a clock, plus the *shared
+# landmarks*: one map point each, with its pixel position in every camera that
+# sees it. Each camera's homography is fitted from the landmarks it has, and
+# saved in the ordinary per-camera file, so the single-camera tabs keep working.
+
+def _scene_doc(name: str) -> dict | None:
+    path = scene_path(_safe(name))
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _clean_scene(name: str, body: dict) -> dict | tuple[dict, int]:
+    cams = body.get("cameras")
+    if not isinstance(cams, list) or not cams:
+        return {"error": "cameras must be a non-empty list of {video, offset_s}"}, 400
+    clean_cams = []
+    for c in cams:
+        vid = c.get("video") if isinstance(c, dict) else c
+        if not vid:
+            return {"error": "every camera needs a video id"}, 400
+        try:
+            _resolve_video(vid)
+        except FileNotFoundError as e:
+            return {"error": str(e)}, 404
+        clean_cams.append({"video": Path(vid).stem, "offset_s": float((c.get("offset_s") if isinstance(c, dict) else 0) or 0)})
+    landmarks = []
+    for i, lm in enumerate(body.get("landmarks") or []):
+        try:
+            m = [float(lm["map"][0]), float(lm["map"][1])]
+            cam_pts = {str(k): [float(v[0]), float(v[1])] for k, v in (lm.get("cams") or {}).items() if v}
+        except (TypeError, ValueError, KeyError, IndexError):
+            return {"error": f"landmark {i} is malformed"}, 400
+        landmarks.append({"map": m, "cams": cam_pts})
+    return {"name": _safe(name), "map": body.get("map"), "map_size": body.get("map_size"),
+            "cameras": clean_cams, "video_sizes": body.get("video_sizes") or {},
+            "landmarks": landmarks}
+
+
+@bp.get("/scenes")
+def list_scenes():
+    SCENE_DIR.mkdir(parents=True, exist_ok=True)
+    out = []
+    for p in sorted(SCENE_DIR.glob("*.json")):
+        doc = json.loads(p.read_text(encoding="utf-8"))
+        out.append({
+            "name": p.stem, "map": doc.get("map"),
+            "cameras": [c["video"] for c in doc.get("cameras", [])],
+            "n_landmarks": len(doc.get("landmarks", [])),
+            "calibrated": [c["video"] for c in doc.get("cameras", [])
+                           if (CALIB_DIR / f"{c['video']}.json").exists()],
+            "has_fusion": (FUSION_DIR / f"{p.stem}.json").exists(),
+        })
+    return jsonify(out)
+
+
+@bp.get("/scenes/<name>")
+def get_scene(name: str):
+    doc = _scene_doc(name)
+    return (jsonify(doc), 200) if doc else ({"error": "no such scene"}, 404)
+
+
+@bp.post("/scenes/<name>")
+def post_scene(name: str):
+    doc = _clean_scene(name, request.json or {})
+    if isinstance(doc, tuple):
+        return doc
+    SCENE_DIR.mkdir(parents=True, exist_ok=True)
+    doc["saved_at"] = _now()
+    scene_path(doc["name"]).write_text(json.dumps(doc, indent=1), encoding="utf-8")
+    return jsonify(doc)
+
+
+@bp.delete("/scenes/<name>")
+def delete_scene(name: str):
+    path = scene_path(_safe(name))
+    if not path.exists():
+        return {"error": "no such scene"}, 404
+    path.unlink()
+    for p in (FUSION_DIR / f"{_safe(name)}.json", FUSION_DIR / f"{_safe(name)}_tracks.csv"):
+        if p.exists():
+            p.unlink()
+    return {"deleted": _safe(name)}
+
+
+def _fit_scene_cameras(doc: dict) -> dict:
+    """Per camera: the homography from the landmarks that camera has a point
+    for. ``errors_px`` is aligned with the landmark list (None where the camera
+    does not see the landmark)."""
+    fits = {}
+    for cam in doc["cameras"]:
+        vid = cam["video"]
+        idx = [i for i, lm in enumerate(doc["landmarks"]) if vid in lm["cams"]]
+        if len(idx) < 4:
+            fits[vid] = {"n_pairs": len(idx), "error": f"needs 4+ landmarks, has {len(idx)}"}
+            continue
+        try:
+            r = solve_homography([doc["landmarks"][i]["cams"][vid] for i in idx],
+                                 [doc["landmarks"][i]["map"] for i in idx])
+        except Exception as e:                       # noqa: BLE001
+            fits[vid] = {"n_pairs": len(idx), "error": str(e)}
+            continue
+        errors = [None] * len(doc["landmarks"])
+        for k, i in enumerate(idx):
+            errors[i] = r["errors_px"][k]
+        fits[vid] = {**r, "errors_px": errors, "n_pairs": len(idx),
+                     "points": [{"img": doc["landmarks"][i]["cams"][vid], "map": doc["landmarks"][i]["map"]}
+                                for i in idx]}
+    return fits
+
+
+@bp.post("/scenes/<name>/calibrate")
+def calibrate_scene(name: str):
+    """Body: the scene doc (map, map_size, cameras, landmarks, video_sizes) +
+    "save": bool. Returns {"fits": {video: fit}}; with save, also writes the
+    scene and one data/calibration/<video>.json per fitted camera."""
+    body = request.json or {}
+    doc = _clean_scene(name, body)
+    if isinstance(doc, tuple):
+        return doc
+    fits = _fit_scene_cameras(doc)
+    out = {"scene": doc["name"], "fits": fits}
+    if body.get("save"):
+        SCENE_DIR.mkdir(parents=True, exist_ok=True)
+        CALIB_DIR.mkdir(parents=True, exist_ok=True)
+        doc["saved_at"] = _now()
+        scene_path(doc["name"]).write_text(json.dumps(doc, indent=1), encoding="utf-8")
+        saved = []
+        for vid, fit in fits.items():
+            if "H" not in fit:
+                continue
+            calib = {"video_id": vid, "map": doc["map"], "map_size": doc["map_size"],
+                     "video_size": doc["video_sizes"].get(vid), "scene": doc["name"],
+                     "points": fit["points"], "H": fit["H"],
+                     "errors_px": [e for e in fit["errors_px"] if e is not None],
+                     "rms_px": fit["rms_px"], "max_px": fit["max_px"]}
+            (CALIB_DIR / f"{_safe(vid)}.json").write_text(json.dumps(calib, indent=2), encoding="utf-8")
+            saved.append(vid)
+        out["saved"] = saved
+        out["saved_to"] = str(scene_path(doc["name"]).relative_to(ROOT))
+    return jsonify(out)
+
+
+@bp.post("/scenes/<name>/fuse")
+def fuse_scene_route(name: str):
+    """Body: {"max_dist_px", "min_overlap_s", "max_gap_s", "min_track_s", "save": bool}
+    (missing → defaults). Runs in-process — a few seconds at most."""
+    doc = _scene_doc(name)
+    if not doc:
+        return {"error": "no such scene"}, 404
+    body = request.json or {}
+    params = {k: body[k] for k in FUSION_DEFAULTS if body.get(k) is not None}
+    try:
+        res = fuse_scene(doc, params, name=doc["name"])
+    except FileNotFoundError as e:
+        return {"error": str(e)}, 404
+    except Exception as e:                           # noqa: BLE001
+        return {"error": str(e), "traceback": traceback.format_exc()}, 500
+    if body.get("save", True):
+        paths = save_fusion(res, doc["name"])
+        res["saved_to"] = {k: str(v.relative_to(ROOT)) for k, v in paths.items()}
+    return jsonify(res)
+
+
+@bp.get("/scenes/<name>/fusion")
+def get_fusion(name: str):
+    path = FUSION_DIR / f"{_safe(name)}.json"
+    if not path.exists():
+        return {"error": "not fused yet — POST /scenes/<name>/fuse"}, 404
+    return send_file(path, mimetype="application/json")
+
+
+@bp.get("/scenes/<name>/fusion.csv")
+def get_fusion_csv(name: str):
+    path = FUSION_DIR / f"{_safe(name)}_tracks.csv"
+    if not path.exists():
+        return {"error": "not fused yet"}, 404
+    return send_file(path, mimetype="text/csv")
+
+
 # ── live stream ───────────────────────────────────────────────────────────
 # One pipeline per server (the demo has one camera). See live.py.
 _live: dict = {"pipe": None}
@@ -473,7 +662,7 @@ def _live_pipe():
 @bp.post("/live/start")
 def live_start():
     """Body: {"source": "rtsp://…" | "0" | "<video id or path>", "fps", "conf",
-    "model", "tracker", "reid", "track_buffer", "stitch", "stitch_gap",
+    "model", "track_buffer", "stitch", "stitch_gap",
     "stitch_sim", "decide_after", "embed", "objects", "object_classes",
     "object_model", "object_conf", "object_interval", "fast", "seconds",
     "jsonl": true|false}. A video id plays at its own speed, like a camera."""
@@ -497,14 +686,10 @@ def live_start():
         jsonl = LIVE_DIR / f"live_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
     pipe = LivePipeline(
         source,
-        model_name=body.get("model", "yolo11n-pose.pt"),
+        model_name=body.get("model", DEFAULT_MODEL),
         conf=float(body.get("conf", 0.35)),
-        imgsz=int(body.get("imgsz", 640)),
         device=body.get("device", "cpu"),
         target_fps=float(body.get("fps", 6.0)),
-        tracker=body.get("tracker", "botsort"),
-        reid=bool(body.get("reid", True)),
-        reid_model=body.get("reid_model", "auto"),
         track_buffer_s=float(body.get("track_buffer", TRACK_BUFFER_S)),
         stitch=bool(body.get("stitch", True)),
         stitch_gap_s=float(body.get("stitch_gap", 8.0)),
