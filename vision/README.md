@@ -409,7 +409,7 @@ everything is toggleable and seekable):
   drop-line when the feet were hidden and the point is estimated), skeleton —
   each toggleable
 * held objects: a dashed box in the holder's colour with the label, hidden when
-  the holder is filtered out; unheld ones (shelf stock) are off by default
+  the holder is filtered out; unheld ones (shelf stock) can be toggled off
 * per-track "holding: shopping bag ×12" in the list, and a whole-video tally of
   objects by label
 * min-confidence and trail-length sliders
