@@ -14,6 +14,8 @@ data/*
 data/videos/*
 !data/videos/KMJS66jBtVQ.mp4
 !data/videos/-1bRhYjw1qE.mp4
+!data/videos/1ye32v77GE0.mp4
+!data/videos/-8zyEwAa50Q.mp4
 !data/tracks/
 data/tracks/*
 !data/tracks/KMJS66jBtVQ_tracks.csv
