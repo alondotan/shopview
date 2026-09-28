@@ -32,7 +32,8 @@ Output: ``data/tracks/<video_id>_actions.csv`` —
 
 (an id that starts with ``-`` goes after ``--``, or argparse reads it as a flag)
 
-Needs ``ANTHROPIC_API_KEY`` in ``.env`` (same as the chat tab).
+Needs a Claude credential — `ant auth login`, or ``ANTHROPIC_API_KEY`` in
+``.env`` (same as the chat tabs).
 """
 
 from __future__ import annotations
@@ -42,6 +43,7 @@ import base64
 import csv
 import json
 import os
+import sys
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -52,6 +54,7 @@ import numpy as np
 from detector import KP_VISIBLE
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))          # llm_stream lives beside server.py
 TRACK_DIR = ROOT / "data" / "tracks"
 VIDEO_DIR = ROOT / "data" / "videos"
 FIXTURE_DIR = ROOT / "data" / "fixtures"
@@ -286,8 +289,9 @@ def run(video_id: str, tracks_csv: Path | None = None, fixtures_path: Path | Non
         from dotenv import load_dotenv
         import anthropic
         load_dotenv(ROOT / ".env")
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            raise SystemExit("ANTHROPIC_API_KEY not set (put it in .env) — or use --no-describe")
+        import llm_stream
+        if llm_stream.credential_source()[0] is None:
+            raise SystemExit(f"{llm_stream.NOT_SIGNED_IN}\nOr run with --no-describe.")
         client = anthropic.Anthropic()
 
     results = []

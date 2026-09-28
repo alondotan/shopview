@@ -9,6 +9,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import anthropic
 
+import llm_stream
+
 load_dotenv()
 
 SUMMARY_FILE = Path(__file__).parent / "week_summary.csv"
@@ -62,9 +64,10 @@ and give concise actionable recommendations. When you quote numbers, cite them f
 
 
 def main() -> None:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        sys.exit("ANTHROPIC_API_KEY not found — add it to the .env file in this folder.")
+    # No explicit key: the SDK resolves ANTHROPIC_API_KEY, then
+    # ANTHROPIC_AUTH_TOKEN, then the profile left by `ant auth login`.
+    if llm_stream.credential_source()[0] is None:
+        sys.exit(llm_stream.NOT_SIGNED_IN)
 
     if not SUMMARY_FILE.exists():
         sys.exit(f"{SUMMARY_FILE.name} not found — run:  python summarize.py")
@@ -72,7 +75,7 @@ def main() -> None:
     csv_text = load_csv(SUMMARY_FILE)
     row_count = csv_text.count("\n") - 1  # subtract header
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic()
     system = system_prompt(csv_text)
     history: list[dict] = []
 
