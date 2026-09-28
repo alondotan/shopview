@@ -1,0 +1,85 @@
+{
+  "map": "_2026-09-14_-8.06.03.png",
+  "map_size": [
+    948,
+    958
+  ],
+  "zones": [
+    {
+      "id": "entrance",
+      "name": "Entrance",
+      "color": "#06d6a0",
+      "role": "entrance",
+      "pts": [
+        [
+          38,
+          512
+        ],
+        [
+          158,
+          512
+        ],
+        [
+          158,
+          708
+        ],
+        [
+          38,
+          708
+        ]
+      ],
+      "visible": true
+    },
+    {
+      "id": "queue",
+      "name": "Checkout queue",
+      "color": "#ffd166",
+      "role": "queue",
+      "pts": [
+        [
+          68,
+          268
+        ],
+        [
+          268,
+          258
+        ],
+        [
+          280,
+          410
+        ],
+        [
+          78,
+          418
+        ]
+      ],
+      "visible": true
+    },
+    {
+      "id": "till",
+      "name": "Till",
+      "color": "#ff6b6b",
+      "role": "counter",
+      "pts": [
+        [
+          95,
+          160
+        ],
+        [
+          260,
+          148
+        ],
+        [
+          270,
+          258
+        ],
+        [
+          100,
+          272
+        ]
+      ],
+      "visible": true
+    }
+  ],
+  "saved_at": "2026-09-22T12:32:36+00:00"
+}

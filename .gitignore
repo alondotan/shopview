@@ -33,6 +33,8 @@ data/calibration/*
 !data/scenes/
 !data/fusion/
 !data/fixtures/
+# the zones the Statistics tab reads — the sample store's entrance, queue and till
+!data/zones/
 !data/map/
 data/map/*
 !data/map/store_map_placeholder.png

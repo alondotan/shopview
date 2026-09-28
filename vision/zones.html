@@ -59,17 +59,23 @@ label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: cent
 #map-canvas.grabbing { cursor: grabbing; }
 
 #side {
-    width: 280px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
+    width: 320px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
     padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
 }
 #zones { display: flex; flex-direction: column; gap: 4px; }
 .zone {
-    display: grid; grid-template-columns: 14px 1fr auto auto; align-items: center; gap: 6px;
+    display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto auto;
+    align-items: center; gap: 6px;
     padding: 5px 6px; border-radius: 6px; border: 1px solid transparent; font-size: 12px;
 }
 .zone.selected { background: #26264a; border-color: #4a4a8a; }
 .zone .swatch { width: 12px; height: 12px; border-radius: 3px; cursor: pointer; border: 1px solid #0008; }
 .zone input[type=text] { width: 100%; min-width: 0; padding: 2px 6px; font-size: 12px; background: transparent; border-color: transparent; }
+.zone select.role {
+    padding: 1px 4px; font-size: 11px; max-width: 74px;
+    background: transparent; border-color: #3a3a5a; color: #8a8aa5;
+}
+.zone select.role:hover { background: #2a2a4a; color: #cdd; }
 .zone input[type=text]:hover, .zone input[type=text]:focus { background: #2a2a4a; border-color: #3a3a5a; }
 .zone .count { font-family: monospace; color: #6ab0ff; font-weight: 600; min-width: 18px; text-align: right; }
 .zone .count.zero { color: #4a4a6a; font-weight: 400; }
@@ -147,6 +153,9 @@ label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: cent
             <div id="zones"></div>
             <div class="help" id="zones-empty">No zones yet. Draw one on the plan: each click adds a corner;
                 click the first corner again, double-click, or press <kbd>Enter</kbd> to close it.</div>
+            <div class="help">Each zone has a <strong>role</strong> the Statistics tab reads:
+                mark the waiting area <em>queue</em> and the counter <em>till</em>, and the
+                wait at the checkout is measured between them.</div>
         </div>
         <div>
             <h2>Show</h2>
@@ -183,7 +192,7 @@ const mapCv  = $('map-canvas'), mapCtx = mapCv.getContext('2d');
 let frames = [], sampleDt = 0.25;
 let calib = null, Hinv = null;        // camera→map and its inverse (map→camera)
 let mapName = null;                   // zones are stored per map image
-let zones = [];                       // {id, name, color, pts:[[x,y]...], visible}
+let zones = [];                       // {id, name, color, role, pts:[[x,y]...], visible}
 let selected = null;                  // zone id
 let drawing = null;                   // [[x,y]...] while a new polygon is being clicked
 let hover = null;                     // [x,y] mouse position on the map (map px)
@@ -191,6 +200,15 @@ let drag = null;                      // {zone, i} while a corner is being dragg
 let dirty = false;
 
 const PALETTE = ['#ff6b6b', '#ffd166', '#06d6a0', '#4cc9f0', '#c77dff', '#ff9f43', '#f72585', '#80ed99'];
+
+// What the Statistics tab does with a zone. A plain zone is still measured —
+// the role only adds meaning the stats stage knows how to use.
+const ROLES = [
+    ['',         'plain zone',  'time spent inside is reported, nothing more'],
+    ['entrance', 'entrance',    'the door: a visit that starts here is a real arrival'],
+    ['queue',    'queue',       'where people wait to pay — time here is the wait'],
+    ['counter',  'till',        'the counter: reaching it ends the wait'],
+];
 
 const status = (msg, cls) => { $('status').textContent = msg; $('status').className = cls || ''; };
 const colorOf = id => 'hsl(' + ((id * 47) % 360) + ' 85% 62%)';
@@ -327,6 +345,7 @@ async function loadZones() {
             id: z.id || ('z' + Date.now() + i),
             name: z.name || ('Zone ' + (i + 1)),
             color: z.color || PALETTE[i % PALETTE.length],
+            role: ROLES.some(r => r[0] === z.role) ? z.role : '',
             pts: z.pts, visible: z.visible !== false,
         }));
     }
@@ -338,7 +357,8 @@ async function saveZones() {
     const res = await fetch('/api/vision/zones/' + encodeURIComponent(mapName), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            zones: zones.map(z => ({ id: z.id, name: z.name, color: z.color, pts: z.pts, visible: z.visible })),
+            zones: zones.map(z => ({ id: z.id, name: z.name, color: z.color, role: z.role,
+                                     pts: z.pts, visible: z.visible })),
             map_size: [mapImg.naturalWidth, mapImg.naturalHeight],
         }),
     }).catch(() => null);
@@ -541,6 +561,22 @@ function renderList() {
         name.addEventListener('keydown', e => { if (e.key === 'Enter') name.blur(); e.stopPropagation(); });
         row.appendChild(name);
 
+        const role = document.createElement('select');
+        role.className = 'role';
+        role.setAttribute('aria-label', 'What ' + z.name + ' is used for');
+        for (const [value, label, hint] of ROLES) {
+            const o = document.createElement('option');
+            o.value = value; o.textContent = label; o.title = hint;
+            role.appendChild(o);
+        }
+        role.value = z.role || '';
+        role.title = (ROLES.find(r => r[0] === z.role) || ROLES[0])[2];
+        role.addEventListener('click', e => e.stopPropagation());
+        role.addEventListener('change', () => {
+            z.role = role.value; markDirty(); renderList(); render();
+        });
+        row.appendChild(role);
+
         const count = document.createElement('span');
         count.className = 'count zero'; count.dataset.zone = z.id; count.textContent = '0';
         count.title = 'People inside right now';
@@ -595,6 +631,7 @@ function finishPolygon() {
         id: 'z' + Date.now().toString(36),
         name: 'Zone ' + (zones.length + 1),
         color: PALETTE[zones.length % PALETTE.length],
+        role: '',
         pts: drawing.map(p => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10]),
         visible: true,
     };
