@@ -200,6 +200,59 @@ frame,time_s,label,conf,x1,y1,x2,y2,cx,cy,w,h,person_id
 
 `person_id` is the `track_id` of the person holding it, empty when nobody is.
 
+## Signing in to Claude
+
+Only the two chat tabs and `actions.py` talk to Claude; detection, tracking,
+calibration, fusion and the statistics stage are entirely local. The SDK
+resolves credentials itself, first match wins:
+
+```
+ANTHROPIC_API_KEY  →  ANTHROPIC_AUTH_TOKEN  →  the profile from `ant auth login`
+                   →  workload identity federation  →  the default profile on disk
+```
+
+so there are two practical options:
+
+```sh
+brew install anthropics/tap/ant      # then, once:
+ant auth login                       # browser sign-in, no key to store
+```
+
+or an `ANTHROPIC_API_KEY=` line in `.env`. `GET /api/auth-status` reports which
+one is in play, the server prints it at startup, and the chat answers with a
+plain "not signed in" sentence rather than a raw 401 when neither is set.
+
+**The trap worth knowing:** a set `ANTHROPIC_API_KEY` *always* beats a login —
+including an empty one. `ANTHROPIC_API_KEY=` with nothing after it wins its slot
+in the chain and authenticates as nobody, which looks exactly like a broken
+login. The `.env` loader therefore skips blank values, so leaving the line empty
+means "use my login" and `ant auth status` stays the source of truth. For the
+same reason nothing in this repo passes `api_key=os.getenv(...)` to the client:
+that hands the SDK `None` and stops the chain before it reaches the profile.
+
+Signing in is for working on your own machine. The container has no browser and
+no profile, so the deployed demo still needs `ANTHROPIC_API_KEY` in its
+environment — Railway and Spaces both take it as a secret.
+
+**What a Claude subscription does not buy you here.** `claude setup-token`
+mints a long-lived token described as "requires Claude subscription", and it is
+tempting to drop into `ANTHROPIC_AUTH_TOKEN` to avoid API credits. It does not
+work for this app: the token *authenticates* — the response carries an
+`anthropic-organization-id` and `anthropic-workspace-id`, so it is not a
+credential problem — but every Messages API call comes back `429
+rate_limit_error`, persistently, across retries with backoff, with and without
+the `anthropic-beta: oauth-2025-04-20` header. The subscription entitles you to
+run Claude Code, not to drive the Messages API from your own client. Reaching
+the subscription would mean replacing the `anthropic` SDK with
+[`claude-agent-sdk`](https://code.claude.com/docs/en/agent-sdk), which runs the
+Claude Code harness itself — a different streaming model, a different tool
+mechanism, and a dependency on the Claude Code binary, which the container does
+not have. `ant auth login` does not help either: it authorises against
+`platform.claude.com`, the API Console, so it bills the same API usage as a key.
+
+So: an API key for this app, and the sign-in path above when you would rather
+not keep a static key on disk.
+
 ## Server
 
 The endpoints are a Flask blueprint mounted by `server.py` under `/api/vision`
@@ -221,8 +274,14 @@ The endpoints are a Flask blueprint mounted by `server.py` under `/api/vision`
 | POST | `/api/vision/scenes/<name>/calibrate` | fit every camera's homography from the shared landmarks; `save` writes the per-camera files too |
 | POST | `/api/vision/scenes/<name>/fuse` | join the cameras' tracks into visitors → `data/fusion/<name>.json` + `_tracks.csv` |
 | GET  | `/api/vision/scenes/<name>/fusion` | the saved fusion result (`fusion.csv` for the CSV) |
+| GET/POST | `/api/vision/zones/<map>` | the polygons drawn on a store plan, each with a `role` |
+| GET  | `/api/vision/stats/sources` | what can be analysed: calibrated videos with tracks, fused scenes |
+| GET  | `/api/vision/stats/video/<video_id>` | dwell / occupancy / queue statistics for one camera |
+| GET  | `/api/vision/stats/scene/<name>` | the same for a fused scene |
+| POST | `/api/vision/chat` | `{kind, id, messages}` → Claude's answer about that source's statistics, streamed as SSE |
+| GET  | `/api/auth-status` | which Claude credential the chats will use (`{signed_in, source, detail}`) |
 
-## The app — seven tabs
+## The app — the tabs
 
 `http://localhost:5000/` is a tab shell (`vision/shell.html`); each tab is its own
 page in an iframe, loaded on first open and kept alive afterwards, so a
@@ -234,20 +293,163 @@ in the URL hash, so `/#livemap` links straight to one.
 | Simulation | `/viewer` (`viewer.html`) | the original simulated-log viewer, animation / analytics / paths / chat |
 | Video | `/vision` (`vision/player.html`) | the video with the detections drawn over it |
 | Calibration | `/calibrate` (`vision/calibrate.html`) | match points between camera and store plan |
-| Live map | `/livemap` (`vision/livemap.html`) | video and plan side by side, people placed on the plan |
+| Live map | `/livemap` (`vision/livemap.html`) | the real-data counterpart of the Simulation tab: map · analytics · paths · chat |
 | Zones | `/zones` (`vision/zones.html`) | draw polygons on the plan, see them projected into the camera |
 | Multi-cam calibration | `/multical` (`vision/multical.html`) | one map, all the cameras of a store, shared landmarks |
 | Multi-cam | `/multiview` (`vision/multiview.html`) | every camera and the plan in sync, tracks fused into one path per shopper |
 
-## Live map tab
+## Live map tab — the real-data counterpart of the simulation
 
-The payoff view: the camera on the left, the store plan on the right, and every
-detected person drawn on the plan at their mapped floor position — play, scrub,
-or step frame by frame and watch them move through the store. Trails show the
-last 6 s. The side panel lists who is in frame with their plan coordinates.
+`http://localhost:5000/livemap`
 
-It needs both a tracks CSV and a saved calibration for the video; when one is
-missing it says which and offers a button through to the Calibration tab.
+The Simulation tab answers four questions about *made-up* shoppers: where are
+they now, what do the numbers say, which way did they walk, and what do I make
+of it. This tab answers the same four about the people a camera actually
+recorded, off the same source picker — a video, or a fused multi-camera scene.
+
+| Sub-view | What it is |
+|---|---|
+| **Live map** | the camera and the store plan side by side, every detected person on the plan at their mapped floor position |
+| **Analytics** | dwell, occupancy and the checkout queue, plus a heat map of where the time went |
+| **Paths** | every path walked, the moves between zones, and the routes most people took |
+| **Chat** | ask Claude about this footage; it answers from the per-visit rows |
+
+Picking a **scene** instead of a camera switches every view to the fused
+visitors from `data/fusion/<scene>_tracks.csv`. The live map itself needs one
+camera and one clock, so for a scene it points at the Multi-cam tab; the other
+three views work unchanged.
+
+`Min visit` and `Min queue` in the bar recompute the statistics on the spot.
+The stage is cheap — a tracks CSV is a few thousand rows — so nothing is cached
+and editing a zone then coming back is enough to see the effect.
+
+### Live map
+
+Play, scrub, or step frame by frame and watch people move through the store.
+Trails show the last 6 s, the zones are drawn on the plan, and the side panel
+lists who is in frame with their plan coordinates. A hollow floor marker with a
+dashed drop line means the feet were hidden and the floor point was estimated.
+
+It needs both a tracks CSV and a saved calibration; when one is missing it says
+which and offers a button through to the tab that fixes it.
+
+### Analytics — `analytics.py`
+
+This is the stage `fusion.py` feeds. It takes visitor trails **in store-map
+pixels** plus the zones drawn on that map, and answers what a manager asks:
+
+* **how long was each person in the store** — `dwell_s`, with mean / median /
+  p90 / longest across the visits;
+* **how many came in**, and what that arrival rate is per hour;
+* **how many were inside at the same time** — the occupancy curve, its peak and
+  its average (tracked person-seconds ÷ the window, so it is the average head
+  count, not the peak);
+* **how long people waited to pay**, who reached the till, who gave up;
+* **where the time actually went** — a heat map of seconds spent per patch of
+  floor, and the same as a per-zone table.
+
+Two sources, the same maths behind one `/api/vision/stats/…` shape:
+
+* a **camera** — its tracks CSV with the saved homography applied to the foot
+  point of every detection;
+* a **scene** — `data/fusion/<scene>_tracks.csv`, already on the map and already
+  one row per visitor, whichever camera(s) saw them.
+
+```bash
+python vision/analytics.py --video=-1bRhYjw1qE   # an id starting with "-" needs the "="
+python vision/analytics.py --scene checkout --min-queue 3
+```
+
+#### What counts as what
+
+* **A visitor** is a track that lasts at least `min_visit_s` (1 s). Shorter ones
+  are detection blips; the count of dropped ones is reported rather than hidden.
+* **Still in the store** — a hole in a trail up to `max_gap_s` (2 s) is an
+  occlusion, not an exit, so the person stays in the head count across it. The
+  visit timeline draws those holes, so a track the tracker kept losing is
+  visible rather than silently averaged in.
+* **Waiting** is time inside a `queue` zone *before* the first moment inside a
+  `counter` zone. A stay under `min_queue_s` (2 s) is walking through the area,
+  not waiting. Someone who was in the queue and never reached the till
+  *abandoned* it. If a plan has a `queue` but no `counter`, a wait simply ends
+  when the person leaves the queue area.
+* **Censoring is not hidden.** On a 60-second clip most visits are cut off by an
+  edge: the person was already inside at the first frame, or still inside at the
+  last. Those are flagged `truncated_in` / `truncated_out`, shown as `32s+` in
+  the table, and the dwell averages are reported twice — over the complete
+  visits and over all of them. The headline tile uses the complete ones, because
+  averaging a censored dwell into an uncensored one just makes a number nobody
+  can act on.
+* **The heat map** is square-root scaled against the 92nd percentile of the
+  occupied bins, not against the maximum. Dwell is long-tailed: one person
+  standing still at the till for half a minute would otherwise push every aisle
+  to the bottom colour and the map would say nothing.
+
+### Paths
+
+The same three panels the simulation's Paths view has, on real geometry:
+
+* **every path walked** on the plan, one colour per visitor; hovering a route
+  dims the rest;
+* **zone to zone** — arrows between the zone centroids, thickness and label from
+  how many visitors made that move. The simulation hard-codes its node layout;
+  here the nodes sit where the zones actually are;
+* **most common routes** — the order visitors reached the zones, most walked
+  first.
+
+All three are built from the zone a trail point falls in, so a plan with no
+zones gets an empty state pointing at the Zones tab rather than a blank panel.
+
+### Chat
+
+The same chat as the Simulation tab, over the measurements instead of the
+simulated log. `POST /api/vision/chat` runs the statistics stage, puts the whole
+brief in the system prompt — totals, the per-visit CSV *and the caveats* — and
+streams the answer back as server-sent events. Both chats share the streaming
+loop and the `render_chart` tool in [`llm_stream.py`](../llm_stream.py).
+
+The caveats travel with the numbers deliberately. A model handed a censored
+dwell without being told it is censored will report it as a fact, and on a clip
+this short most dwells are censored. The prompt also tells it to refuse the
+questions the data cannot answer — hour of day, comparisons between days, what
+anyone bought — rather than inventing them.
+
+### Reading it on the sample clip
+
+`-1bRhYjw1qE` is a 60-second petrol-station shop. Its plan
+(`_2026-09-14_-8.06.03.png`) ships with three zones drawn on it — the entrance
+mat, the queue lane in front of the counter and the till itself — so the tab has
+something to show out of the box:
+
+```
+visitors          11  (3 short tracks dropped, 5 cut off by the clip edges)
+arrivals          8  → 477.4/hour at this rate
+dwell (complete)  mean 10s   median 7s   max 32s   (n=6)
+in store at once  avg 3.56   peak 6 at 10.0s
+checkout          3 queued (3 served, 0 left without paying)
+  wait            mean 3s   median 3s   max 3s
+```
+
+Sixty seconds is far too short to draw conclusions from — five of eleven visits
+are censored and only one person actually queued behind someone — but it
+exercises every number, and the same run over an hour of footage needs no
+changes. The page prints the calibration RMS in its method note for the same
+reason: at 55 map px on this camera, a foot point can land that far from where
+the person really stood, so a zone boundary is fuzzy to about the width of a
+person.
+
+Output: `data/analytics/<name>.json` when run from the CLI — `totals`,
+`occupancy`, `queue`, `zones` and one record per visit.
+
+### One note on the overlays
+
+Every annotated view puts a canvas over an image or a video with `inset: 0` of a
+wrapper. CSS alone cannot size that wrapper: a percentage `max-height` inside an
+auto-height wrapper resolves to `none`, so the media keeps its natural size
+while the wrapper gets clamped, and the drawing drifts off what it is
+annotating. `fitBox()` measures the stage and sets the wrapper to exactly the
+box the media will occupy, which also removes the letterboxing an
+`object-fit: contain` fallback would leave behind.
 
 ## Several cameras on one store
 
@@ -396,8 +598,18 @@ A map edge that crosses the camera's horizon would flip to the other side of the
 image; edges are subdivided and the points behind the camera dropped, so such a
 zone degrades to a clipped outline rather than a bow-tie.
 
+Every zone also carries a **role**, picked from the dropdown on its row — this
+is what the Statistics tab does with it:
+
+| Role | Meaning |
+|---|---|
+| *(plain)* | time spent inside is reported, nothing more |
+| `entrance` | the door: a visit that starts here counts as a real arrival, not someone the clip caught mid-browse |
+| `queue` | where people wait to pay — time here is the wait |
+| `counter` | the till: the first moment inside it ends the wait |
+
 Endpoints: `GET/POST /api/vision/zones/<map>` — body
-`{"zones": [{"id","name","color","pts": [[x,y],…],"visible"}], "map_size": [w,h]}`.
+`{"zones": [{"id","name","color","role","pts": [[x,y],…],"visible"}], "map_size": [w,h]}`.
 
 ## Player app
 
@@ -752,10 +964,16 @@ viewer; the held ones are what the per-visitor tally shows.
    person in front — the ImageNet classifier tried there does not separate people.
 2. ~~Homography~~ — done, see the calibration app above. Still to do: turn
    `map_x,map_y` into the `row,col` cells `store.py` uses.
-3. **Zones & events** — the polygons from the Zones tab (`data/zones/<map>.json`)
-   → `ENTERED`, `BROWSING`, `JOINED_QUEUE`… in the same schema as `*_video.csv`.
-4. **Per-visit summary** — dwell, sections, funnel stage → `week_summary`-shaped
-   CSV, which the existing viewer and chat already consume unchanged.
+3. ~~Zones & events~~ — done, see "Statistics tab": the polygons from the Zones
+   tab carry a role, and `analytics.py` turns them into dwell, occupancy and
+   checkout waits per visitor. Still open: emitting the individual
+   `ENTERED` / `BROWSING` / `JOINED_QUEUE` events in the `*_video.csv` schema,
+   and a per-shelf "browsed" zone role on top of the plain one.
+4. **Per-visit summary** — the per-visit records `analytics.py` already produces
+   reshaped into a `week_summary`-shaped CSV. The Live map tab's chat already
+   reads the records directly, so what is left is the funnel stage, the section
+   list, and a real clock (wall time, not seconds from the start of a clip) —
+   which is also what the simulation viewer would need to consume them.
 5. ~~Several cameras~~ — done, see "Several cameras on one store". Still open:
    a ReID embedding across cameras (view-invariant where the colour histogram
    is only roughly so), floor points for people cut off by the frame edge
