@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#12121f">
-<title>Live map — people on the store plan</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<title>Live map — the store from the video</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { color-scheme: dark; }
@@ -19,35 +20,67 @@ h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     background: #1c1c30; border-radius: 8px; padding: 8px 14px; flex-shrink: 0;
 }
-button, select {
+button, select, input[type=number] {
     background: #2a2a4a; color: #cdd; border: 1px solid #3a3a5a;
     border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 13px;
-    transition: background-color .15s;
+    font-family: inherit; transition: background-color .15s;
 }
 button:hover:not(:disabled) { background: #3a3a6a; }
 button:disabled { opacity: .35; cursor: default; }
 button.primary { background: #2f5da8; border-color: #4a7fd0; color: #eaf2ff; }
-button:focus-visible, select:focus-visible, input:focus-visible {
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
     outline: 2px solid #5c8ee8; outline-offset: 2px;
 }
 select { padding: 4px 6px; font-size: 12px; }
+input[type=number] { width: 60px; padding: 3px 6px; font-size: 12px; cursor: text; }
 label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: center; gap: 6px; }
-#seek { flex: 1; min-width: 140px; accent-color: #5c8ee8; }
+#playbar { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 220px; }
+#seek { flex: 1; min-width: 120px; accent-color: #5c8ee8; }
 #time { font-family: monospace; font-size: 14px; color: #6ab0ff; min-width: 108px; }
+#status { font-size: 12px; color: #9a9ab0; margin-left: auto; }
+#status.error { color: #ff8080; }
 
-#main { display: flex; gap: 10px; flex: 1; min-height: 0; }
-.pane {
-    flex: 1; min-width: 0; background: #1c1c30; border-radius: 8px; padding: 10px;
-    display: flex; flex-direction: column; gap: 8px;
+/* ── sub-tabs: the same four views the simulation viewer has ── */
+#subtabs { display: flex; gap: 6px; flex-shrink: 0; }
+.subtab {
+    background: #1c1c30; color: #8a8aa5; border: 1px solid #2a2a4a;
+    border-radius: 7px; padding: 6px 16px; font-size: 13px;
 }
+.subtab:hover { color: #ccc; background: #22223a; }
+.subtab[aria-selected="true"] { color: #6ab0ff; font-weight: 600; border-color: #3a4a7a; background: #222340; }
+
+#notice {
+    display: none; background: #241c2e; border: 1px solid #5a3a6a; border-radius: 8px;
+    padding: 12px 16px; font-size: 13px; color: #e6d6f0; line-height: 1.5; flex-shrink: 0;
+}
+#notice.show { display: block; }
+#notice button { margin-top: 10px; }
+
+#views { flex: 1; min-height: 0; position: relative; }
+.view { display: none; position: absolute; inset: 0; flex-direction: column; gap: 10px; }
+.view.active { display: flex; }
+.view.scroll { overflow-y: auto; }
+
+.pane {
+    background: #1c1c30; border-radius: 8px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 8px; min-width: 0;
+}
+.pane .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.hint { font-size: 11px; color: #6a6a85; }
+.help { font-size: 11.5px; color: #7a7a95; line-height: 1.55; }
+.help strong { color: #9a9ab0; }
+.empty { color: #6a6a85; font-size: 12.5px; padding: 10px 2px; }
+
+/* ── the map view, unchanged in behaviour ── */
+#map-main { display: flex; gap: 10px; flex: 1; min-height: 0; }
+#map-main .pane { flex: 1; }
 .stage {
     position: relative; flex: 1; min-height: 0; background: #0b0b14; border-radius: 6px;
     display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
-.inner { position: relative; line-height: 0; max-width: 100%; max-height: 100%; }
-.inner > video, .inner > img { display: block; max-width: 100%; max-height: 100%; background: #000; }
+.inner { position: relative; line-height: 0; }
+.inner > video, .inner > img { display: block; width: 100%; height: 100%; background: #000; }
 .inner > canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-
 #side {
     width: 260px; flex-shrink: 0; background: #1c1c30; border-radius: 8px;
     padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
@@ -58,17 +91,128 @@ label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: cent
 #people { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-family: monospace; }
 .person { display: flex; align-items: center; gap: 7px; }
 .swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
-#status { font-size: 12px; color: #9a9ab0; }
-#status.error { color: #ff8080; }
-#notice {
-    display: none; background: #241c2e; border: 1px solid #5a3a6a; border-radius: 8px;
-    padding: 14px 16px; font-size: 13px; color: #e6d6f0; line-height: 1.5;
+
+/* ── KPI tiles ── */
+#kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 8px; flex-shrink: 0; }
+.kpi {
+    background: #1c1c30; border-radius: 8px; padding: 10px 14px;
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
 }
-#notice.show { display: block; }
-#notice button { margin-top: 10px; }
+.kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #7a7a9a; }
+.kpi .value { font-size: 25px; font-weight: 700; font-family: monospace; color: #6ab0ff; line-height: 1.15; }
+.kpi .sub { font-size: 11px; color: #8a8aa5; }
+.kpi.queue .value { color: #ffd166; }
+.kpi.muted .value { color: #6a6a85; }
+
+/* ── charts and the plan ── */
+canvas.chart { width: 100%; display: block; }
+#occupancy { flex: 1; min-height: 180px; }
+#timeline { height: 200px; }
+.plan-stage {
+    position: relative; background: #0b0b14; border-radius: 6px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; flex: 1; min-height: 240px;
+}
+.plan-inner { position: relative; line-height: 0; }
+.plan-inner > img { display: block; width: 100%; height: 100%; }
+.plan-inner > canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: #9a9ab0; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.subsub { display: flex; gap: 4px; }
+.subsub button { padding: 3px 12px; font-size: 12px; }
+.subsub button.active { background: #2f5da8; border-color: #4a7fd0; color: #eaf2ff; }
+
+#ana-row, #paths-row { display: flex; gap: 10px; flex-wrap: wrap; }
+#ana-row > .pane { flex: 1 1 440px; min-height: 300px; max-height: 520px; }
+#paths-row > .pane { flex: 1 1 380px; min-height: 320px; max-height: 560px; }
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th {
+    text-align: left; font-weight: 600; color: #7a7a9a; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .05em;
+    padding: 5px 8px; border-bottom: 1px solid #2a2a4a; position: sticky; top: 0;
+    background: #1c1c30; white-space: nowrap;
+}
+td { padding: 4px 8px; border-bottom: 1px solid #23233c; white-space: nowrap; }
+td.num { font-family: monospace; text-align: right; color: #cdd; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #23233c; }
+tbody tr.sel { background: #26264a; }
+.tag {
+    display: inline-block; padding: 0 6px; border-radius: 10px; font-size: 10px;
+    background: #2a2a4a; color: #9a9ab0; margin-right: 3px;
+}
+.tag.ok { background: #1d3a2a; color: #7ee0a0; }
+.tag.warn { background: #3a2a1d; color: #ffc078; }
+.tag.cut { background: #2a2a4a; color: #8a8aa5; }
+#table-wrap { max-height: 300px; overflow: auto; }
+
+/* ── routes list ── */
+.route {
+    display: flex; align-items: center; gap: 8px; padding: 5px 0;
+    border-bottom: 1px solid #23233c; cursor: pointer;
+}
+.route:hover { background: #23233c; }
+.route .rank { color: #5a5a7a; font-size: 11px; min-width: 16px; }
+.route .stops { flex: 1; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.route .stop { padding: 1px 7px; border-radius: 3px; font-size: 11px; white-space: nowrap; color: #101018; font-weight: 600; }
+.route .arrow { color: #55557a; }
+.route .n { color: #6ab0ff; font-size: 11px; font-family: monospace; min-width: 52px; text-align: right; }
+.route .bar { height: 4px; background: #5c8ee8; border-radius: 2px; }
+
+/* ── chat ── */
+#view-chat { gap: 0; }
+#chat-pane { flex: 1; min-height: 0; padding: 0; overflow: hidden; }
+#chat-info {
+    padding: 8px 14px; border-bottom: 1px solid #2a2a4a; font-size: 12px; color: #8a8aa5;
+    flex-shrink: 0;
+}
+#chat-messages {
+    flex: 1; overflow-y: auto; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 12px; min-height: 0;
+}
+.chat-msg { display: flex; flex-direction: column; max-width: 80%; gap: 4px; }
+.chat-msg.user { align-self: flex-end; align-items: flex-end; }
+.chat-msg.asst { align-self: flex-start; align-items: flex-start; }
+.chat-bubble {
+    padding: 11px 15px; border-radius: 14px; font-size: 14.5px; line-height: 1.6;
+    white-space: pre-wrap; word-break: break-word;
+}
+.chat-msg.user .chat-bubble { background: #2a4a8a; color: #ddeeff; border-bottom-right-radius: 4px; }
+.chat-msg.asst .chat-bubble { background: #1e1e35; color: #ddd; border-bottom-left-radius: 4px; }
+.chat-msg.asst .chat-bubble b { color: #90caf9; }
+.chat-bubble code { background: #0d0d1e; padding: 1px 5px; border-radius: 3px; font-size: 11.5px; }
+.chat-bubble table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px; }
+.chat-bubble th { background: #1a1a35; color: #6ab0ff; padding: 6px 11px; white-space: nowrap; }
+.chat-bubble td { padding: 5px 11px; border-bottom: 1px solid #1e1e38; color: #ccc; }
+.chat-bubble td:not(:first-child), .chat-bubble th:not(:first-child) { text-align: right; }
+.chat-bubble ul { padding-left: 18px; margin: 4px 0; }
+.chart-wrap {
+    background: #16162a; border-radius: 10px; padding: 12px;
+    max-width: 560px; width: 100%; height: 330px;
+}
+.chart-wrap canvas { width: 100% !important; height: 100% !important; }
+#chat-suggest { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 6px; }
+#chat-suggest button { font-size: 12px; padding: 4px 11px; color: #9ab; }
+#chat-input-row {
+    display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #2a2a4a; flex-shrink: 0;
+}
+#chat-input {
+    flex: 1; background: #16162a; border: 1px solid #3a3a5a; border-radius: 8px;
+    color: #ddd; font-size: 14.5px; padding: 10px 14px; resize: none; outline: none;
+    font-family: inherit; min-height: 42px; max-height: 130px;
+}
+#chat-send {
+    background: #2a4a8a; color: #aacfff; border-color: #3a5fad;
+    padding: 10px 18px; font-size: 14.5px; flex-shrink: 0;
+}
+
 @media (max-width: 1000px) {
     body { overflow: auto; height: auto; }
-    #main { flex-direction: column; }
+    #views { position: static; flex: none; }
+    .view { position: static; }
+    #map-main { flex-direction: column; }
     #side { width: auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -77,77 +221,206 @@ label.inline { font-size: 12px; color: #9a9ab0; display: flex; align-items: cent
 <body>
 
 <div class="bar">
-    <label class="inline">Video
-        <select id="video-select" aria-label="Source video"></select>
+    <label class="inline">Source
+        <select id="source" aria-label="Video or scene to show"></select>
     </label>
-    <button id="play">Play</button>
-    <input type="range" id="seek" min="0" max="100" step="0.05" value="0" aria-label="Video time">
-    <span id="time">0.00 / 0.00 s</span>
-    <label class="inline">Speed
-        <select id="speed">
-            <option value="0.5">0.5x</option>
-            <option value="1" selected>1x</option>
-            <option value="2">2x</option>
-            <option value="4">4x</option>
-        </select>
-    </label>
+    <span id="playbar">
+        <button id="play">Play</button>
+        <input type="range" id="seek" min="0" max="100" step="0.05" value="0" aria-label="Video time">
+        <span id="time">0.00 / 0.00 s</span>
+        <label class="inline">Speed
+            <select id="speed">
+                <option value="0.5">0.5x</option>
+                <option value="1" selected>1x</option>
+                <option value="2">2x</option>
+                <option value="4">4x</option>
+            </select>
+        </label>
+    </span>
+    <span id="tuning" style="display:none;gap:10px">
+        <label class="inline" title="Tracks shorter than this are detection blips, not visitors">
+            Min visit <input type="number" id="min-visit" min="0" max="60" step="0.5" value="1"> s
+        </label>
+        <label class="inline" title="A shorter stay in the queue zone is walking through, not waiting">
+            Min queue <input type="number" id="min-queue" min="0" max="60" step="0.5" value="2"> s
+        </label>
+    </span>
     <span id="status" role="status"></span>
 </div>
 
+<nav id="subtabs" role="tablist" aria-label="Views">
+    <button class="subtab" role="tab" data-view="map" aria-selected="true">▶ Live map</button>
+    <button class="subtab" role="tab" data-view="analytics" aria-selected="false">📊 Analytics</button>
+    <button class="subtab" role="tab" data-view="paths" aria-selected="false">🚶 Paths</button>
+    <button class="subtab" role="tab" data-view="chat" aria-selected="false">💬 Chat</button>
+</nav>
+
 <div id="notice" role="status"></div>
 
-<div id="main">
-    <div class="pane">
-        <h2>Camera</h2>
-        <div class="stage">
-            <div class="inner">
-                <video id="video" playsinline preload="auto" muted></video>
-                <canvas id="cam-canvas" aria-hidden="true"></canvas>
+<div id="views">
+
+    <!-- ── Live map ────────────────────────────────────────────────────── -->
+    <section id="view-map" class="view active" role="tabpanel" aria-label="Live map">
+        <div id="map-main">
+            <div class="pane">
+                <h2>Camera</h2>
+                <div class="stage">
+                    <div class="inner">
+                        <video id="video" playsinline preload="auto" muted></video>
+                        <canvas id="cam-canvas" aria-hidden="true"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="pane">
+                <h2>Store plan</h2>
+                <div class="stage">
+                    <div class="inner">
+                        <img id="map-img" alt="Store plan with the people detected in the video">
+                        <canvas id="map-canvas" aria-hidden="true"></canvas>
+                    </div>
+                </div>
+            </div>
+            <aside id="side">
+                <div>
+                    <h2>Now</h2>
+                    <dl class="stats">
+                        <dt>People</dt><dd id="s-now">0</dd>
+                        <dt>On the plan</dt><dd id="s-onmap">0</dd>
+                        <dt>Sampled at</dt><dd id="s-frame">–</dd>
+                    </dl>
+                </div>
+                <div>
+                    <h2>Whole video</h2>
+                    <dl class="stats">
+                        <dt>Track IDs</dt><dd id="s-tracks">0</dd>
+                        <dt>Max in frame</dt><dd id="s-max">0</dd>
+                        <dt>Calibration</dt><dd id="s-rms">–</dd>
+                    </dl>
+                </div>
+                <div>
+                    <h2>Show</h2>
+                    <label class="inline"><input type="checkbox" id="o-box" checked> Boxes on the camera</label>
+                    <label class="inline"><input type="checkbox" id="o-id" checked> Track IDs</label>
+                    <label class="inline"><input type="checkbox" id="o-trail" checked> Trails on the plan</label>
+                    <label class="inline"><input type="checkbox" id="o-zones" checked> Zones on the plan</label>
+                    <label class="inline"><input type="checkbox" id="o-outside"> Keep people who fall off the plan</label>
+                </div>
+                <div>
+                    <h2>In frame</h2>
+                    <div id="people"></div>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <!-- ── Analytics ───────────────────────────────────────────────────── -->
+    <section id="view-analytics" class="view scroll" role="tabpanel" aria-label="Analytics">
+        <div id="kpis"></div>
+        <div id="ana-row">
+            <div class="pane">
+                <div class="head"><h2>People in the store</h2>
+                    <span class="hint">head count over the analysed window</span></div>
+                <canvas id="occupancy" class="chart" aria-label="Occupancy over time"></canvas>
+                <div class="legend">
+                    <span><i style="background:#4a7fd0"></i> in the store</span>
+                    <span><i style="background:#ffd166"></i> waiting at the checkout</span>
+                    <span><i style="background:#ff6b6b"></i> peak</span>
+                </div>
+            </div>
+            <div class="pane">
+                <div class="head"><h2>Where the time goes</h2>
+                    <div class="subsub" id="ana-sub">
+                        <button data-sub="heat" class="active">Heat map</button>
+                        <button data-sub="zones">Zones</button>
+                    </div></div>
+                <div class="plan-stage" id="heat-stage">
+                    <div class="plan-inner">
+                        <img id="heat-img" alt="Store plan shaded by how long people stood on each patch of floor">
+                        <canvas id="heat-canvas" aria-hidden="true"></canvas>
+                    </div>
+                </div>
+                <div class="legend" id="heat-legend"></div>
+                <div id="zones-panel" style="display:none">
+                    <table>
+                        <thead><tr><th>Zone</th><th>Role</th><th style="text-align:right">Visitors</th>
+                            <th style="text-align:right">Share</th><th style="text-align:right">Average stay</th>
+                            <th style="text-align:right">Total</th></tr></thead>
+                        <tbody id="zones-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="pane">
-        <h2>Store plan</h2>
-        <div class="stage">
-            <div class="inner">
-                <img id="map-img" alt="Store plan with the people detected in the video">
-                <canvas id="map-canvas" aria-hidden="true"></canvas>
+        <div class="pane">
+            <div class="head"><h2>Every visit</h2>
+                <span class="hint">one row per visitor; hover to follow that path on the Paths view</span></div>
+            <canvas id="timeline" class="chart" aria-label="When each visitor was in the store"></canvas>
+            <div class="legend">
+                <span><i style="background:#4a7fd0"></i> in the store</span>
+                <span><i style="background:#ffd166"></i> waiting in the queue</span>
+                <span><i style="background:#ff6b6b"></i> at the till</span>
+                <span><i style="background:#2a2a4a"></i> lost by the tracker</span>
             </div>
         </div>
-    </div>
 
-    <aside id="side">
-        <div>
-            <h2>Now</h2>
-            <dl class="stats">
-                <dt>People</dt><dd id="s-now">0</dd>
-                <dt>On the plan</dt><dd id="s-onmap">0</dd>
-                <dt>Sampled at</dt><dd id="s-frame">–</dd>
-            </dl>
+        <div class="pane">
+            <div class="head"><h2>Visits</h2><span class="hint" id="visits-hint"></span></div>
+            <div id="table-wrap">
+                <table><thead><tr id="visits-head"></tr></thead><tbody id="visits-body"></tbody></table>
+            </div>
+            <div class="help" id="method"></div>
         </div>
-        <div>
-            <h2>Whole video</h2>
-            <dl class="stats">
-                <dt>Track IDs</dt><dd id="s-tracks">0</dd>
-                <dt>Max in frame</dt><dd id="s-max">0</dd>
-                <dt>Calibration</dt><dd id="s-rms">–</dd>
-            </dl>
+    </section>
+
+    <!-- ── Paths ───────────────────────────────────────────────────────── -->
+    <section id="view-paths" class="view scroll" role="tabpanel" aria-label="Paths">
+        <div id="paths-row">
+            <div class="pane">
+                <div class="head"><h2>Every path walked</h2>
+                    <span class="hint" id="paths-hint">hover a route below to pick it out</span></div>
+                <div class="plan-stage">
+                    <div class="plan-inner">
+                        <img id="trails-img" alt="Store plan with every path walked drawn on it">
+                        <canvas id="trails-canvas" aria-hidden="true"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="pane">
+                <div class="head"><h2>Zone to zone</h2>
+                    <span class="hint">arrow thickness = how many visitors made that move</span></div>
+                <div class="plan-stage">
+                    <div class="plan-inner">
+                        <img id="flow-img" alt="Store plan with arrows between the zones visitors moved between">
+                        <canvas id="flow-canvas" aria-hidden="true"></canvas>
+                    </div>
+                </div>
+                <div class="legend" id="flow-legend"></div>
+            </div>
         </div>
-        <div>
-            <h2>Show</h2>
-            <label class="inline"><input type="checkbox" id="o-box" checked> Boxes on the camera</label>
-            <label class="inline"><input type="checkbox" id="o-id" checked> Track IDs</label>
-            <label class="inline"><input type="checkbox" id="o-trail" checked> Trails on the plan</label>
-            <label class="inline"><input type="checkbox" id="o-outside"> Keep people who fall off the plan</label>
+        <div class="pane">
+            <div class="head"><h2>Most common routes</h2>
+                <span class="hint">the order visitors reached the zones, most walked first</span></div>
+            <div id="routes"></div>
         </div>
-        <div>
-            <h2>In frame</h2>
-            <div id="people"></div>
+    </section>
+
+    <!-- ── Chat ────────────────────────────────────────────────────────── -->
+    <section id="view-chat" class="view" role="tabpanel" aria-label="Chat">
+        <div class="pane" id="chat-pane">
+            <div id="chat-info">Ask about <span id="chat-source">…</span></div>
+            <div id="chat-messages" aria-live="polite" aria-atomic="false"></div>
+            <div id="chat-suggest"></div>
+            <div id="chat-input-row">
+                <textarea id="chat-input" rows="1" autocomplete="off"
+                    placeholder="Ask about this video's shoppers…" aria-label="Question about the data"></textarea>
+                <button id="chat-send">Send ↑</button>
+            </div>
         </div>
-    </aside>
+    </section>
+
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
 <script>
 const $ = id => document.getElementById(id);
 const video  = $('video');
@@ -155,17 +428,48 @@ const mapImg = $('map-img');
 const camCv  = $('cam-canvas'), camCtx = camCv.getContext('2d');
 const mapCv  = $('map-canvas'), mapCtx = mapCv.getContext('2d');
 
-let frames = [], trails = new Map(), sampleDt = 0.25;
-let calib = null;                     // saved calibration for the current video
+const COL = { store: '#4a7fd0', queue: '#ffd166', counter: '#ff6b6b',
+              entrance: '#06d6a0', gap: '#2a2a4a', grid: '#2a2a4a', text: '#8a8aa5' };
+
+// ── shared state ──────────────────────────────────────────────────────────
+let source  = null;      // {kind: 'video'|'scene', id}
+let frames  = [];        // camera-space detections per sampled time (Live map only)
+let trails  = new Map(); // track id → camera-space trail (Live map only)
+let sampleDt = 0.25;
+let calib   = null;      // the camera → map homography for this video
+let stats   = null;      // the /api/vision/stats result: the other three views
+let zones   = [];        // polygons on the plan, with their roles
+let mapSize = null;
+let selected = null;     // visit id being followed
+let view    = 'map';
 
 const status = (msg, isError) => { $('status').textContent = msg; $('status').className = isError ? 'error' : ''; };
-const colorOf = id => 'hsl(' + ((id * 47) % 360) + ' 85% 62%)';
+const colorOf = id => 'hsl(' + ((Math.abs(hash(id)) * 47) % 360) + ' 78% 62%)';
+function hash(s) {
+    let h = 0, str = String(s);
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    return h;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function applyH(H, x, y) {
     const w = H[2][0] * x + H[2][1] * y + H[2][2];
     return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w,
             (H[1][0] * x + H[1][1] * y + H[1][2]) / w];
 }
+
+function dur(s) {
+    if (s === null || s === undefined) return '–';
+    if (s < 60) return (s < 10 ? s.toFixed(1) : Math.round(s)) + 's';
+    return Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's';
+}
+function clock(s) {
+    return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+}
+const pct = v => v === null || v === undefined ? '–' : Math.round(v * 100) + '%';
+const zoneColor = z => z.role === 'queue' ? COL.queue : z.role === 'counter' ? COL.counter
+                     : z.role === 'entrance' ? COL.entrance : (z.color || '#4cc9f0');
 
 function notice(html) {
     const el = $('notice');
@@ -176,53 +480,211 @@ function notice(html) {
         parent.postMessage({ showTab: btn.dataset.tab }, '*'));
 }
 
-// ── loading ───────────────────────────────────────────────────────────────
-async function loadVideos() {
-    const list = await (await fetch('/api/vision/videos')).json();
-    const sel = $('video-select');
-    sel.innerHTML = '';
-    list.forEach(v => sel.add(new Option(
-        v.id + (v.has_calibration ? ' · calibrated' : v.has_tracks ? ' · tracked' : ' · no tracks'), v.id)));
-    if (!list.length) { notice('No videos in <code>data/videos</code> yet.'); return; }
-    const first = list.find(v => v.has_calibration && v.has_tracks) || list[0];
-    sel.value = first.id;
-    await load(first.id);
+/** Size a stage wrapper to exactly the box its image or video will occupy.
+ *
+ *  CSS cannot do this on its own: a percentage max-height inside an auto-height
+ *  wrapper resolves to none, so the media kept its natural size while the
+ *  wrapper was clamped — and the overlay canvas, which is inset:0 of the
+ *  wrapper, stopped lining up with what it was annotating. Fitting the box here
+ *  keeps the two identical, with no letterboxing to account for. */
+function fitBox(inner, w, h) {
+    if (!(w > 0 && h > 0)) return;
+    const r = inner.parentElement.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return;          // the view is hidden
+    const s = Math.min(r.width / w, r.height / h);
+    inner.style.width = Math.floor(w * s) + 'px';
+    inner.style.height = Math.floor(h * s) + 'px';
 }
 
-async function load(id) {
-    frames = []; trails = new Map(); calib = null;
+function fit(cv) {
+    const dpr = window.devicePixelRatio || 1;
+    const r = cv.getBoundingClientRect();
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, r.width, r.height);
+    return { ctx, w: r.width, h: r.height };
+}
+
+/** A canvas sized to the store plan, so everything can be drawn in map pixels. */
+function planCanvas(imgId, cvId) {
+    const img = $(imgId), cv = $(cvId);
+    if (!img.getAttribute('src') || !img.naturalWidth) { cv.width = cv.height = 1; return null; }
+    fitBox(img.parentElement, img.naturalWidth, img.naturalHeight);
+    const size = mapSize || [img.naturalWidth, img.naturalHeight];
+    cv.width = size[0]; cv.height = size[1];
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    return { ctx, w: cv.width, h: cv.height, scale: cv.width / 900 };
+}
+
+function drawZones(ctx, scale, { fill = true } = {}) {
+    for (const z of zones) {
+        if (z.visible === false) continue;
+        const col = zoneColor(z);
+        ctx.beginPath();
+        z.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+        ctx.closePath();
+        if (fill) { ctx.fillStyle = col + '26'; ctx.fill(); }
+        ctx.strokeStyle = col; ctx.lineWidth = 2 * scale; ctx.stroke();
+    }
+}
+
+const centroid = pts => {
+    const n = pts.length;
+    return [pts.reduce((s, p) => s + p[0], 0) / n, pts.reduce((s, p) => s + p[1], 0) / n];
+};
+
+function pointInPolygon(x, y, pts) {
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const [xi, yi] = pts[i], [xj, yj] = pts[j];
+        if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+}
+
+// ── loading ───────────────────────────────────────────────────────────────
+async function loadSources() {
+    const [vidRes, statRes] = await Promise.all([
+        fetch('/api/vision/videos').catch(() => null),
+        fetch('/api/vision/stats/sources').catch(() => null),
+    ]);
+    const videos = vidRes && vidRes.ok ? await vidRes.json() : [];
+    const analysable = statRes && statRes.ok ? await statRes.json() : { videos: [], scenes: [] };
+
+    const sel = $('source');
+    sel.innerHTML = '';
+    if (videos.length) {
+        const g = document.createElement('optgroup');
+        g.label = 'Cameras';
+        for (const v of videos) {
+            g.appendChild(new Option(
+                v.id + (v.has_calibration ? ' · calibrated' : v.has_tracks ? ' · tracked' : ' · no tracks'),
+                'video/' + v.id));
+        }
+        sel.appendChild(g);
+    }
+    if ((analysable.scenes || []).length) {
+        const g = document.createElement('optgroup');
+        g.label = 'Scenes (several cameras fused)';
+        for (const s of analysable.scenes)
+            g.appendChild(new Option(s.id + ' · ' + s.cameras.length + ' cameras', 'scene/' + s.id));
+        sel.appendChild(g);
+    }
+    if (!sel.options.length) { notice('No videos in <code>data/videos</code> yet.'); return; }
+
+    // prefer a camera whose plan already has a checkout zone, so every view has
+    // something to show on the first open
+    const ready = (analysable.videos || []).find(v => v.roles.includes('queue'));
+    sel.value = ready ? 'video/' + ready.id
+        : 'video/' + (videos.find(v => v.has_calibration && v.has_tracks) || videos[0]).id;
+    await load(sel.value);
+}
+
+async function load(value) {
+    const [kind, ...rest] = value.split('/');
+    source = { kind, id: rest.join('/') };
+    frames = []; trails = new Map(); calib = null; stats = null; zones = []; mapSize = null;
+    selected = null;
+    chatReset();
     video.pause();
-    video.src = '/api/vision/video/' + id;
     mapImg.removeAttribute('src');
     notice('');
     status('loading…');
+    $('playbar').style.display = kind === 'video' ? '' : 'none';
 
-    const [tracksRes, calibRes] = await Promise.all([
-        fetch('/api/vision/tracks/' + id).catch(() => null),
-        fetch('/api/vision/calibration/' + id).catch(() => null),
-    ]);
-
-    if (tracksRes && tracksRes.ok) parseTracks(await tracksRes.text());
-    if (calibRes && calibRes.ok) {
-        calib = await calibRes.json();
-        if (calib.map) mapImg.src = '/api/vision/maps/' + encodeURIComponent(calib.map);
+    if (kind === 'video') {
+        video.src = '/api/vision/video/' + source.id;
+        const [tracksRes, calibRes] = await Promise.all([
+            fetch('/api/vision/tracks/' + source.id).catch(() => null),
+            fetch('/api/vision/calibration/' + source.id).catch(() => null),
+        ]);
+        if (tracksRes && tracksRes.ok) parseTracks(await tracksRes.text());
+        if (calibRes && calibRes.ok) {
+            calib = await calibRes.json();
+            mapSize = calib.map_size || null;
+            if (calib.map) setPlans(calib.map);
+        }
+    } else {
+        video.removeAttribute('src');
     }
 
-    const missing = [];
-    if (!frames.length) missing.push('detections');
-    if (!calib) missing.push('a camera → map calibration');
-    if (missing.length) {
-        notice('<strong>' + id + '</strong> is missing ' + missing.join(' and ') + '.'
-            + (!frames.length ? '<br>Run <code>python vision/detect_people.py data/videos/' + id + '.mp4</code> to detect people.' : '')
-            + (!calib ? '<br>Then match a few points between the camera and the store plan.' : '')
-            + (!calib ? '<br><button class="primary" data-tab="calibrate">Open calibration</button>' : ''));
-    }
+    await loadStats();
+    await loadZones();
 
     $('s-tracks').textContent = trails.size;
     $('s-max').textContent = frames.reduce((m, f) => Math.max(m, f.dets.length), 0);
     $('s-rms').textContent = calib ? 'RMS ' + calib.rms_px + ' px' : '–';
-    status(frames.length ? frames.length + ' annotated frames' : '');
-    render();
+    explainGaps();
+    renderAll();
+}
+
+/** The same plan image backs the map, the heat map and both path views. */
+function setPlans(mapName) {
+    const url = '/api/vision/maps/' + encodeURIComponent(mapName);
+    for (const el of ['map-img', 'heat-img', 'trails-img', 'flow-img']) $(el).src = url;
+}
+
+async function loadStats() {
+    if (!source) return;
+    const q = new URLSearchParams({
+        min_visit_s: $('min-visit').value || 1,
+        min_queue_s: $('min-queue').value || 2,
+    });
+    const res = await fetch('/api/vision/stats/' + source.kind + '/'
+        + encodeURIComponent(source.id) + '?' + q).catch(() => null);
+    stats = res && res.ok ? await res.json() : null;
+    if (stats && stats.source.map_size) mapSize = stats.source.map_size;
+    if (stats && stats.source.map) setPlans(stats.source.map);
+}
+
+async function loadZones() {
+    const mapName = (stats && stats.source.map) || (calib && calib.map);
+    if (!mapName) return;
+    const res = await fetch('/api/vision/zones/' + encodeURIComponent(mapName)).catch(() => null);
+    if (res && res.ok) {
+        const body = await res.json();
+        zones = body.zones || [];
+        if (body.map_size) mapSize = body.map_size;
+    }
+}
+
+/** One banner that says what is missing and which tab fixes it. */
+function explainGaps() {
+    if (!source) return;
+    if (source.kind === 'scene') {
+        if (!stats) {
+            notice('<strong>' + esc(source.id) + '</strong> has not been fused yet, so there is '
+                + 'nothing to show.<br><button class="primary" data-tab="multiview">Open Multi-cam</button>');
+        } else if (view === 'map') {
+            notice('<strong>' + esc(source.id) + '</strong> is a fused scene: several cameras rather '
+                + 'than one, so its live view lives in its own tab. Analytics, Paths and Chat all '
+                + 'work here.<br><button class="primary" data-tab="multiview">Open Multi-cam</button>');
+        } else {
+            notice('');
+        }
+        return;
+    }
+    const missing = [];
+    if (!frames.length) missing.push('detections');
+    if (!calib) missing.push('a camera &rarr; map calibration');
+    if (missing.length) {
+        notice('<strong>' + esc(source.id) + '</strong> is missing ' + missing.join(' and ') + '.'
+            + (!frames.length ? '<br>Run <code>python vision/detect_people.py data/videos/'
+                + esc(source.id) + '.mp4</code> to detect people.' : '')
+            + (!calib ? '<br>Then match a few points between the camera and the store plan.'
+                + '<br><button class="primary" data-tab="calibrate">Open calibration</button>' : ''));
+    } else if (stats && !stats.queue.configured && view !== 'map') {
+        notice('This plan has no zone marked <strong>queue</strong>, so there are no checkout waits, '
+            + 'no zone-to-zone flow and no routes. Draw the waiting area on the plan and give it the '
+            + 'role <em>queue</em> — and <em>till</em> for the counter.'
+            + '<br><button class="primary" data-tab="zones">Open the Zones tab</button>');
+    } else {
+        notice('');
+    }
 }
 
 function parseTracks(csv) {
@@ -238,7 +700,7 @@ function parseTracks(csv) {
         const d = {
             id: id, conf: +p[ix.conf], fx: +p[ix.foot_x], fy: +p[ix.foot_y],
             x1: +p[ix.x1], y1: +p[ix.y1], x2: +p[ix.x2], y2: +p[ix.y2],
-            est: ix.foot_src !== undefined && p[ix.foot_src] !== 'box',   // feet hidden → estimated
+            est: ix.foot_src !== undefined && p[ix.foot_src] !== 'box',   // feet hidden: estimated
         };
         if (!byTime.has(t)) byTime.set(t, []);
         byTime.get(t).push(d);
@@ -260,12 +722,13 @@ function frameAt(t) {
     return Math.abs(b.t - t) < Math.abs(t - a.t) ? b : a;
 }
 
-// ── drawing ───────────────────────────────────────────────────────────────
+// ── the live map itself ───────────────────────────────────────────────────
 function render() {
+    if (view !== 'map' || !source || source.kind !== 'video') return;
     const f = frameAt(video.currentTime);
-    const dur = video.duration || 0;
-    $('time').textContent = video.currentTime.toFixed(2) + ' / ' + dur.toFixed(2) + ' s';
-    if (dur && +$('seek').max !== dur) $('seek').max = dur;
+    const d = video.duration || 0;
+    $('time').textContent = video.currentTime.toFixed(2) + ' / ' + d.toFixed(2) + ' s';
+    if (d && +$('seek').max !== d) $('seek').max = d;
     if (document.activeElement !== $('seek')) $('seek').value = video.currentTime;
 
     drawCamera(f);
@@ -276,6 +739,7 @@ function render() {
 function drawCamera(f) {
     const w = video.videoWidth, h = video.videoHeight;
     if (!w) return;
+    fitBox(video.parentElement, w, h);
     if (camCv.width !== w) { camCv.width = w; camCv.height = h; }
     camCtx.clearRect(0, 0, w, h);
     if (!f) return;
@@ -316,11 +780,15 @@ function drawCamera(f) {
 function drawMap(f) {
     const w = mapImg.naturalWidth, h = mapImg.naturalHeight;
     if (!w) return;
+    fitBox(mapImg.parentElement, w, h);
     if (mapCv.width !== w) { mapCv.width = w; mapCv.height = h; }
     mapCtx.clearRect(0, 0, w, h);
-    if (!f || !calib || !calib.H) return;
+    if (!calib || !calib.H) return;
 
     const sc = Math.max(w, h) / 900;
+    if ($('o-zones').checked) drawZones(mapCtx, sc);
+    if (!f) return;
+
     const keepOutside = $('o-outside').checked;
     const inside = p => keepOutside || (p[0] >= -20 && p[0] <= w + 20 && p[1] >= -20 && p[1] <= h + 20);
     let onMap = 0;
@@ -391,6 +859,754 @@ function drawSide(f) {
     }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+//  ANALYTICS
+// ══════════════════════════════════════════════════════════════════════════
+function tile(label, value, sub, cls) {
+    return '<div class="kpi ' + (cls || '') + '"><span class="label">' + label + '</span>'
+         + '<span class="value">' + value + '</span>'
+         + '<span class="sub">' + (sub || '&nbsp;') + '</span></div>';
+}
+
+function renderKpis() {
+    if (!stats) { $('kpis').innerHTML = ''; return; }
+    const t = stats.totals, q = stats.queue;
+    const out = [
+        tile('Visitors', t.visitors,
+             t.dropped_short ? t.dropped_short + ' short tracks dropped as noise' : 'over the whole window'),
+        tile('Walked in', t.arrivals, '≈ ' + t.visitors_per_hour + ' / hour at this rate'),
+        tile('Time in store', dur(t.dwell_complete_s.mean),
+             t.dwell_complete_s.n
+                ? 'median ' + dur(t.dwell_complete_s.median) + ' · longest ' + dur(t.dwell_complete_s.max)
+                  + ' (' + t.dwell_complete_s.n + ' complete visits)'
+                : 'no visit started and ended inside the window'),
+        tile('At the same time', t.avg_concurrent,
+             'on average · peak ' + t.peak_concurrent + ' at ' + clock(t.peak_at_s || 0)),
+    ];
+    if (q.configured) {
+        out.push(
+            tile('Queued to pay', q.joined,
+                 q.served + ' reached the till'
+                 + (q.abandoned ? ' · ' + q.abandoned + ' gave up' : '')
+                 + (q.share_of_visitors !== null ? ' · ' + pct(q.share_of_visitors) + ' of visitors' : ''),
+                 'queue'),
+            tile('Waited', q.wait_s.n ? dur(q.wait_s.mean) : '0s',
+                 q.wait_s.n
+                    ? 'median ' + dur(q.wait_s.median) + ' · longest ' + dur(q.wait_s.max)
+                      + ' · ' + q.wait_s.n + ' of ' + q.joined + ' had to wait'
+                    : 'nobody queued behind anyone', 'queue'),
+            tile('Queue length', q.peak_length,
+                 'at its longest · ' + q.avg_length + ' on average', 'queue'));
+    } else {
+        out.push(tile('Checkout', '—', 'no zone on this plan is marked <em>queue</em>', 'muted queue'));
+    }
+    $('kpis').innerHTML = out.join('');
+}
+
+function renderOccupancy() {
+    const { ctx, w, h } = fit($('occupancy'));
+    if (!stats) return;
+    const curve = stats.occupancy.curve, qcurve = stats.queue.curve || [];
+    const pad = { l: 34, r: 8, t: 10, b: 22 };
+    const x0 = stats.window.start_s, x1 = stats.window.end_s;
+    const yMax = Math.max(2, stats.totals.peak_concurrent + 1);
+    const X = t => pad.l + (t - x0) / Math.max(1e-6, x1 - x0) * (w - pad.l - pad.r);
+    const Y = n => h - pad.b - n / yMax * (h - pad.t - pad.b);
+
+    ctx.font = '10px monospace'; ctx.textBaseline = 'middle';
+    const stepY = yMax <= 6 ? 1 : Math.ceil(yMax / 6);
+    for (let n = 0; n <= yMax; n += stepY) {
+        ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(pad.l, Y(n) + .5); ctx.lineTo(w - pad.r, Y(n) + .5); ctx.stroke();
+        ctx.fillStyle = COL.text; ctx.textAlign = 'right';
+        ctx.fillText(String(n), pad.l - 6, Y(n));
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const stepX = tickStep(x1 - x0);
+    for (let t = Math.ceil(x0 / stepX) * stepX; t <= x1; t += stepX) {
+        ctx.fillStyle = COL.text;
+        ctx.fillText(clock(t), X(t), h - pad.b + 5);
+    }
+
+    const area = (pts, fillCol, strokeCol) => {
+        if (!pts.length) return;
+        ctx.beginPath(); ctx.moveTo(X(pts[0][0]), Y(0));
+        for (const [t, n] of pts) ctx.lineTo(X(t), Y(n));
+        ctx.lineTo(X(pts[pts.length - 1][0]), Y(0)); ctx.closePath();
+        ctx.fillStyle = fillCol; ctx.fill();
+        ctx.beginPath();
+        pts.forEach(([t, n], i) => i ? ctx.lineTo(X(t), Y(n)) : ctx.moveTo(X(t), Y(n)));
+        ctx.strokeStyle = strokeCol; ctx.lineWidth = 1.5; ctx.stroke();
+    };
+    area(curve, 'rgba(74,127,208,.28)', COL.store);
+    if (qcurve.length) {
+        // the queue curve lies under the occupancy curve by definition, so clear
+        // the blue behind it first — layering amber on blue just reads as brown
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(X(qcurve[0][0]), Y(0));
+        for (const [t, n] of qcurve) ctx.lineTo(X(t), Y(n));
+        ctx.lineTo(X(qcurve[qcurve.length - 1][0]), Y(0)); ctx.closePath();
+        ctx.fillStyle = '#1c1c30'; ctx.fill();
+        ctx.restore();
+        area(qcurve, 'rgba(255,209,102,.62)', COL.queue);
+    }
+
+    if (stats.totals.peak_at_s !== null) {
+        const px = X(stats.totals.peak_at_s), py = Y(stats.totals.peak_concurrent);
+        ctx.strokeStyle = COL.counter; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, h - pad.b); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = COL.counter; ctx.beginPath(); ctx.arc(px, py, 3.5, 0, 7); ctx.fill();
+    }
+    // the average, so the peak is read against the normal rather than alone
+    const ay = Y(stats.totals.avg_concurrent);
+    ctx.strokeStyle = 'rgba(224,224,224,.35)'; ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(pad.l, ay); ctx.lineTo(w - pad.r, ay); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(224,224,224,.6)'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('avg ' + stats.totals.avg_concurrent, pad.l + 4, ay - 2);
+}
+
+const tickStep = span => span <= 90 ? 15 : span <= 400 ? 60 : span <= 1800 ? 300 : 900;
+
+// ── the visit timeline ────────────────────────────────────────────────────
+let rowHit = [];
+
+function renderTimeline() {
+    const cv = $('timeline');
+    if (stats) cv.style.height = Math.max(120, Math.min(420, 22 + stats.visits.length * 15)) + 'px';
+    const { ctx, w, h } = fit(cv);
+    rowHit = [];
+    if (!stats || !stats.visits.length) return;
+    const pad = { l: 42, r: 8, t: 4, b: 18 };
+    const x0 = stats.window.start_s, x1 = stats.window.end_s;
+    const X = t => pad.l + (t - x0) / Math.max(1e-6, x1 - x0) * (w - pad.l - pad.r);
+    const rowH = (h - pad.t - pad.b) / stats.visits.length;
+    const barH = Math.max(4, Math.min(11, rowH - 3));
+
+    ctx.font = '10px monospace';
+    const stepX = tickStep(x1 - x0);
+    for (let t = Math.ceil(x0 / stepX) * stepX; t <= x1; t += stepX) {
+        ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(t) + .5, pad.t); ctx.lineTo(X(t) + .5, h - pad.b); ctx.stroke();
+        ctx.fillStyle = COL.text; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(clock(t), X(t), h - pad.b + 4);
+    }
+
+    stats.visits.forEach((v, i) => {
+        const yc = pad.t + i * rowH + rowH / 2, y = yc - barH / 2;
+        rowHit.push({ y0: pad.t + i * rowH, y1: pad.t + (i + 1) * rowH, id: v.id });
+        const on = v.id === selected;
+
+        ctx.fillStyle = on ? '#e0e0e0' : COL.text;
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText('#' + v.id, pad.l - 6, yc);
+
+        // the whole span, faint — the holes are where the tracker lost them
+        ctx.fillStyle = COL.gap;
+        ctx.fillRect(X(v.t_in), y, Math.max(1, X(v.t_out) - X(v.t_in)), barH);
+        ctx.fillStyle = on ? '#7ab4ff' : COL.store;
+        for (const [a, b] of v.intervals) ctx.fillRect(X(a), y, Math.max(1.5, X(b) - X(a)), barH);
+        ctx.fillStyle = COL.queue;
+        for (const s of v.queue_segments)
+            ctx.fillRect(X(s.t_start), y, Math.max(1.5, X(s.t_end) - X(s.t_start)), barH);
+        if (v.counter_at_s !== null) {
+            ctx.fillStyle = COL.counter;
+            ctx.fillRect(X(v.counter_at_s) - 1, y - 2, 3, barH + 4);
+        }
+        // an open edge: the clip started or ended with them still inside
+        ctx.fillStyle = 'rgba(224,224,224,.45)';
+        if (v.truncated_in) ctx.fillRect(X(v.t_in), y - 1, 2, barH + 2);
+        if (v.truncated_out) ctx.fillRect(X(v.t_out) - 2, y - 1, 2, barH + 2);
+        if (on) {
+            ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+            ctx.strokeRect(X(v.t_in) - 1.5, y - 1.5, X(v.t_out) - X(v.t_in) + 3, barH + 3);
+        }
+    });
+}
+
+// ── heat map: where the time actually went ────────────────────────────────
+const HEAT_CELL = 22;     // map px — about a person's footprint on these plans
+
+function renderHeat() {
+    const c = planCanvas('heat-img', 'heat-canvas');
+    $('heat-legend').innerHTML = '';
+    if (!c || !stats) return;
+    const { ctx, w, h, scale } = c;
+
+    const cols = Math.ceil(w / HEAT_CELL), rows = Math.ceil(h / HEAT_CELL);
+    const grid = new Float32Array(cols * rows);
+    for (const v of stats.visits) {
+        for (let i = 1; i < v.trail.length; i++) {
+            const dt = v.trail[i][0] - v.trail[i - 1][0];
+            if (dt <= 0 || dt > stats.params.max_gap_s) continue;
+            const cx = Math.floor(v.trail[i][1] / HEAT_CELL), cy = Math.floor(v.trail[i][2] / HEAT_CELL);
+            if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) continue;
+            grid[cy * cols + cx] += dt;
+        }
+    }
+    // One person standing still for a minute dwarfs a whole aisle of passers-by,
+    // so scaling against the maximum would paint everything the bottom colour.
+    // The top of the ramp is the 92nd percentile of the occupied cells instead,
+    // and anything above it saturates.
+    const busy = [...grid].filter(t => t > 0).sort((a, b) => a - b);
+    const topT = busy.length ? busy[Math.min(busy.length - 1, Math.floor(busy.length * 0.92))] : 0;
+    const maxT = busy.length ? busy[busy.length - 1] : 0;
+    if (!maxT) {
+        ctx.fillStyle = '#6a6a85';
+        ctx.font = (16 * scale) + "px 'Segoe UI', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.fillText('No mapped positions to bin', w / 2, h / 2);
+        return;
+    }
+
+    // blurred so a floor reads as a surface rather than as the bin edges
+    if ('filter' in ctx) ctx.filter = 'blur(' + Math.round(HEAT_CELL * 0.7) + 'px)';
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const t = grid[y * cols + x];
+            if (t <= 0) continue;
+            const k = heatLevel(t, topT);
+            ctx.fillStyle = heatColor(k, 0.25 + 0.55 * k);
+            ctx.fillRect(x * HEAT_CELL, y * HEAT_CELL, HEAT_CELL, HEAT_CELL);
+        }
+    }
+    if ('filter' in ctx) ctx.filter = 'none';
+    drawZones(ctx, scale, { fill: false });
+
+    const steps = [0.2, 0.4, 0.6, 0.8, 1];
+    $('heat-legend').innerHTML =
+        '<span>seconds spent on this patch of floor:</span>'
+        + steps.map(k => '<span><i style="background:' + heatColor(k, 1) + '"></i>'
+            + (k === 1 ? '≥ ' : '') + dur(Math.round(heatValue(k, topT) * 10) / 10) + '</span>').join('')
+        + '<span style="color:#6a6a85">· ' + HEAT_CELL + ' px bins, smoothed'
+        + (maxT > topT ? ' · busiest bin ' + dur(Math.round(maxT)) : '') + '</span>';
+}
+
+// The ramp is square-root scaled: dwell is long-tailed, and a linear scale hides
+// every ordinary aisle under the one spot somebody stood still in.
+const heatLevel = (t, topT) => topT > 0 ? Math.min(1, Math.sqrt(t / topT)) : 0;
+const heatValue = (k, topT) => k * k * topT;
+
+/** Light blue → cyan → green → yellow → red, readable on a white plan. */
+function heatColor(t, alpha) {
+    t = Math.max(0, Math.min(1, t));
+    const stops = [[120, 170, 255], [60, 200, 220], [90, 215, 120], [250, 205, 60], [235, 70, 55]];
+    const f = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(f)), k = f - i;
+    const c = stops[i].map((v, j) => Math.round(v + (stops[i + 1][j] - v) * k));
+    return 'rgba(' + c.join(',') + ',' + alpha + ')';
+}
+
+// ── the tables ────────────────────────────────────────────────────────────
+function renderVisits() {
+    const head = $('visits-head'), body = $('visits-body');
+    head.innerHTML = ''; body.innerHTML = '';
+    if (!stats) return;
+    const zoneCols = stats.zones;
+    const cols = ['#', 'In', 'Out', 'In store', 'Waited', 'At the till',
+                  ...zoneCols.map(z => z.name), 'Carrying', ''];
+    head.innerHTML = cols.map((c, i) =>
+        '<th' + (i >= 1 && i <= 5 + zoneCols.length ? ' style="text-align:right"' : '') + '>'
+        + esc(c) + '</th>').join('');
+
+    for (const v of stats.visits) {
+        const tr = document.createElement('tr');
+        tr.dataset.id = v.id;
+        if (v.id === selected) tr.className = 'sel';
+        const tags = [];
+        if (v.truncated_in) tags.push('<span class="tag cut" title="already inside when the clip started">open start</span>');
+        if (v.truncated_out) tags.push('<span class="tag cut" title="still inside when the clip ended">open end</span>');
+        if (v.entered_via_entrance) tags.push('<span class="tag ok">walked in</span>');
+        if (v.abandoned_queue) tags.push('<span class="tag warn">left the queue</span>');
+        tr.innerHTML =
+            '<td style="color:' + colorOf(v.id) + '">#' + esc(v.id) + '</td>'
+          + '<td class="num">' + clock(v.t_in) + '</td>'
+          + '<td class="num">' + clock(v.t_out) + '</td>'
+          + '<td class="num">' + dur(v.dwell_s) + (v.truncated_in || v.truncated_out ? '+' : '') + '</td>'
+          + '<td class="num" style="color:' + (v.queue_wait_s ? COL.queue : '#4a4a6a') + '"'
+              + (v.queue_wait_s ? '' : ' title="never stood in the queue zone long enough to be waiting,'
+                  + ' or was already at the till before it"') + '>'
+              + (v.queue_wait_s ? dur(v.queue_wait_s) : '–') + '</td>'
+          + '<td class="num" style="color:' + (v.counter_s ? COL.counter : '#4a4a6a') + '">'
+              + (v.reached_counter ? dur(v.counter_s) : '–') + '</td>'
+          + zoneCols.map(z => {
+                const s = v.zone_seconds[z.id] || 0;
+                return '<td class="num"' + (s ? '' : ' style="color:#4a4a6a"') + '>'
+                     + (s ? dur(s) : '–') + '</td>';
+            }).join('')
+          + '<td style="color:#8a8aa5">' + esc(Object.keys(v.items).slice(0, 3).join(', ') || '–') + '</td>'
+          + '<td>' + tags.join('') + '</td>';
+        tr.addEventListener('mouseenter', () => select(v.id));
+        tr.addEventListener('click', () => select(v.id === selected ? null : v.id));
+        body.appendChild(tr);
+    }
+    const t = stats.totals;
+    $('visits-hint').textContent = t.truncated_visits + ' of ' + t.visitors
+        + ' visits touch an edge of the clip, so their "in store" is a lower bound (marked +)';
+}
+
+function renderZonesTable() {
+    const body = $('zones-body');
+    body.innerHTML = '';
+    if (!stats) return;
+    if (!stats.zones.length) {
+        body.innerHTML = '<tr><td colspan="6" class="empty">No zones on this plan yet — '
+            + 'draw them in the Zones tab.</td></tr>';
+        return;
+    }
+    for (const z of stats.zones) {
+        body.insertAdjacentHTML('beforeend',
+            '<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:3px;'
+          + 'margin-right:6px;background:' + zoneColor(z) + '"></i>' + esc(z.name) + '</td>'
+          + '<td style="color:#8a8aa5">' + (z.role || '–') + '</td>'
+          + '<td class="num">' + z.visitors + '</td>'
+          + '<td class="num">' + pct(z.share_of_visitors) + '</td>'
+          + '<td class="num">' + dur(z.mean_s) + '</td>'
+          + '<td class="num">' + dur(z.total_s) + '</td></tr>');
+    }
+}
+
+function renderMethod() {
+    if (!stats) { $('method').innerHTML = ''; return; }
+    const p = stats.params, s = stats.source, q = stats.queue;
+    const bits = [
+        '<strong>How these are counted.</strong> ' + esc(s.source_file) + ' over '
+        + dur(stats.window.duration_s) + (s.duration_s ? ' of a ' + dur(s.duration_s) + ' video' : '')
+        + '. A track shorter than ' + p.min_visit_s + 's is dropped as a detection blip; a hole up to '
+        + p.max_gap_s + 's is treated as an occlusion rather than someone leaving.',
+        '<strong>At the same time</strong> is the tracked person-seconds divided by the window, so it '
+        + 'is the average head count, not the peak.',
+    ];
+    if (q.configured) {
+        bits.push('<strong>Waiting</strong> is time inside a <em>queue</em> zone before first reaching '
+            + 'a <em>till</em> zone; a stay under ' + p.min_queue_s + 's counts as walking through.'
+            + (q.counter_configured ? '' : ' No zone is marked <em>till</em>, so a wait ends only when '
+              + 'the person leaves the queue area.'));
+    }
+    if (s.calibration_rms_px) {
+        bits.push('The camera &rarr; plan calibration has an RMS error of ' + s.calibration_rms_px
+            + ' map px, which is roughly how far a foot point can land from where the person really '
+            + 'stood — zone boundaries and heat-map edges are that fuzzy.');
+    }
+    $('method').innerHTML = bits.join('<br>');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PATHS
+// ══════════════════════════════════════════════════════════════════════════
+// The zone a point falls in — the first match wins, so overlapping zones are
+// resolved by drawing order rather than silently double-counted.
+function zoneAt(x, y) {
+    for (const z of zones) if (z.visible !== false && pointInPolygon(x, y, z.pts)) return z.id;
+    return null;
+}
+
+let routes = [];    // [{stops: [zoneId], visitors: [id], n}]
+let flow = [];      // [{from, to, n}]
+
+function computeRoutes() {
+    routes = []; flow = [];
+    if (!stats || !zones.length) return;
+    const byRoute = new Map(), byEdge = new Map();
+
+    for (const v of stats.visits) {
+        const stops = [];
+        for (const [, x, y] of v.trail) {
+            const z = zoneAt(x, y);
+            if (z && z !== stops[stops.length - 1]) stops.push(z);
+        }
+        if (stops.length < 2) continue;
+        for (let i = 1; i < stops.length; i++) {
+            const k = stops[i - 1] + '\u0000' + stops[i];
+            byEdge.set(k, (byEdge.get(k) || 0) + 1);
+        }
+        const key = stops.join('\u0000');
+        if (!byRoute.has(key)) byRoute.set(key, { stops, visitors: [] });
+        byRoute.get(key).visitors.push(v.id);
+    }
+
+    routes = [...byRoute.values()].map(r => ({ ...r, n: r.visitors.length }))
+        .sort((a, b) => b.n - a.n || a.stops.length - b.stops.length);
+    flow = [...byEdge.entries()].map(([k, n]) => {
+        const [from, to] = k.split('\u0000');
+        return { from, to, n };
+    }).sort((a, b) => b.n - a.n);
+}
+
+function renderTrails() {
+    const c = planCanvas('trails-img', 'trails-canvas');
+    if (!c || !stats) return;
+    const { ctx, scale } = c;
+    drawZones(ctx, scale, { fill: true });
+
+    const highlight = selected ? new Set([selected])
+        : hoverRoute !== null && routes[hoverRoute] ? new Set(routes[hoverRoute].visitors) : null;
+
+    ctx.lineJoin = ctx.lineCap = 'round';
+    for (const v of stats.visits) {
+        if (v.trail.length < 2) continue;
+        const on = !highlight || highlight.has(v.id);
+        ctx.beginPath();
+        v.trail.forEach((p, i) => i ? ctx.lineTo(p[1], p[2]) : ctx.moveTo(p[1], p[2]));
+        ctx.strokeStyle = colorOf(v.id);
+        ctx.globalAlpha = on ? (highlight ? 1 : 0.6) : 0.09;
+        ctx.lineWidth = (on && highlight ? 4 : 2.2) * scale;
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // where each highlighted visit began and ended
+    if (highlight) {
+        for (const v of stats.visits) {
+            if (!highlight.has(v.id) || v.trail.length < 2) continue;
+            const a = v.trail[0], b = v.trail[v.trail.length - 1];
+            ctx.fillStyle = COL.entrance;
+            ctx.beginPath(); ctx.arc(a[1], a[2], 6 * scale, 0, 7); ctx.fill();
+            ctx.fillStyle = COL.counter;
+            ctx.beginPath(); ctx.arc(b[1], b[2], 6 * scale, 0, 7); ctx.fill();
+        }
+    }
+    $('paths-hint').textContent = selected ? 'visitor #' + selected + ' — start ●, end ●'
+        : highlight ? routes[hoverRoute].n + ' visitors walked this route'
+        : (stats.visits.length + ' paths · hover a route below to pick one out');
+}
+
+function renderFlow() {
+    const c = planCanvas('flow-img', 'flow-canvas');
+    $('flow-legend').innerHTML = '';
+    if (!c || !stats) return;
+    const { ctx, w, h, scale } = c;
+    drawZones(ctx, scale, { fill: true });
+
+    if (!zones.length || !flow.length) {
+        ctx.fillStyle = '#6a6a85';
+        ctx.font = (15 * scale) + "px 'Segoe UI', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.fillText(zones.length ? 'Nobody moved between two zones here'
+                                  : 'No zones drawn on this plan', w / 2, h / 2);
+        return;
+    }
+
+    const pos = Object.fromEntries(zones.map(z => [z.id, centroid(z.pts)]));
+    const maxN = Math.max(...flow.map(e => e.n));
+    for (const e of flow) {
+        const a = pos[e.from], b = pos[e.to];
+        if (!a || !b) continue;
+        const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len, uy = dy / len;
+        const r = 16 * scale;                       // stop short of the node discs
+        const x1 = a[0] + ux * r, y1 = a[1] + uy * r;
+        const x2 = b[0] - ux * r, y2 = b[1] - uy * r;
+        // bow the line so A→B and B→A do not sit on top of each other
+        const mx = (x1 + x2) / 2 - uy * len * 0.12, my = (y1 + y2) / 2 + ux * len * 0.12;
+
+        ctx.strokeStyle = 'rgba(122,180,255,.75)';
+        ctx.lineWidth = (1.5 + 6 * e.n / maxN) * scale;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(mx, my, x2, y2); ctx.stroke();
+
+        const ang = Math.atan2(y2 - my, x2 - mx), head = 9 * scale;
+        ctx.fillStyle = 'rgba(122,180,255,.95)';
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - head * Math.cos(ang - 0.45), y2 - head * Math.sin(ang - 0.45));
+        ctx.lineTo(x2 - head * Math.cos(ang + 0.45), y2 - head * Math.sin(ang + 0.45));
+        ctx.closePath(); ctx.fill();
+
+        const label = String(e.n), lw = (10 + label.length * 7) * scale;
+        ctx.fillStyle = 'rgba(16,16,24,.85)';
+        ctx.beginPath();
+        ctx.roundRect(mx - lw / 2, my - 9 * scale, lw, 18 * scale, 9 * scale);
+        ctx.fill();
+        ctx.fillStyle = '#e0e0e0';
+        ctx.font = '700 ' + Math.round(12 * scale) + "px 'Segoe UI', sans-serif";
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, mx, my);
+    }
+
+    for (const z of zones) {
+        if (z.visible === false) continue;
+        const [x, y] = pos[z.id];
+        ctx.fillStyle = zoneColor(z);
+        ctx.strokeStyle = '#101018'; ctx.lineWidth = 2 * scale;
+        ctx.beginPath(); ctx.arc(x, y, 16 * scale, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#101018';
+        ctx.font = '700 ' + Math.round(11 * scale) + "px 'Segoe UI', sans-serif";
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(z.name.slice(0, 2).toUpperCase(), x, y);
+    }
+    $('flow-legend').innerHTML = zones.filter(z => z.visible !== false).map(z =>
+        '<span><i style="background:' + zoneColor(z) + '"></i>'
+        + esc(z.name.slice(0, 2).toUpperCase()) + ' = ' + esc(z.name) + '</span>').join('');
+}
+
+let hoverRoute = null;
+
+function renderRoutes() {
+    const el = $('routes');
+    if (!stats) { el.innerHTML = ''; return; }
+    if (!zones.length) {
+        el.innerHTML = '<div class="empty">Routes are the order visitors reached the zones, so this '
+            + 'plan needs zones first — draw them in the Zones tab.</div>';
+        return;
+    }
+    if (!routes.length) {
+        el.innerHTML = '<div class="empty">No visitor passed through two different zones in this '
+            + 'window, so there is no route to report.</div>';
+        return;
+    }
+    const nameOf = id => (zones.find(z => z.id === id) || { name: id }).name;
+    const colOf = id => zoneColor(zones.find(z => z.id === id) || {});
+    const total = routes.reduce((s, r) => s + r.n, 0);
+    const top = routes.slice(0, 12);
+
+    el.innerHTML = top.map((r, i) => {
+        const share = Math.round(r.n / total * 100);
+        return '<div class="route" data-i="' + i + '">'
+            + '<span class="rank">' + (i + 1) + '</span>'
+            + '<span class="stops">' + r.stops.map(s =>
+                '<span class="stop" style="background:' + colOf(s) + '">' + esc(nameOf(s)) + '</span>')
+                .join('<span class="arrow">›</span>') + '</span>'
+            + '<span class="n">' + r.n + '× · ' + share + '%</span>'
+            + '<span class="bar" style="width:' + Math.max(4, share) + 'px"></span></div>';
+    }).join('')
+    + (routes.length > top.length
+        ? '<div class="empty">' + (routes.length - top.length) + ' more routes walked once or twice</div>'
+        : '');
+
+    for (const row of el.querySelectorAll('.route')) {
+        row.addEventListener('mouseenter', () => { hoverRoute = +row.dataset.i; renderTrails(); });
+        row.addEventListener('mouseleave', () => { hoverRoute = null; renderTrails(); });
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  CHAT
+// ══════════════════════════════════════════════════════════════════════════
+let chatHistory = [], chatBusy = false;
+
+const SUGGESTIONS = [
+    'What stands out about this footage?',
+    'Who spent the longest in the store, and where?',
+    'Is the checkout a bottleneck here?',
+    'Which numbers here should I not trust?',
+];
+
+function chatReset() {
+    chatHistory = [];
+    $('chat-messages').innerHTML = '';
+    $('chat-suggest').innerHTML = SUGGESTIONS
+        .map(q => '<button type="button">' + esc(q) + '</button>').join('');
+    for (const b of $('chat-suggest').children) {
+        b.addEventListener('click', () => { $('chat-input').value = b.textContent; chatSend(); });
+    }
+}
+
+function renderChatInfo() {
+    if (!stats) {
+        $('chat-source').textContent = source ? source.id + ' — nothing analysed yet' : '…';
+        $('chat-input').disabled = $('chat-send').disabled = true;
+        return;
+    }
+    $('chat-input').disabled = $('chat-send').disabled = false;
+    $('chat-source').innerHTML = '<strong>' + esc(stats.source.name) + '</strong> — '
+        + stats.totals.visitors + ' visitors over ' + dur(stats.window.duration_s)
+        + (stats.queue.configured ? ', checkout zones set' : ', no checkout zone');
+}
+
+function simpleMarkdown(raw) {
+    let text = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    text = text.replace(/((?:^\|.+\n?)+)/gm, block => {
+        const lines = block.trim().split('\n').filter(l => l.trim());
+        const sepIdx = lines.findIndex(l => /^\|[-| :]+\|?\s*$/.test(l));
+        if (lines.length < 2 || sepIdx < 1) return block;
+        const cells = l => l.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        const th = cells(lines[0]).map(c => '<th>' + c + '</th>').join('');
+        const rows = lines.slice(sepIdx + 1).map(l =>
+            '<tr>' + cells(l).map(c => '<td>' + c + '</td>').join('') + '</tr>').join('');
+        return '<table><thead><tr>' + th + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    });
+    return text
+        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/^#{1,3} (.+)$/gm, '<b style="color:#6ab0ff">$1</b>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>[\s\S]*<\/li>)/, '<ul>$1</ul>')
+        .replace(/\n/g, '<br>');
+}
+
+function chatBubble(role, html) {
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg ' + role;
+    wrap.innerHTML = '<div class="chat-bubble">' + html + '</div>';
+    $('chat-messages').appendChild(wrap);
+    $('chat-messages').scrollTop = 9e6;
+    return wrap.querySelector('.chat-bubble');
+}
+
+function chatChart(config) {
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg asst';
+    wrap.innerHTML = '<div class="chart-wrap"><canvas></canvas></div>';
+    $('chat-messages').appendChild(wrap);
+    if (typeof Chart === 'undefined') {
+        wrap.querySelector('.chart-wrap').innerHTML =
+            '<span style="color:#8a8aa5;font-size:12px">Chart library not loaded.</span>';
+    } else {
+        Chart.defaults.color = '#999';
+        Chart.defaults.borderColor = '#2a2a4a';
+        Chart.defaults.font.size = 11;
+        // fill the wrapper rather than deriving a height from the width: the
+        // model's titles and series names are long, and with a derived height
+        // they crowd the plot down to nothing
+        Chart.defaults.maintainAspectRatio = false;
+        Chart.defaults.plugins.legend.labels.boxWidth = 12;
+        Chart.defaults.plugins.legend.labels.padding = 8;
+        new Chart(wrap.querySelector('canvas'), config);
+    }
+    $('chat-messages').scrollTop = 9e6;
+}
+
+async function chatSend() {
+    if (chatBusy || !stats) return;
+    const inp = $('chat-input');
+    const text = inp.value.trim();
+    if (!text) return;
+
+    inp.value = ''; inp.style.height = '';
+    $('chat-suggest').innerHTML = '';
+    chatHistory.push({ role: 'user', content: text });
+    chatBubble('user', simpleMarkdown(text));
+    chatBusy = true;
+    $('chat-send').disabled = true;
+
+    let bubble = null, streamed = '', historyText = '';
+    try {
+        const res = await fetch('/api/vision/chat', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                kind: source.kind, id: source.id, messages: chatHistory,
+                min_visit_s: +$('min-visit').value || 1,
+                min_queue_s: +$('min-queue').value || 2,
+            }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            chatBubble('asst', esc(err.error || res.statusText));
+            chatHistory.pop();
+            return;
+        }
+        const reader = res.body.getReader(), decoder = new TextDecoder();
+        let buf = '';
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const payload = line.slice(6);
+                if (payload === '[DONE]') break;
+                const evt = JSON.parse(payload);
+                if (evt.type === 'text') {
+                    if (!bubble) bubble = chatBubble('asst', '');
+                    streamed += evt.chunk;
+                    bubble.innerHTML = simpleMarkdown(streamed);
+                    $('chat-messages').scrollTop = 9e6;
+                } else if (evt.type === 'chart') {
+                    bubble = null; streamed = '';
+                    chatChart(evt.config);
+                } else if (evt.type === 'history') {
+                    historyText = evt.text;
+                }
+            }
+        }
+        chatHistory.push({ role: 'assistant', content: historyText || streamed || '(chart)' });
+    } catch (e) {
+        chatBubble('asst', 'Network error: ' + esc(e.message));
+        chatHistory.pop();
+    } finally {
+        chatBusy = false;
+        $('chat-send').disabled = false;
+        $('chat-input').focus();
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  VIEWS AND WIRING
+// ══════════════════════════════════════════════════════════════════════════
+function select(id) {
+    if (id === selected) return;
+    selected = id;
+    for (const tr of $('visits-body').children) tr.classList.toggle('sel', tr.dataset.id === id);
+    renderTimeline();
+    renderTrails();
+}
+
+function renderAll() {
+    if (!stats && source) {
+        status(source.kind === 'scene' ? 'not fused yet' : 'no statistics for this source');
+    } else if (stats) {
+        status(stats.totals.visitors + ' visitors over ' + dur(stats.window.duration_s)
+             + ' · ' + stats.source.source_file);
+    }
+    renderKpis();
+    renderOccupancy();
+    renderTimeline();
+    renderHeat();
+    renderVisits();
+    renderZonesTable();
+    renderMethod();
+    computeRoutes();
+    renderTrails();
+    renderFlow();
+    renderRoutes();
+    renderChatInfo();
+    render();
+}
+
+function showView(name) {
+    view = name;
+    for (const btn of document.querySelectorAll('.subtab')) {
+        const on = btn.dataset.view === name;
+        btn.setAttribute('aria-selected', String(on));
+        $('view-' + btn.dataset.view).classList.toggle('active', on);
+    }
+    $('playbar').style.display = name === 'map' && source && source.kind === 'video' ? '' : 'none';
+    $('tuning').style.display = name === 'map' ? 'none' : 'flex';
+    if (name !== 'map') video.pause();
+    explainGaps();
+    // canvases sized from their layout box need a redraw once they are visible
+    requestAnimationFrame(() => {
+        if (name === 'analytics') { renderOccupancy(); renderTimeline(); renderHeat(); }
+        if (name === 'paths') { renderTrails(); renderFlow(); }
+        if (name === 'chat') $('chat-input').focus();
+        if (name === 'map') render();
+    });
+}
+
+for (const btn of document.querySelectorAll('.subtab'))
+    btn.addEventListener('click', () => showView(btn.dataset.view));
+
+$('ana-sub').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    for (const b of $('ana-sub').children) b.classList.toggle('active', b === btn);
+    const heat = btn.dataset.sub === 'heat';
+    $('heat-stage').style.display = heat ? '' : 'none';
+    $('heat-legend').style.display = heat ? '' : 'none';
+    $('zones-panel').style.display = heat ? 'none' : '';
+    if (heat) renderHeat();
+});
+
+$('timeline').addEventListener('mousemove', e => {
+    const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
+    const hit = rowHit.find(h => y >= h.y0 && y < h.y1);
+    e.currentTarget.style.cursor = hit ? 'pointer' : 'default';
+    if (hit) select(hit.id);
+});
+$('timeline').addEventListener('mouseleave', () => select(null));
+
 // redraw on every rendered video frame where supported, else on rAF
 if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
     const step = () => { render(); video.requestVideoFrameCallback(step); };
@@ -402,24 +1618,65 @@ if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
 video.addEventListener('seeked', render);
 video.addEventListener('loadeddata', render);
 mapImg.addEventListener('load', render);
+$('heat-img').addEventListener('load', renderHeat);
+$('trails-img').addEventListener('load', renderTrails);
+$('flow-img').addEventListener('load', renderFlow);
 
-// ── controls ──────────────────────────────────────────────────────────────
 $('play').addEventListener('click', () => video.paused ? video.play() : video.pause());
 video.addEventListener('play',  () => $('play').textContent = 'Pause');
 video.addEventListener('pause', () => $('play').textContent = 'Play');
 $('seek').addEventListener('input', e => { video.currentTime = +e.target.value; });
 $('speed').addEventListener('change', e => { video.playbackRate = +e.target.value; });
-$('video-select').addEventListener('change', e => load(e.target.value));
-for (const id of ['o-box', 'o-id', 'o-trail', 'o-outside']) $(id).addEventListener('change', render);
+$('source').addEventListener('change', e => load(e.target.value));
+for (const id of ['o-box', 'o-id', 'o-trail', 'o-zones', 'o-outside'])
+    $(id).addEventListener('change', render);
+for (const id of ['min-visit', 'min-queue'])
+    $(id).addEventListener('change', async () => {
+        status('recomputing…');
+        await loadStats();
+        explainGaps();
+        renderAll();
+    });
 
-document.addEventListener('keydown', e => {
-    if (e.target.matches('input, select, button')) return;
-    if (e.key === ' ') { e.preventDefault(); video.paused ? video.play() : video.pause(); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); video.pause(); video.currentTime += sampleDt; }
-    else if (e.key === 'ArrowLeft')  { e.preventDefault(); video.pause(); video.currentTime = Math.max(0, video.currentTime - sampleDt); }
+$('chat-send').addEventListener('click', chatSend);
+$('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
+    e.stopPropagation();
+});
+$('chat-input').addEventListener('input', function () {
+    this.style.height = '';
+    this.style.height = Math.min(this.scrollHeight, 130) + 'px';
 });
 
-loadVideos();
+document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, button, textarea')) return;
+    if (view !== 'map') return;
+    if (e.key === ' ') { e.preventDefault(); video.paused ? video.play() : video.pause(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); video.pause(); video.currentTime += sampleDt; }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); video.pause(); video.currentTime = Math.max(0, video.currentTime - sampleDt); }
+});
+
+let resizeTimer = null;
+const redraw = () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if (view === 'analytics') { renderOccupancy(); renderTimeline(); }
+    }, 90);
+};
+window.addEventListener('resize', redraw);
+
+if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => {
+        if (view === 'map') render();
+        else if (view === 'analytics') renderHeat();
+        else if (view === 'paths') { renderTrails(); renderFlow(); }
+    });
+    for (const el of document.querySelectorAll('.stage, .plan-stage')) ro.observe(el);
+}
+
+chatReset();
+showView('map');
+loadSources();
 </script>
 </body>
 </html>
