@@ -2,6 +2,7 @@
 .git
 data/models
 data/live
+data/analytics
 __pycache__
 **/__pycache__
 *.log

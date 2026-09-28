@@ -13,7 +13,13 @@ Endpoints (all under /api/vision):
     GET  /jobs/<id>/preview      – annotated mp4 (if requested)
     GET  /objects/<video_id>     – objects CSV matching /tracks/<video_id>
     GET  /zones/<map>            – zone polygons drawn on a store map
-    POST /zones/<map>            – save them
+    POST /zones/<map>            – save them (each may carry a role: entrance /
+                                   queue / counter, which the stats stage reads)
+    GET  /stats/video/<video_id> – visit statistics for one camera: dwell,
+                                   occupancy, checkout queue
+    GET  /stats/scene/<name>     – the same for a fused multi-camera scene
+    GET  /stats/sources          – what can be analysed right now
+    POST /chat {kind,id,messages} – ask Claude about one video's statistics (SSE)
     GET  /scenes                 – multi-camera scenes (videos sharing one map + clock)
     GET  /scenes/<name>          – one scene: map, cameras, shared landmarks
     POST /scenes/<name>          – save it
@@ -36,6 +42,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+import sys
 import threading
 import traceback
 import uuid
@@ -43,15 +50,18 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, Response, jsonify, request, send_file, stream_with_context
 
 from detect_people import DEFAULT_OBJECT_CLASSES, DEFAULT_OBJECT_MODEL, TRACK_BUFFER_S, analyze
 from detector import DEFAULT_MODEL
 from download_video import download
 from fusion import DEFAULT_PARAMS as FUSION_DEFAULTS, FUSION_DIR, SCENE_DIR, fuse_scene, save_fusion, scene_path
+from analytics import DEFAULT_PARAMS as STATS_DEFAULTS, ZONE_ROLES, analyse, brief
 from homography import CALIB_DIR, solve_homography
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))          # llm_stream lives beside server.py
+
 VIDEO_DIR = ROOT / "data" / "videos"
 TRACK_DIR = ROOT / "data" / "tracks"
 MAP_DIR = ROOT / "data" / "map"
@@ -438,8 +448,12 @@ def get_zones(map_name: str):
 
 @bp.post("/zones/<map_name>")
 def post_zones(map_name: str):
-    """Body: {"zones": [{"id", "name", "color", "pts": [[x, y], ...], "visible"}, ...],
-              "map_size": [w, h]}  — pts in map pixels, >= 3 per zone."""
+    """Body: {"zones": [{"id", "name", "color", "role", "pts": [[x, y], ...], "visible"}, ...],
+              "map_size": [w, h]}  — pts in map pixels, >= 3 per zone.
+
+    ``role`` is what the statistics stage does with the zone: "entrance",
+    "queue" (people waiting to pay), "counter" (the till — reaching it ends the
+    wait), or "" for an ordinary zone."""
     body = request.json or {}
     zones = body.get("zones")
     if not isinstance(zones, list):
@@ -453,10 +467,14 @@ def post_zones(map_name: str):
             pts = [[float(p[0]), float(p[1])] for p in pts]
         except (TypeError, ValueError, IndexError):
             return {"error": f"zone {i} has malformed points"}, 400
+        role = str(z.get("role") or "")
+        if role not in ZONE_ROLES:
+            return {"error": f"zone {i}: role must be one of {list(ZONE_ROLES)}"}, 400
         clean.append({
             "id": str(z.get("id") or f"z{i}"),
             "name": str(z.get("name") or f"Zone {i + 1}"),
             "color": str(z.get("color") or "#4cc9f0"),
+            "role": role,
             "pts": pts,
             "visible": bool(z.get("visible", True)),
         })
@@ -467,6 +485,141 @@ def post_zones(map_name: str):
            "saved_at": _now()}
     path.write_text(json.dumps(doc, indent=2), encoding="utf-8")
     return jsonify({**doc, "saved_to": str(path.relative_to(ROOT))})
+
+
+# ── statistics: dwell, occupancy, checkout queue ──────────────────────────
+# Cheap enough to recompute per request (a tracks CSV is a few thousand rows),
+# so there is nothing to invalidate when the zones change.
+
+CHAT_SYSTEM = """You are a retail analytics assistant helping a store manager \
+understand what happened in their shop, from video their cameras already recorded.
+
+Everything below was measured by the vision pipeline: people were detected and \
+tracked frame by frame, each person's floor position was projected onto the store \
+plan, and the zones drawn on that plan turned those positions into dwell, \
+occupancy and checkout waits.
+
+<data>
+{brief}
+</data>
+
+Answer from these rows. Compute the statistics you need, cite the numbers, and \
+name the visitor ids when a specific person makes the point.
+
+Be straight about what the data cannot support. This is one clip, not a trading \
+day: if a question needs an hour of day, a date, a comparison between days, what \
+anybody bought, or who they are, say the measurement does not exist rather than \
+guessing at it. Respect the censoring and the calibration caveats listed above — \
+a lower bound is not a measurement, and a difference smaller than the calibration \
+error is not a finding. When a sample is this small, give the count alongside the \
+average so the manager can see how much weight it carries.
+
+When a chart would help, call the render_chart tool with a Chart.js v4 config. \
+You may combine text and a chart in the same response.
+
+Reply in the language the user writes in."""
+
+
+def _stats_params() -> dict:
+    """Read the tuning knobs off the query string; missing → the defaults."""
+    out = {}
+    for key in STATS_DEFAULTS:
+        raw = request.args.get(key) or request.args.get(key.removesuffix("_s"))
+        if raw not in (None, ""):
+            try:
+                out[key] = float(raw)
+            except ValueError:
+                pass
+    return out
+
+
+@bp.get("/stats/sources")
+def stats_sources():
+    """What the Statistics tab can offer: calibrated videos that have tracks,
+    and scenes that have been fused."""
+    VIDEO_DIR.mkdir(parents=True, exist_ok=True)
+    videos = []
+    for p in sorted(VIDEO_DIR.glob("*.mp4")):
+        calib = CALIB_DIR / f"{p.stem}.json"
+        if not calib.exists() or not list(TRACK_DIR.glob(f"{p.stem}*_tracks.csv")):
+            continue
+        doc = json.loads(calib.read_text(encoding="utf-8"))
+        map_name = doc.get("map")
+        zones = (json.loads(_zone_path(map_name).read_text(encoding="utf-8")).get("zones", [])
+                 if map_name and _zone_path(map_name).exists() else [])
+        videos.append({"kind": "video", "id": p.stem, "map": map_name,
+                       "n_zones": len(zones),
+                       "roles": sorted({z.get("role") for z in zones if z.get("role")})})
+    scenes = []
+    SCENE_DIR.mkdir(parents=True, exist_ok=True)
+    for p in sorted(SCENE_DIR.glob("*.json")):
+        if not (FUSION_DIR / f"{p.stem}_tracks.csv").exists():
+            continue
+        doc = json.loads(p.read_text(encoding="utf-8"))
+        map_name = doc.get("map")
+        zones = (json.loads(_zone_path(map_name).read_text(encoding="utf-8")).get("zones", [])
+                 if map_name and _zone_path(map_name).exists() else [])
+        scenes.append({"kind": "scene", "id": p.stem, "map": map_name,
+                       "cameras": [c["video"] for c in doc.get("cameras", [])],
+                       "n_zones": len(zones),
+                       "roles": sorted({z.get("role") for z in zones if z.get("role")})})
+    return jsonify({"videos": videos, "scenes": scenes})
+
+
+@bp.get("/stats/video/<video_id>")
+def stats_video(video_id: str):
+    """Query: job, plus any of min_visit_s / max_gap_s / min_queue_s / grid_s."""
+    try:
+        return jsonify(analyse("video", _safe(video_id), request.args.get("job"),
+                               _stats_params()))
+    except FileNotFoundError as e:
+        return {"error": str(e)}, 404
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+
+@bp.get("/stats/scene/<name>")
+def stats_scene(name: str):
+    try:
+        return jsonify(analyse("scene", _safe(name), None, _stats_params()))
+    except FileNotFoundError as e:
+        return {"error": str(e)}, 404
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+
+@bp.post("/chat")
+def stats_chat():
+    """Ask Claude about one analysed video or scene.
+
+    Body: {"kind": "video"|"scene", "id": "...", "messages": [...], plus any
+    stats parameter}. The whole statistics brief goes in the system prompt —
+    totals, the per-visit table and the caveats — so the model answers from the
+    rows rather than from a summary of them. Same SSE protocol as /api/chat.
+    """
+    import llm_stream
+
+    body = request.json or {}
+    kind = body.get("kind", "video")
+    if kind not in ("video", "scene"):
+        return {"error": "kind must be 'video' or 'scene'"}, 400
+    if not body.get("id"):
+        return {"error": "id is required"}, 400
+    params = {k: float(body[k]) for k in STATS_DEFAULTS if body.get(k) is not None}
+
+    try:
+        res = analyse(kind, _safe(body["id"]), body.get("job"), params)
+    except FileNotFoundError as e:
+        return {"error": str(e)}, 404
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+    system = CHAT_SYSTEM.format(brief=brief(res))
+    return Response(
+        stream_with_context(llm_stream.stream(system, body.get("messages", []))),
+        mimetype="text/event-stream",
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"},
+    )
 
 
 # ── scenes: several cameras on one store ──────────────────────────────────
@@ -731,7 +884,6 @@ def live_frame():
     jpg = pipe.snapshot_jpeg() if pipe is not None else None
     if not jpg:
         return {"error": "no frame yet"}, 404
-    from flask import Response
     return Response(jpg, mimetype="image/jpeg",
                     headers={"Cache-Control": "no-store"})
 
@@ -752,8 +904,6 @@ def live_stream():
     """Server-sent events: every pipeline event as it happens (people rows are
     ``decide_after`` seconds late by design, once their visitor id is final)."""
     import queue as _queue
-
-    from flask import Response, stream_with_context
 
     pipe = _live_pipe()
     if pipe is None:
